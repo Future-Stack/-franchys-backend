@@ -8,15 +8,19 @@ model User {
   updatedAt DateTime @updatedAt
   createAt  DateTime @default(now())
 
-  googleAuth        Boolean   @default(false)
-  language          String?
-  profileImage      String?
-  operationsRole    String?
-  otp               Int?
-  isVerified        Boolean   @default(false)
-  refreshToken      String?
-  resetToken        String?
-  resetTokenExpires DateTime?
+  googleAuth          Boolean   @default(false)
+  language            String?
+  profileImage        String?
+  operationsRole      String?
+  otp                 Int?
+  isVerified          Boolean   @default(false)
+  refreshToken        String?
+  resetToken          String?
+  resetTokenExpires   DateTime?
+  avatar              String?
+  timezone            String?
+  tasksRemainderEmail Boolean   @default(false)
+  taskAssignEmail     Boolean   @default(false)
 
   phone   String?
   address String?

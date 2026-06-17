@@ -1,6 +1,6 @@
 import { Module, Global } from '@nestjs/common';
 import { MailerModule } from '@nestjs-modules/mailer';
-import { HandlebarsAdapter } from '@nestjs-modules/mailer/adapters/handlebars.adapter';
+import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
 import { MailService } from './mail.service';
 import { join } from 'path';
 import { ConfigService } from '@nestjs/config';
@@ -20,7 +20,7 @@ import { ConfigService } from '@nestjs/config';
           },
         },
         defaults: {
-          from: `"No Reply" <${config.get('MAIL_USER')}>`,
+          from: config.get('MAIL_FROM') || `"No Reply" <${config.get('MAIL_USER') || 'no-reply@example.com'}>`,
         },
         template: {
           dir: join(__dirname, 'templates'),

@@ -4,8 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { UsersService } from '../users/users.service';
 import { MailService } from '../mail/mail.service';
 import { PrismaService } from '../../prisma/prisma.service';
-import { RegisterDto, LoginDto, ForgotPasswordDto, ResetPasswordDto, VerificationDto } from './dto/auth.dto';
-import * as crypto from 'crypto';
+import { RegisterDto, LoginDto, ForgotPasswordDto, ResetPasswordDto, VerificationDto, ChangePasswordDto, VerifyResetCodeDto } from './dto/auth.dto';
 
 @Injectable()
 export class AuthService {
@@ -15,7 +14,7 @@ export class AuthService {
     private configService: ConfigService,
     private mailService: MailService,
     private prisma: PrismaService,
-  ) {}
+  ) { }
 
   async register(registerDto: RegisterDto) {
     const existingUser = await this.usersService.findByEmail(registerDto.email);
@@ -27,11 +26,12 @@ export class AuthService {
     const user = await this.usersService.create({
       ...registerDto,
       otp,
+      isVerified: true,
     } as any);
 
     await this.mailService.sendVerificationCode(user.email, otp.toString());
 
-    return { message: 'Registration successful. Please check your email for the verification code.' };
+    return { message: 'Registration successful. Your account has been verified automatically and a verification email has been sent.' };
   }
 
   async verify(verificationDto: VerificationDto) {
@@ -49,22 +49,15 @@ export class AuthService {
   }
 
   async login(loginDto: LoginDto) {
-    let user: any = await this.usersService.findByEmail(loginDto.email);
-    let role = 'USER';
-
-    if (!user) {
-      // Check Admin table
-      user = await this.prisma.admin.findUnique({ where: { email: loginDto.email } });
-      if (user) role = user.role;
-    }
+    const user = await this.usersService.findByEmail(loginDto.email);
 
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
     // For regular users, check verification
-    if (role === 'USER' && !user.isVerified) {
-       throw new UnauthorizedException('Email not verified');
+    if (user.role === 'USER' && !user.isVerified) {
+      throw new UnauthorizedException('Email not verified');
     }
 
     const isPasswordValid = await this.usersService.verifyPassword(loginDto.password, user.password);
@@ -72,7 +65,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    return this.generateTokens(user.userId || user.adminId, user.email, role);
+    return this.generateTokens(user.userId, user.email, user.role);
   }
 
   async refresh(refreshToken: string) {
@@ -81,19 +74,13 @@ export class AuthService {
         secret: this.configService.get('jwt.refreshSecret'),
       });
 
-      let user: any = await this.prisma.user.findUnique({ where: { userId: payload.sub } });
-      let role = 'USER';
-
-      if (!user) {
-        user = await this.prisma.admin.findUnique({ where: { adminId: payload.sub } });
-        if (user) role = user.role;
-      }
+      const user = await this.prisma.user.findUnique({ where: { userId: payload.sub } });
 
       if (!user || user.refreshToken !== refreshToken) {
         throw new UnauthorizedException();
       }
 
-      return this.generateTokens(user.userId || user.adminId, user.email, role);
+      return this.generateTokens(user.userId, user.email, user.role);
     } catch (e) {
       throw new UnauthorizedException();
     }
@@ -119,19 +106,74 @@ export class AuthService {
     return { message: 'Password reset code sent to your email' };
   }
 
-  async resetPassword(resetPasswordDto: ResetPasswordDto) {
-    const user = await this.usersService.findByEmail(resetPasswordDto.email);
-    if (!user || user.resetToken !== resetPasswordDto.code || !user.resetTokenExpires || user.resetTokenExpires < new Date()) {
+  async verifyResetCode(verifyResetCodeDto: VerifyResetCodeDto) {
+    const user = await this.usersService.findByEmail(verifyResetCodeDto.email);
+    if (!user || user.resetToken !== verifyResetCodeDto.code || !user.resetTokenExpires || user.resetTokenExpires < new Date()) {
       throw new BadRequestException('Invalid or expired reset code');
     }
 
-    await this.usersService.update(user.userId, {
-      password: resetPasswordDto.newPassword,
-      resetToken: null,
-      resetTokenExpires: null,
+    // Generate a temporary JWT reset token valid for 15 minutes
+    const resetToken = await this.jwtService.signAsync(
+      { sub: user.userId, email: user.email, purpose: 'reset-password' },
+      {
+        secret: this.configService.get('jwt.secret'),
+        expiresIn: '15m',
+      },
+    );
+
+    return {
+      message: 'OTP verified successfully. Use the provided reset token to change your password.',
+      resetToken,
+    };
+  }
+
+  async resetPassword(resetPasswordDto: ResetPasswordDto) {
+    try {
+      const payload = await this.jwtService.verifyAsync(resetPasswordDto.token, {
+        secret: this.configService.get('jwt.secret'),
+      });
+
+      if (payload.purpose !== 'reset-password') {
+        throw new BadRequestException('Invalid token');
+      }
+
+      const user = await this.usersService.findOne(payload.sub);
+      if (!user) {
+        throw new BadRequestException('User not found');
+      }
+
+      if (!user.resetToken) {
+        throw new BadRequestException('Token has already been used or is invalid');
+      }
+
+      await this.usersService.update(user.userId, {
+        password: resetPasswordDto.newPassword,
+        resetToken: null,
+        resetTokenExpires: null,
+      } as any);
+
+      return { message: 'Password reset successful' };
+    } catch (e: any) {
+      throw new BadRequestException(e.message || 'Invalid or expired reset token');
+    }
+  }
+
+  async changePassword(userId: string, changePasswordDto: ChangePasswordDto) {
+    const user = await this.usersService.findOne(userId);
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    const isPasswordValid = await this.usersService.verifyPassword(changePasswordDto.oldPassword, user.password);
+    if (!isPasswordValid) {
+      throw new BadRequestException('Incorrect current password');
+    }
+
+    await this.usersService.update(userId, {
+      password: changePasswordDto.newPassword,
     } as any);
 
-    return { message: 'Password reset successful' };
+    return { message: 'Password changed successfully' };
   }
 
   private async generateTokens(userId: string, email: string, role: string) {
@@ -152,14 +194,7 @@ export class AuthService {
       ),
     ]);
 
-    if (role === 'USER') {
-      await this.usersService.update(userId, { refreshToken } as any);
-    } else {
-      await this.prisma.admin.update({
-        where: { adminId: userId },
-        data: { refreshToken },
-      });
-    }
+    await this.usersService.update(userId, { refreshToken } as any);
 
     return {
       accessToken,

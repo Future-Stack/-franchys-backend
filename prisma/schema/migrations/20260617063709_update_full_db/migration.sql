@@ -4,6 +4,9 @@ CREATE TYPE "Role" AS ENUM ('USER', 'BUYER', 'SELLER', 'DEALER', 'ADMIN', 'SUPER
 -- CreateEnum
 CREATE TYPE "Status" AS ENUM ('ACTIVE', 'TRIAL', 'SUSPEND');
 
+-- CreateEnum
+CREATE TYPE "AdminRole" AS ENUM ('ADMIN', 'SUPER_ADMIN');
+
 -- CreateTable
 CREATE TABLE "User" (
     "userId" TEXT NOT NULL,
@@ -23,6 +26,9 @@ CREATE TABLE "User" (
     "refreshToken" TEXT,
     "resetToken" TEXT,
     "resetTokenExpires" TIMESTAMP(3),
+    "phone" TEXT,
+    "address" TEXT,
+    "country" TEXT,
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("userId")
 );

@@ -25,8 +25,8 @@ async function bootstrap() {
   // Swagger setup
   const swaggerPath = `${apiPrefix}/docs`;
   const config = new DocumentBuilder()
-    .setTitle('Aimalya API')
-    .setDescription('The Aimalya API documentation')
+    .setTitle('Francys API')
+    .setDescription('The Francys API documentation')
     .setVersion('1.0')
     .addBearerAuth()
     .build();

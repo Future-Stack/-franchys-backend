@@ -1,7 +1,16 @@
-import { Controller, Post, Body, UnauthorizedException } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { Controller, Post, Body, Request } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { RegisterDto, LoginDto, ForgotPasswordDto, ResetPasswordDto, VerificationDto } from './dto/auth.dto';
+import {
+  RegisterDto,
+  LoginDto,
+  ForgotPasswordDto,
+  ResetPasswordDto,
+  VerificationDto,
+  ChangePasswordDto,
+  RefreshTokenDto,
+  VerifyResetCodeDto,
+} from './dto/auth.dto';
 import { Public } from '../../common/decorators/public.decorator';
 
 @ApiTags('Auth')
@@ -33,9 +42,8 @@ export class AuthController {
   @Public()
   @Post('refresh')
   @ApiOperation({ summary: 'Refresh access token' })
-  refresh(@Body('refreshToken') refreshToken: string) {
-    if (!refreshToken) throw new UnauthorizedException('Refresh token missing');
-    return this.authService.refresh(refreshToken);
+  refresh(@Body() refreshTokenDto: RefreshTokenDto) {
+    return this.authService.refresh(refreshTokenDto.refreshToken);
   }
 
   @Public()
@@ -46,9 +54,26 @@ export class AuthController {
   }
 
   @Public()
+  @Post('verify-reset-code')
+  @ApiOperation({ summary: 'Verify password reset code and issue temporary token' })
+  verifyResetCode(@Body() verifyResetCodeDto: VerifyResetCodeDto) {
+    return this.authService.verifyResetCode(verifyResetCodeDto);
+  }
+
+  @Public()
   @Post('reset-password')
-  @ApiOperation({ summary: 'Reset password with code' })
+  @ApiOperation({ summary: 'Reset password with temporary token' })
   resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
     return this.authService.resetPassword(resetPasswordDto);
+  }
+
+  @ApiBearerAuth()
+  @Post('change-password')
+  @ApiOperation({ summary: 'Change password for logged in user' })
+  changePassword(
+    @Request() req: any,
+    @Body() changePasswordDto: ChangePasswordDto,
+  ) {
+    return this.authService.changePassword(req.user.userId, changePasswordDto);
   }
 }
