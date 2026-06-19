@@ -12,6 +12,9 @@ import { PrismaModule } from './prisma/prisma.module';
 import { MailModule } from './modules/mail/mail.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
+import { ProfileShopModule } from './modules/profile-shop/profile-shop.module';
+import { InvoiceModule } from './modules/invoice/invoice.module';
+import { PriceMatricsModule } from './modules/price-matrics/price-matrics.module';
 
 @Module({
   imports: [
@@ -24,6 +27,9 @@ import { RolesGuard } from './common/guards/roles.guard';
     UsersModule,
     MailModule,
     PrismaModule,
+    ProfileShopModule,
+    InvoiceModule,
+    PriceMatricsModule,
   ],
   controllers: [AppController],
   providers: [

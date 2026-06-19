@@ -17,7 +17,7 @@ async function main() {
 
   // Create Super Admin if it doesn't exist
   const existingSuperAdmin = await prisma.user.findFirst({
-    where: { role: Role.SUPER_ADMIN },
+    where: { email: superAdminEmail, role: Role.SUPER_ADMIN },
   });
 
   if (!existingSuperAdmin) {

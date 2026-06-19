@@ -1,0 +1,13 @@
+model InvoiceInformation {
+    iniId String @id @default(uuid())
+
+    currency                 String @default("USD")
+    language                 String @default("English")
+    termsAndCondition        String
+    paymentTramsAndCondition String
+    invoiceTaxRate           Int    @default(0)
+    invoiceSeed              Int    @default(1)
+
+    updatedAt DateTime @updatedAt
+    createAt  DateTime @default(now())
+}

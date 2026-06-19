@@ -26,3 +26,8 @@ enum AdminRole {
   ADMIN
   SUPER_ADMIN
 }
+
+enum VendorStatus {
+  ACTIVE
+  INACTIVE
+}

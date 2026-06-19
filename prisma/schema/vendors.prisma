@@ -1,0 +1,21 @@
+model Vendors {
+    vendorId String @id @default(uuid())
+
+    companyName     String
+    contactName     String
+    avatar          String
+    status          VendorStatus @default(ACTIVE)
+    email           String
+    phone           String
+    fax             String
+    accountNumber   String
+    mainAddress     String
+    optionalAddress String?
+    city            String
+    state           String
+    country         String
+    zip             String
+
+    updatedAt DateTime @updatedAt
+    createAt  DateTime @default(now())
+}

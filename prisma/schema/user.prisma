@@ -22,11 +22,69 @@ model User {
   tasksRemainderEmail Boolean   @default(false)
   taskAssignEmail     Boolean   @default(false)
 
-  phone   String?
-  address String?
-  country String?
+  phone           String?
+  address         String?
+  country         String?
+  userPermissions UserPermission[]
 
   @@index([operationsRole])
   @@index([name])
   @@index([googleAuth])
+}
+
+model UserPermission {
+  userPermissionId String @id @default(uuid())
+  userId           String @unique
+  user             User   @relation(fields: [userId], references: [userId])
+
+  // Customer Permissions
+  canCreateCustomers Boolean @default(false)
+  canUpdateCustomers Boolean @default(false)
+  canDeleteCustomers Boolean @default(false)
+
+  // Quote Permissions
+  canCreateQuotes  Boolean @default(false)
+  canUpdateQuotes  Boolean @default(false)
+  canDeleteQuotes  Boolean @default(false)
+  canApproveQuotes Boolean @default(false)
+
+  // Jobs Permissions
+  canCreateJobs Boolean @default(false)
+  canUpdateJobs Boolean @default(false)
+  canDeleteJobs Boolean @default(false)
+
+  // Products Permissions
+  canCreateProducts Boolean @default(false)
+  canUpdateProducts Boolean @default(false)
+  canDeleteProducts Boolean @default(false)
+
+  // Users Permissions
+  canCreateUsers Boolean @default(false)
+  canUpdateUsers Boolean @default(false)
+  canDeleteUsers Boolean @default(false)
+
+  // Invoice Permission
+  canCreateInvoices  Boolean @default(false)
+  canUpdateInvoices  Boolean @default(false)
+  canDeleteInvoices  Boolean @default(false)
+  canApproveInvoices Boolean @default(false)
+
+  // Payments Permissions
+  canTakePayment Boolean @default(false)
+
+  //Invoice Fees Permissions
+  canCreateInvoiceFees Boolean @default(false)
+  canUpdateInvoiceFees Boolean @default(false)
+  canDeleteInvoiceFees Boolean @default(false)
+
+  //invoice Information Permissions
+  canChangeInvoiceInformation Boolean @default(false)
+
+  // Shop Information Permissions
+  canChangeShopInformation Boolean @default(false)
+
+  // Vendors Permissions
+  canCreateVendor Boolean @default(false)
+  canUpdateVendor Boolean @default(false)
+  canDeleteVendor Boolean @default(false)
 }

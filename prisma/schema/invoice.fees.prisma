@@ -1,0 +1,11 @@
+model InvoiceFees {
+    infId String @id @default(uuid())
+
+    feeName          String
+    amount           Int
+    isTax            Boolean @default(false)
+    isDefaultAutoAdd Boolean @default(false)
+
+    updatedAt DateTime @updatedAt
+    createAt  DateTime @default(now())
+}
