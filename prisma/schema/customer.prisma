@@ -1,0 +1,43 @@
+enum CustomerType {
+    BUSINESS
+    PERSONAL
+}
+
+model Customer {
+    id String @id @default(uuid())
+
+    firstName String
+    lastName  String
+    email     String  @unique
+    phone     String
+
+    language String?
+    website  String?
+
+    companyName String?
+    taxId       String?
+
+    secondaryEmail String?
+    secondaryPhone String?
+
+    street     String?
+    city       String?
+    state      String?
+    postalCode String?
+    country    String?
+
+    tags  String[] @default([])
+    notes String?  @db.Text
+
+    customerType CustomerType
+
+    // Personal customer fields
+    orderPurpose String?
+    eventType    String?
+    eventDate    DateTime?
+
+    profileImage String?
+    
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
