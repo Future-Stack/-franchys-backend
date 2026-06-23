@@ -15,35 +15,55 @@ import { CreateBrandDto, UpdateBrandDto } from './dto/brand.dto';
 @ApiBearerAuth()
 @Controller('brand')
 export class BrandController {
-  constructor(private readonly brandService: BrandService) {}
+  constructor(private readonly brandService: BrandService) { }
 
   @Post()
   @ApiOperation({ summary: 'Create a new brand' })
-  create(@Body() dto: CreateBrandDto) {
-    return this.brandService.create(dto);
+  async create(@Body() dto: CreateBrandDto) {
+    const data = await this.brandService.create(dto);
+    return {
+      message: 'Brand created successfully',
+      data,
+    };
   }
 
   @Get()
   @ApiOperation({ summary: 'Get all brands' })
-  findAll() {
-    return this.brandService.findAll();
+  async findAll() {
+    const data = await this.brandService.findAll();
+    return {
+      message: 'Brands fetched successfully',
+      data,
+    };
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get a brand by ID' })
-  findOne(@Param('id') id: string) {
-    return this.brandService.findOne(id);
+  async findOne(@Param('id') id: string) {
+    const data = await this.brandService.findOne(id);
+    return {
+      message: 'Brand fetched successfully',
+      data,
+    };
   }
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update a brand by ID' })
-  update(@Param('id') id: string, @Body() dto: UpdateBrandDto) {
-    return this.brandService.update(id, dto);
+  async update(@Param('id') id: string, @Body() dto: UpdateBrandDto) {
+    const data = await this.brandService.update(id, dto);
+    return {
+      message: 'Brand updated successfully',
+      data,
+    };
   }
 
   @Delete(':id')
   @ApiOperation({ summary: 'Soft-delete a brand by ID' })
-  remove(@Param('id') id: string) {
-    return this.brandService.remove(id);
+  async remove(@Param('id') id: string) {
+    const data = await this.brandService.remove(id);
+    return {
+      message: 'Brand deleted successfully',
+      data,
+    };
   }
 }

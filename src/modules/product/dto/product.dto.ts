@@ -8,7 +8,7 @@ import {
   ValidateNested,
   IsDecimal,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 
 export class CreateProductColorDto {
   @ApiProperty({ description: 'Color name', example: 'Midnight Black' })
@@ -40,6 +40,7 @@ export class CreateProductDto {
 
   @ApiProperty({ description: 'Price (e.g. 99.99)', example: '99.99' })
   @IsNotEmpty()
+  @Transform(({ value }) => Number(value))
   price: string | number;
 
   @ApiPropertyOptional({ description: 'Item/SKU number', example: 'SKU-001' })
@@ -53,6 +54,7 @@ export class CreateProductDto {
   material?: string;
 
   @ApiPropertyOptional({ description: 'Weight in kg', example: 0.8 })
+  @Transform(({ value }) => Number(value))
   @IsNumber()
   @IsOptional()
   weight?: number;
@@ -62,19 +64,37 @@ export class CreateProductDto {
   @IsOptional()
   style?: string;
 
-  @ApiPropertyOptional({ description: 'Image URLs', type: [String], example: ['https://cdn.example.com/img.jpg'] })
-  @IsArray()
-  @IsString({ each: true })
+  @ApiPropertyOptional({ type: 'array', items: { type: 'string', format: 'binary' }, description: 'Image files' })
   @IsOptional()
-  images?: string[];
+  images?: any[];
 
-  @ApiPropertyOptional({ description: 'Available sizes', type: [String], example: ['S', 'M', 'L', 'XL'] })
+  @ApiPropertyOptional({ type: 'string', description: 'Available sizes as JSON string. Example: ["S", "M", "L", "XL"]' })
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      try {
+        return JSON.parse(value);
+      } catch (e) {
+        return value.split(',').map(s => s.trim());
+      }
+    }
+    return value;
+  })
   @IsArray()
   @IsString({ each: true })
   @IsOptional()
   availableSizes?: string[];
 
-  @ApiPropertyOptional({ description: 'Product colors', type: [CreateProductColorDto] })
+  @ApiPropertyOptional({ type: 'string', description: 'Product colors as JSON string. Example: [{"name": "Midnight Black", "code": "#000"}]' })
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      try {
+        return JSON.parse(value);
+      } catch (e) {
+        return [];
+      }
+    }
+    return value;
+  })
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => CreateProductColorDto)
@@ -99,6 +119,7 @@ export class UpdateProductDto {
   brandId?: string;
 
   @ApiPropertyOptional({ description: 'Price', example: '129.99' })
+  @Transform(({ value }) => Number(value))
   @IsOptional()
   price?: string | number;
 
@@ -113,6 +134,7 @@ export class UpdateProductDto {
   material?: string;
 
   @ApiPropertyOptional({ description: 'Weight in kg', example: 0.5 })
+  @Transform(({ value }) => Number(value))
   @IsNumber()
   @IsOptional()
   weight?: number;
@@ -122,17 +144,42 @@ export class UpdateProductDto {
   @IsOptional()
   style?: string;
 
-  @ApiPropertyOptional({ description: 'Image URLs', type: [String] })
-  @IsArray()
-  @IsString({ each: true })
+  @ApiPropertyOptional({ type: 'array', items: { type: 'string', format: 'binary' }, description: 'Image files' })
   @IsOptional()
-  images?: string[];
+  images?: any[];
 
-  @ApiPropertyOptional({ description: 'Available sizes', type: [String] })
+  @ApiPropertyOptional({ type: 'string', description: 'Available sizes as JSON string. Example: ["S", "M", "L", "XL"]' })
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      try {
+        return JSON.parse(value);
+      } catch (e) {
+        return value.split(',').map(s => s.trim());
+      }
+    }
+    return value;
+  })
   @IsArray()
   @IsString({ each: true })
   @IsOptional()
   availableSizes?: string[];
+
+  @ApiPropertyOptional({ type: 'string', description: 'Product colors as JSON string. Example: [{"name": "Midnight Black", "code": "#000"}]' })
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      try {
+        return JSON.parse(value);
+      } catch (e) {
+        return [];
+      }
+    }
+    return value;
+  })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateProductColorDto)
+  @IsOptional()
+  colors?: CreateProductColorDto[];
 
   @ApiPropertyOptional({ description: 'Soft delete flag', example: false })
   @IsOptional()

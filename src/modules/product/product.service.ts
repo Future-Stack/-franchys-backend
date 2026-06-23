@@ -10,19 +10,31 @@ import {
   CreateProductColorDto,
   UpdateProductColorDto,
 } from './dto/product.dto';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
 
 @Injectable()
 export class ProductService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cloudinaryService: CloudinaryService,
+  ) {}
 
   // ─── Product CRUD ────────────────────────────────────────────────────────────
 
-  async create(dto: CreateProductDto) {
+  async create(dto: CreateProductDto, files?: Express.Multer.File[]) {
     const { colors, ...productData } = dto;
+    
+    let imagePaths: string[] = [];
+    if (files && files.length > 0) {
+      imagePaths = await this.cloudinaryService.uploadMultipleFiles(files);
+    }
+    
+    const finalImages = imagePaths.length ? imagePaths : (productData.images || []);
 
     return this.prisma.product.create({
       data: {
         ...productData,
+        images: finalImages,
         colors: colors?.length
           ? { create: colors }
           : undefined,
@@ -50,11 +62,27 @@ export class ProductService {
     return product;
   }
 
-  async update(id: string, dto: UpdateProductDto) {
+  async update(id: string, dto: UpdateProductDto, files?: Express.Multer.File[]) {
     await this.findOne(id);
+    const { colors, ...updateData } = dto;
+    
+    const updateInput: any = { ...updateData };
+    
+    if (files && files.length > 0) {
+      const imagePaths = await this.cloudinaryService.uploadMultipleFiles(files);
+      updateInput.images = imagePaths;
+    }
+
+    if (colors !== undefined) {
+      updateInput.colors = {
+        deleteMany: {}, // replace all colors
+        create: colors,
+      };
+    }
+
     return this.prisma.product.update({
       where: { id },
-      data: dto,
+      data: updateInput,
       include: { colors: true, category: true, brand: true },
     });
   }

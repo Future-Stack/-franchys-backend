@@ -1,4 +1,6 @@
 import { Module } from '@nestjs/common';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
@@ -22,6 +24,7 @@ import { ProductModule } from './modules/product/product.module';
 import { VendorsModule } from './modules/vendors/vendors.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { EmailTrackerModule } from './modules/email-tracker/email-tracker.module';
+import { CloudinaryModule } from './modules/cloudinary/cloudinary.module';
 
 @Module({
   imports: [
@@ -29,6 +32,9 @@ import { EmailTrackerModule } from './modules/email-tracker/email-tracker.module
       isGlobal: true,
       load: [appConfig, databaseConfig, jwtConfig],
       envFilePath: ['.env.local', '.env'],
+    }),
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'public'),
     }),
     AuthModule,
     UsersModule,
@@ -44,6 +50,7 @@ import { EmailTrackerModule } from './modules/email-tracker/email-tracker.module
     VendorsModule,
     ScheduleModule.forRoot(),
     EmailTrackerModule,
+    CloudinaryModule,
   ],
   controllers: [AppController],
   providers: [
