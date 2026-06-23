@@ -19,6 +19,9 @@ import { BrandModule } from './modules/brand/brand.module';
 import { CategoryModule } from './modules/category/category.module';
 import { CustomerModule } from './modules/customer/customer.module';
 import { ProductModule } from './modules/product/product.module';
+import { VendorsModule } from './modules/vendors/vendors.module';
+import { ScheduleModule } from '@nestjs/schedule';
+import { EmailTrackerModule } from './modules/email-tracker/email-tracker.module';
 
 @Module({
   imports: [
@@ -38,6 +41,9 @@ import { ProductModule } from './modules/product/product.module';
     CategoryModule,
     CustomerModule,
     ProductModule,
+    VendorsModule,
+    ScheduleModule.forRoot(),
+    EmailTrackerModule,
   ],
   controllers: [AppController],
   providers: [
