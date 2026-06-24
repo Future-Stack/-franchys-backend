@@ -48,7 +48,7 @@ export class EmailTrackerService {
     }
   }
 
-  @Cron(CronExpression.EVERY_MINUTE)
+  @Cron('*/30 * * * * *')
   async syncEmails() {
     try {
       this.logger.log('Running automatic email sync...');
@@ -62,7 +62,7 @@ export class EmailTrackerService {
       const messageList = await gmail.users.messages.list({
         userId: emailAddress,
         maxResults: 10,
-        labelIds: ['INBOX', 'SENT'],
+        q: 'in:inbox OR in:sent',
       });
 
       const messages = messageList.data.messages || [];
@@ -80,14 +80,54 @@ export class EmailTrackerService {
         });
 
         const headers = fullMessage.data.payload?.headers || [];
-        const subject = headers.find(h => h.name === 'Subject')?.value || 'No Subject';
-        const from = headers.find(h => h.name === 'From')?.value || '';
-        const to = headers.find(h => h.name === 'To')?.value || '';
-        const messageId = headers.find(h => h.name === 'Message-ID')?.value || '';
-        const inReplyTo = headers.find(h => h.name === 'In-Reply-To')?.value || null;
-        const bodyContent = fullMessage.data.snippet || '';
+        const subject = headers.find(h => h.name?.toLowerCase() === 'subject')?.value || 'No Subject';
+        const from = headers.find(h => h.name?.toLowerCase() === 'from')?.value || '';
+        const to = headers.find(h => h.name?.toLowerCase() === 'to')?.value || '';
+        const messageId = headers.find(h => h.name?.toLowerCase() === 'message-id')?.value || '';
+        const inReplyTo = headers.find(h => h.name?.toLowerCase() === 'in-reply-to')?.value || null;
+        // Helper to extract the actual email body from payload parts
+        const getBodyData = (payload: any): string => {
+          if (!payload) return '';
+          if (payload.parts) {
+            let body = '';
+            for (const part of payload.parts) {
+              if (part.mimeType === 'text/plain' && part.body?.data) {
+                return Buffer.from(part.body.data, 'base64').toString('utf8');
+              } else if (part.parts) {
+                body = getBodyData(part) || body;
+              }
+            }
+            if (body) return body;
+            // Fallback to text/html if text/plain is not found
+            for (const part of payload.parts) {
+              if (part.mimeType === 'text/html' && part.body?.data) {
+                return Buffer.from(part.body.data, 'base64').toString('utf8');
+              }
+            }
+          } else if (payload.body && payload.body.data) {
+            return Buffer.from(payload.body.data, 'base64').toString('utf8');
+          }
+          return '';
+        };
 
-        if (!messageId) continue;
+        const decodedBody = getBodyData(fullMessage.data.payload);
+        let bodyContent = decodedBody || fullMessage.data.snippet || '';
+
+        // Clean up any remaining HTML entities that Gmail might leave in the text
+        bodyContent = bodyContent
+          .replace(/&lt;/g, '<')
+          .replace(/&gt;/g, '>')
+          .replace(/&amp;/g, '&')
+          .replace(/&quot;/g, '"')
+          .replace(/&#39;/g, "'");
+
+        // Strip out the quoted reply history (e.g., "On Wed, Jun 24, 2026 at 1:28 PM User wrote:")
+        bodyContent = bodyContent.split(/(?:\r?\n)+On .*? wrote:\r?\n/)[0].trim();
+
+        if (!messageId) {
+          this.logger.warn(`Message ${msgInfo.id} skipped: No Message-ID header found.`);
+          continue;
+        }
 
         const exists = await this.prisma.message.findUnique({ where: { messageId } });
         if (exists) continue;
@@ -96,7 +136,7 @@ export class EmailTrackerService {
 
         const isOutbound = from.includes(emailAddress);
         const direction = isOutbound ? "OUTBOUND" : "INBOUND";
-        
+
         let contactString = isOutbound ? to : from;
         const emailMatch = contactString.match(/<([^>]+)>/);
         const contactEmail = emailMatch ? emailMatch[1].trim() : contactString.trim();
@@ -132,7 +172,7 @@ export class EmailTrackerService {
             inReplyTo
           }
         });
-        
+
         this.logger.log(`Successfully saved message ${messageId} to thread ${threadId}`);
       }
     } catch (error) {
@@ -190,6 +230,30 @@ export class EmailTrackerService {
     return this.prisma.message.findMany({
       where: { threadId },
       orderBy: { createdAt: 'asc' }
+    });
+  }
+
+  async getContacts() {
+    return this.prisma.contact.findMany({
+      orderBy: { email: 'asc' },
+      include: {
+        threads: {
+          orderBy: { lastActivity: 'desc' },
+          take: 1
+        }
+      }
+    });
+  }
+
+  async getContactConversations(contactId: string) {
+    return this.prisma.thread.findMany({
+      where: { contactId },
+      orderBy: { lastActivity: 'desc' },
+      include: {
+        messages: {
+          orderBy: { createdAt: 'asc' }
+        }
+      }
     });
   }
 }
