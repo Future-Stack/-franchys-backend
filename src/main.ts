@@ -39,12 +39,18 @@ async function bootstrap() {
 
   const displayPort = port || 3000;
 
-  // Add a raw route to handle Google Site Verification without the global prefix
+  // Add a middleware to handle Google Site Verification without the global prefix
   const httpAdapter = app.getHttpAdapter();
-  httpAdapter.get('/google*.html', (req: any, res: any) => {
-    const filename = req.path.replace('/', '');
-    res.send(`google-site-verification: ${filename}`);
+  httpAdapter.use((req: any, res: any, next: any) => {
+    if (req.path.startsWith('/google') && req.path.endsWith('.html')) {
+      const filename = req.path.replace('/', '');
+      res.send(`google-site-verification: ${filename}`);
+    } else {
+      next();
+    }
   });
+
+  console.log("Update global prefix");
 
   await app.listen(displayPort);
   logger.log(
