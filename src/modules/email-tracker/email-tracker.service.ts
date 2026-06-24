@@ -48,33 +48,33 @@ export class EmailTrackerService {
     }
   }
 
-  async handleWebhook(body: any) {
+  @Cron(CronExpression.EVERY_MINUTE)
+  async syncEmails() {
     try {
-      const message = body?.message;
-      if (!message || !message.data) return;
-
-      const dataString = Buffer.from(message.data, 'base64').toString('utf-8');
-      const data = JSON.parse(dataString);
-      this.logger.log(`Webhook received for email address: ${data.emailAddress}`);
-
+      this.logger.log('Running automatic email sync...');
       const auth = this.getAuthClient();
       const gmail = google.gmail({ version: 'v1', auth });
 
+      const profile = await gmail.users.getProfile({ userId: 'me' });
+      const emailAddress = profile.data.emailAddress;
+      if (!emailAddress) return;
+
       const messageList = await gmail.users.messages.list({
-        userId: data.emailAddress,
-        maxResults: 5,
+        userId: emailAddress,
+        maxResults: 10,
         labelIds: ['INBOX', 'SENT'],
       });
 
       const messages = messageList.data.messages || [];
-      this.logger.log(`Found ${messages.length} recent messages to check.`);
-      if (messages.length === 0) return;
+      if (messages.length > 0) {
+        this.logger.log(`Found ${messages.length} recent messages to check.`);
+      }
 
       for (const msgInfo of messages.reverse()) {
         if (!msgInfo.id) continue;
 
         const fullMessage = await gmail.users.messages.get({
-          userId: data.emailAddress,
+          userId: emailAddress,
           id: msgInfo.id,
           format: 'full'
         });
@@ -94,7 +94,7 @@ export class EmailTrackerService {
 
         this.logger.log(`Processing new message: "${subject}" from ${from}`);
 
-        const isOutbound = from.includes(data.emailAddress);
+        const isOutbound = from.includes(emailAddress);
         const direction = isOutbound ? "OUTBOUND" : "INBOUND";
         
         let contactString = isOutbound ? to : from;
@@ -136,8 +136,14 @@ export class EmailTrackerService {
         this.logger.log(`Successfully saved message ${messageId} to thread ${threadId}`);
       }
     } catch (error) {
-      this.logger.error('Error handling webhook', error);
+      this.logger.error('Error in automatic email sync', error);
     }
+  }
+
+  async handleWebhook(body: any) {
+    // Keep this function so the controller doesn't break,
+    // but just forward it to the syncEmails function to pull immediately.
+    return this.syncEmails();
   }
 
   async sendFollowUpEmail(threadId: string, replyText: string) {
