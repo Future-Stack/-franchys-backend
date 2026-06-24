@@ -55,72 +55,85 @@ export class EmailTrackerService {
 
       const dataString = Buffer.from(message.data, 'base64').toString('utf-8');
       const data = JSON.parse(dataString);
+      this.logger.log(`Webhook received for email address: ${data.emailAddress}`);
 
       const auth = this.getAuthClient();
       const gmail = google.gmail({ version: 'v1', auth });
 
-      const historyList = await gmail.users.history.list({
+      const messageList = await gmail.users.messages.list({
         userId: data.emailAddress,
-        startHistoryId: data.historyId,
+        maxResults: 5,
+        labelIds: ['INBOX', 'SENT'],
       });
 
-      const histories = historyList.data.history;
-      if (!histories) return;
+      const messages = messageList.data.messages || [];
+      this.logger.log(`Found ${messages.length} recent messages to check.`);
+      if (messages.length === 0) return;
 
-      for (const history of histories) {
-        const messagesAdded = history.messagesAdded || [];
-        for (const msgInfo of messagesAdded) {
-          if (!msgInfo.message || !msgInfo.message.id) continue;
+      for (const msgInfo of messages.reverse()) {
+        if (!msgInfo.id) continue;
 
-          const fullMessage = await gmail.users.messages.get({
-            userId: data.emailAddress,
-            id: msgInfo.message.id,
-            format: 'full'
-          });
+        const fullMessage = await gmail.users.messages.get({
+          userId: data.emailAddress,
+          id: msgInfo.id,
+          format: 'full'
+        });
 
-          const headers = fullMessage.data.payload?.headers || [];
-          const subject = headers.find(h => h.name === 'Subject')?.value || 'No Subject';
-          const from = headers.find(h => h.name === 'From')?.value || '';
-          const to = headers.find(h => h.name === 'To')?.value || '';
-          const messageId = headers.find(h => h.name === 'Message-ID')?.value || '';
-          const inReplyTo = headers.find(h => h.name === 'In-Reply-To')?.value || null;
-          const bodyContent = fullMessage.data.snippet || '';
+        const headers = fullMessage.data.payload?.headers || [];
+        const subject = headers.find(h => h.name === 'Subject')?.value || 'No Subject';
+        const from = headers.find(h => h.name === 'From')?.value || '';
+        const to = headers.find(h => h.name === 'To')?.value || '';
+        const messageId = headers.find(h => h.name === 'Message-ID')?.value || '';
+        const inReplyTo = headers.find(h => h.name === 'In-Reply-To')?.value || null;
+        const bodyContent = fullMessage.data.snippet || '';
 
-          if (!messageId) continue;
+        if (!messageId) continue;
 
-          const exists = await this.prisma.message.findUnique({ where: { messageId } });
-          if (exists) continue;
+        const exists = await this.prisma.message.findUnique({ where: { messageId } });
+        if (exists) continue;
 
-          let threadId;
-          if (inReplyTo) {
-            const existingMsg = await this.prisma.message.findUnique({ where: { messageId: inReplyTo } });
-            threadId = existingMsg ? existingMsg.threadId : null;
-          }
+        this.logger.log(`Processing new message: "${subject}" from ${from}`);
 
-          if (!threadId) {
-            let contact = await this.prisma.contact.findUnique({ where: { email: data.emailAddress } });
-            if (!contact) {
-              contact = await this.prisma.contact.create({ data: { email: data.emailAddress } });
-            }
+        const isOutbound = from.includes(data.emailAddress);
+        const direction = isOutbound ? "OUTBOUND" : "INBOUND";
+        
+        let contactString = isOutbound ? to : from;
+        const emailMatch = contactString.match(/<([^>]+)>/);
+        const contactEmail = emailMatch ? emailMatch[1].trim() : contactString.trim();
 
-            const newThread = await this.prisma.thread.create({
-              data: { subject, contactId: contact.id }
-            });
-            threadId = newThread.id;
-          }
-
-          await this.prisma.message.create({
-            data: {
-              threadId,
-              direction: from.includes(data.emailAddress) ? "OUTBOUND" : "INBOUND",
-              from,
-              to,
-              body: bodyContent,
-              messageId,
-              inReplyTo
-            }
-          });
+        let threadId;
+        if (inReplyTo) {
+          const existingMsg = await this.prisma.message.findUnique({ where: { messageId: inReplyTo } });
+          threadId = existingMsg ? existingMsg.threadId : null;
         }
+
+        if (!threadId) {
+          let contact = await this.prisma.contact.findUnique({ where: { email: contactEmail } });
+          if (!contact) {
+            contact = await this.prisma.contact.create({ data: { email: contactEmail } });
+            this.logger.log(`Created new contact: ${contactEmail}`);
+          }
+
+          const newThread = await this.prisma.thread.create({
+            data: { subject, contactId: contact.id }
+          });
+          threadId = newThread.id;
+          this.logger.log(`Created new thread: ${threadId}`);
+        }
+
+        await this.prisma.message.create({
+          data: {
+            threadId,
+            direction,
+            from,
+            to,
+            body: bodyContent,
+            messageId,
+            inReplyTo
+          }
+        });
+        
+        this.logger.log(`Successfully saved message ${messageId} to thread ${threadId}`);
       }
     } catch (error) {
       this.logger.error('Error handling webhook', error);
