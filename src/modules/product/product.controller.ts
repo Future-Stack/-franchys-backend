@@ -8,10 +8,11 @@ import {
   Delete,
   UseInterceptors,
   UploadedFiles,
+  BadRequestException,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes, ApiBody, getSchemaPath, ApiExtraModels } from '@nestjs/swagger';
 import { ProductService } from './product.service';
 import {
   CreateProductDto,
@@ -19,9 +20,12 @@ import {
   CreateProductColorDto,
   UpdateProductColorDto,
 } from './dto/product.dto';
+import { plainToInstance } from 'class-transformer';
+import { validate } from 'class-validator';
 
 @ApiTags('Product')
 @ApiBearerAuth()
+@ApiExtraModels(CreateProductColorDto)
 @Controller('product')
 export class ProductController {
   constructor(private readonly productService: ProductService) { }
@@ -100,13 +104,31 @@ export class ProductController {
   // ─── Product Color Endpoints ─────────────────────────────────────────────────
 
   @Post(':id/colors')
-  @ApiOperation({ summary: 'Add a color to a product' })
-  async addColor(@Param('id') id: string, @Body() dto: CreateProductColorDto) {
+  @ApiOperation({ summary: 'Add multiple colors to a product' })
+  @ApiBody({
+    type: [CreateProductColorDto],
+    description: 'Array of colors to add to the product',
+  })
+  async addColor(
+    @Param('id') id: string,
+    @Body() dto: CreateProductColorDto[],
+  ) {
+    const isArray = Array.isArray(dto);
+    const items = isArray ? dto : [dto];
+
+    for (const item of items) {
+      const instance = plainToInstance(CreateProductColorDto, item);
+      const errors = await validate(instance);
+      if (errors.length > 0) {
+        throw new BadRequestException(errors);
+      }
+    }
+
     const data = await this.productService.addColor(id, dto);
     return {
-      message: 'Color added successfully',
+      message: isArray ? 'Colors added successfully' : 'Color added successfully',
       data,
-    }
+    };
   }
 
   @Get(':id/colors')

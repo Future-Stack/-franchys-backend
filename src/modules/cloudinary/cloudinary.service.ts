@@ -9,7 +9,9 @@ export class CloudinaryService {
       const uploadStream = cloudinary.uploader.upload_stream(
         { folder: 'products' },
         (error, result) => {
-          if (error) return reject(error);
+          if (error) {
+            return reject(new Error(error.message || JSON.stringify(error)));
+          }
           if (result) return resolve(result);
           reject(new Error('Upload failed'));
         },
