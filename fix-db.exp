@@ -1,0 +1,22 @@
+#!/usr/bin/expect -f
+
+set timeout -1
+set password "123Mak@1013."
+set ip "2.25.176.128"
+
+spawn ssh -o StrictHostKeyChecking=no root@$ip
+expect "*?assword:*"
+send "$password\r"
+
+expect "# "
+send "cd /root/francys\r"
+
+expect "# "
+send "docker compose run --rm api npx prisma db push --accept-data-loss\r"
+
+expect "# "
+send "docker compose restart api\r"
+
+expect "# "
+send "exit\r"
+expect eof

@@ -48,7 +48,7 @@ export class EmailTrackerService {
     }
   }
 
-  @Cron('*/30 * * * * *')
+  @Cron('*/5 * * * *')
   async syncEmails() {
     try {
       this.logger.log('Running automatic email sync...');

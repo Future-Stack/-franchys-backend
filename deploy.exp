@@ -1,0 +1,33 @@
+#!/usr/bin/expect -f
+
+set timeout -1
+set password "123Mak@1013."
+set ip "2.25.176.128"
+
+puts "=> Copying clean files to VPS..."
+spawn scp -o StrictHostKeyChecking=no app.tar.gz root@$ip:/root/
+expect "*?assword:*"
+send "$password\r"
+expect eof
+
+puts "=> Connecting to VPS to deploy..."
+spawn ssh -o StrictHostKeyChecking=no root@$ip
+expect "*?assword:*"
+send "$password\r"
+
+expect "# "
+send "rm -rf /root/francys && mkdir -p /root/francys && tar -xzvf /root/app.tar.gz -C /root/francys\r"
+
+expect "# "
+send "cd /root/francys\r"
+
+expect "# "
+send "docker compose down\r"
+
+expect "# "
+send "docker compose up -d --build\r"
+
+expect "# "
+send "exit\r"
+expect eof
+puts "=> Deployment complete!"
