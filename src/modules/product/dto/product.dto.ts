@@ -8,7 +8,7 @@ import {
   ValidateNested,
   IsDecimal,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform, plainToInstance } from 'class-transformer';
 
 export class CreateProductColorDto {
   @ApiProperty({ description: 'Color name', example: 'Midnight Black' })
@@ -40,6 +40,7 @@ export class CreateProductDto {
 
   @ApiProperty({ description: 'Price (e.g. 99.99)', example: '99.99' })
   @IsNotEmpty()
+  @Transform(({ value }) => Number(value))
   price: string | number;
 
   @ApiPropertyOptional({ description: 'Item/SKU number', example: 'SKU-001' })
@@ -53,6 +54,7 @@ export class CreateProductDto {
   material?: string;
 
   @ApiPropertyOptional({ description: 'Weight in kg', example: 0.8 })
+  @Transform(({ value }) => Number(value))
   @IsNumber()
   @IsOptional()
   weight?: number;
@@ -62,19 +64,43 @@ export class CreateProductDto {
   @IsOptional()
   style?: string;
 
-  @ApiPropertyOptional({ description: 'Image URLs', type: [String], example: ['https://cdn.example.com/img.jpg'] })
-  @IsArray()
-  @IsString({ each: true })
+  @ApiPropertyOptional({ type: 'array', items: { type: 'string', format: 'binary' }, description: 'Image files' })
   @IsOptional()
-  images?: string[];
+  images?: any[];
 
-  @ApiPropertyOptional({ description: 'Available sizes', type: [String], example: ['S', 'M', 'L', 'XL'] })
+  @ApiPropertyOptional({ type: 'string', description: 'Available sizes as JSON string. Example: ["S", "M", "L", "XL"]' })
+  @Transform(({ value }) => {
+    if (!value || typeof value !== 'string' || value.trim() === '') return undefined;
+    try {
+      return JSON.parse(value);
+    } catch (e) {
+      const parts = value.split(',').map(s => s.trim()).filter(Boolean);
+      return parts.length > 0 ? parts : undefined;
+    }
+  })
   @IsArray()
   @IsString({ each: true })
   @IsOptional()
   availableSizes?: string[];
 
-  @ApiPropertyOptional({ description: 'Product colors', type: [CreateProductColorDto] })
+  @ApiPropertyOptional({ type: 'string', description: 'Product colors as JSON string. Example: [{"name": "Midnight Black", "code": "#000"}]' })
+  @Transform(({ value }) => {
+    if (!value || typeof value !== 'string' || value.trim() === '') return undefined;
+    try {
+      const parsed = JSON.parse(value);
+      if (!Array.isArray(parsed)) return [];
+      const uniqueNames = new Set();
+      const uniqueColors = parsed.filter(color => {
+        if (!color.name) return true;
+        if (uniqueNames.has(color.name)) return false;
+        uniqueNames.add(color.name);
+        return true;
+      });
+      return plainToInstance(CreateProductColorDto, uniqueColors);
+    } catch (e) {
+      return [];
+    }
+  })
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => CreateProductColorDto)
@@ -99,6 +125,7 @@ export class UpdateProductDto {
   brandId?: string;
 
   @ApiPropertyOptional({ description: 'Price', example: '129.99' })
+  @Transform(({ value }) => Number(value))
   @IsOptional()
   price?: string | number;
 
@@ -113,6 +140,7 @@ export class UpdateProductDto {
   material?: string;
 
   @ApiPropertyOptional({ description: 'Weight in kg', example: 0.5 })
+  @Transform(({ value }) => Number(value))
   @IsNumber()
   @IsOptional()
   weight?: number;
@@ -122,19 +150,46 @@ export class UpdateProductDto {
   @IsOptional()
   style?: string;
 
-  @ApiPropertyOptional({ description: 'Image URLs', type: [String] })
+  @ApiPropertyOptional({ type: 'string', description: 'Existing image URLs as JSON string or comma-separated string. example(["img1.jpg", "img2.jpg"])' })
+  @Transform(({ value }) => {
+    if (!value || typeof value !== 'string' || value.trim() === '') return undefined;
+    try {
+      return JSON.parse(value);
+    } catch (e) {
+      const parts = value.split(',').map(s => s.trim()).filter(Boolean);
+      return parts.length > 0 ? parts : undefined;
+    }
+  })
   @IsArray()
   @IsString({ each: true })
   @IsOptional()
-  images?: string[];
+  existingImages?: string[];
 
-  @ApiPropertyOptional({ description: 'Available sizes', type: [String] })
+  @ApiPropertyOptional({ type: 'array', items: { type: 'string', format: 'binary' }, description: 'Image files' })
+  @IsOptional()
+  images?: any[];
+
+  @ApiPropertyOptional({ type: 'string', description: 'Available sizes as JSON string. Example: ["S", "M", "L", "XL"]' })
+  @Transform(({ value }) => {
+    if (!value || typeof value !== 'string' || value.trim() === '') return undefined;
+    try {
+      return JSON.parse(value);
+    } catch (e) {
+      const parts = value.split(',').map(s => s.trim()).filter(Boolean);
+      return parts.length > 0 ? parts : undefined;
+    }
+  })
   @IsArray()
   @IsString({ each: true })
   @IsOptional()
   availableSizes?: string[];
 
-  @ApiPropertyOptional({ description: 'Soft delete flag', example: false })
+  @ApiPropertyOptional({ description: 'Soft delete flag. Send "true" or "false"', example: false, type: 'boolean' })
+  @Transform(({ value }) => {
+    if (value === 'true' || value === true || value === 1 || value === '1') return true;
+    if (value === 'false' || value === false || value === 0 || value === '0') return false;
+    return undefined; // ignore empty strings or invalid values
+  })
   @IsOptional()
   isDeleted?: boolean;
 }

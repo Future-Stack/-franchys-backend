@@ -10,19 +10,31 @@ import {
   CreateProductColorDto,
   UpdateProductColorDto,
 } from './dto/product.dto';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
 
 @Injectable()
 export class ProductService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cloudinaryService: CloudinaryService,
+  ) {}
 
   // ─── Product CRUD ────────────────────────────────────────────────────────────
 
-  async create(dto: CreateProductDto) {
-    const { colors, ...productData } = dto;
+  async create(dto: CreateProductDto, files?: Express.Multer.File[]) {
+    const { colors, images, ...productData } = dto;
+    
+    let imagePaths: string[] = [];
+    if (files && files.length > 0) {
+      imagePaths = await this.cloudinaryService.uploadMultipleFiles(files);
+    }
+    
+    const finalImages = imagePaths;
 
     return this.prisma.product.create({
       data: {
         ...productData,
+        images: finalImages,
         colors: colors?.length
           ? { create: colors }
           : undefined,
@@ -50,11 +62,34 @@ export class ProductService {
     return product;
   }
 
-  async update(id: string, dto: UpdateProductDto) {
-    await this.findOne(id);
+  async update(id: string, dto: UpdateProductDto, files?: Express.Multer.File[]) {
+    const existingProduct = await this.findOne(id);
+    const { existingImages, images, ...updateData } = dto;
+    
+    const updateInput: any = { ...updateData };
+    
+    let finalImages: string[] = [];
+    if (existingImages !== undefined) {
+      finalImages = [...existingImages];
+    } else {
+      // If existingImages isn't sent, fallback to current images to prevent accidental deletion
+      finalImages = [...existingProduct.images];
+    }
+    
+    if (files && files.length > 0) {
+      const newImagePaths = await this.cloudinaryService.uploadMultipleFiles(files);
+      finalImages = [...finalImages, ...newImagePaths];
+    }
+
+    if (existingImages !== undefined || (files && files.length > 0)) {
+      updateInput.images = finalImages;
+    }
+
+
+
     return this.prisma.product.update({
       where: { id },
-      data: dto,
+      data: updateInput,
       include: { colors: true, category: true, brand: true },
     });
   }
@@ -70,19 +105,33 @@ export class ProductService {
 
   // ─── ProductColor Sub-resource ───────────────────────────────────────────────
 
-  async addColor(productId: string, dto: CreateProductColorDto) {
+  async addColor(productId: string, dto: CreateProductColorDto | CreateProductColorDto[]) {
     await this.findOne(productId);
-    const existing = await this.prisma.productColor.findUnique({
-      where: { productId_name: { productId, name: dto.name } },
-    });
-    if (existing) {
-      throw new ConflictException(
-        `Color "${dto.name}" already exists for this product`,
-      );
+    
+    const items = Array.isArray(dto) ? dto : [dto];
+    
+    // Check all for duplicates first
+    for (const item of items) {
+      const existing = await this.prisma.productColor.findUnique({
+        where: { productId_name: { productId, name: item.name } },
+      });
+      if (existing) {
+        throw new ConflictException(
+          `Color "${item.name}" already exists for this product`,
+        );
+      }
     }
-    return this.prisma.productColor.create({
-      data: { ...dto, productId },
-    });
+    
+    // Create all
+    const createdColors = await this.prisma.$transaction(
+      items.map(item =>
+        this.prisma.productColor.create({
+          data: { ...item, productId },
+        })
+      )
+    );
+    
+    return Array.isArray(dto) ? createdColors : createdColors[0];
   }
 
   async findAllColors(productId: string) {
