@@ -8,6 +8,7 @@ import { APP_GUARD } from '@nestjs/core';
 import appConfig from './config/app.config';
 import databaseConfig from './config/database.config';
 import jwtConfig from './config/jwt.config';
+import whatsappConfig from './config/whatsapp.config';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { PrismaModule } from './prisma/prisma.module';
@@ -25,12 +26,13 @@ import { VendorsModule } from './modules/vendors/vendors.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { EmailTrackerModule } from './modules/email-tracker/email-tracker.module';
 import { CloudinaryModule } from './modules/cloudinary/cloudinary.module';
+import { WhatsAppModule } from './modules/whatsapp/whatsapp.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [appConfig, databaseConfig, jwtConfig],
+      load: [appConfig, databaseConfig, jwtConfig, whatsappConfig],
       envFilePath: ['.env.local', '.env'],
     }),
     ServeStaticModule.forRoot({
@@ -51,6 +53,7 @@ import { CloudinaryModule } from './modules/cloudinary/cloudinary.module';
     ScheduleModule.forRoot(),
     EmailTrackerModule,
     CloudinaryModule,
+    WhatsAppModule,
   ],
   controllers: [AppController],
   providers: [
