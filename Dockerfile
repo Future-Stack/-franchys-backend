@@ -1,8 +1,8 @@
 # ── Stage 1: Build ───────────────────────────────────────────────────
 FROM node:22-alpine AS builder
 
-# Install build dependencies for native node-gyp modules if needed
-RUN apk add --no-cache libc6-compat
+# Install build dependencies for native node-gyp modules and prisma
+RUN apk add --no-cache libc6-compat openssl
 
 WORKDIR /usr/src/app
 
@@ -31,6 +31,9 @@ RUN npm prune --production --legacy-peer-deps && npm cache clean --force
 # ── Stage 2: Runtime ─────────────────────────────────────────────────
 FROM node:22-alpine AS runner
 
+# Install openssl for prisma runtime
+RUN apk add --no-cache openssl
+
 WORKDIR /usr/src/app
 
 ENV NODE_ENV=production
@@ -40,12 +43,16 @@ COPY --from=builder /usr/src/app/package*.json ./
 COPY --from=builder /usr/src/app/node_modules ./node_modules
 COPY --from=builder /usr/src/app/dist ./dist
 COPY --from=builder /usr/src/app/prisma ./prisma
+COPY --from=builder /usr/src/app/prisma.config.ts ./
 
 # Use the non-root 'node' user provided by Node.js base images for enhanced security
+# Ensure the node user owns the working directory
+RUN chown -R node:node /usr/src/app
+
 USER node
 
 # Expose NestJS default port
 EXPOSE 3000
 
-# Execute database migrations and start the NestJS application in production
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main.js"]
+# Execute database schema push and start the NestJS application in production
+CMD ["sh", "-c", "npx -y prisma db push --accept-data-loss && node dist/src/main.js"]

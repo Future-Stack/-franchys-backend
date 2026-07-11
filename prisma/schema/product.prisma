@@ -1,0 +1,38 @@
+model Product {
+    id          String  @id @default(uuid())
+    productName String
+    itemNo      String? @unique
+    price       Decimal @db.Decimal(10, 2)
+
+    material String?
+    weight   Float?
+    style    String?
+
+    images         String[] @default([])
+    availableSizes String[] @default([])
+
+    isDeleted Boolean @default(false)
+
+    categoryId String
+    category   Category @relation(fields: [categoryId], references: [id])
+
+    brandId String
+    brand   Brand @relation(fields: [brandId], references: [id])
+
+    colors ProductColor[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
+
+model ProductColor {
+    id String @id @default(uuid())
+
+    name String
+    code String? // Hex code (#FFFFFF) or internal color code
+
+    productId String
+    product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+    @@unique([productId, name])
+}

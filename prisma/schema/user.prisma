@@ -22,6 +22,7 @@ model User {
   tasksRemainderEmail Boolean   @default(false)
   taskAssignEmail     Boolean   @default(false)
 
+  isDeleted       Boolean   @default(false)
   phone           String?
   address         String?
   country         String?
