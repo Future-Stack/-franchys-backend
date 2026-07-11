@@ -1,5 +1,13 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsInt, IsNumber, IsArray, ValidateNested, IsOptional } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsInt,
+  IsNumber,
+  IsArray,
+  ValidateNested,
+  IsOptional,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreatePriceTierDto {
@@ -8,29 +16,38 @@ export class CreatePriceTierDto {
   @IsNotEmpty()
   quantity: number;
 
-  @ApiProperty({ description: 'Base price of the tier', example: 100.00 })
+  @ApiProperty({ description: 'Base price of the tier', example: 100.0 })
   @IsNumber()
   @IsNotEmpty()
   basePrice: number;
 
-  @ApiProperty({ description: 'Markup percentage or amount', example: 10.00 })
+  @ApiProperty({ description: 'Markup percentage or amount', example: 10.0 })
   @IsNumber()
   @IsNotEmpty()
   markup: number;
 }
 
 export class CreatePriceMatrixDto {
-  @ApiProperty({ description: 'Name of the price matrix', example: 'Wholesale Tier' })
+  @ApiProperty({
+    description: 'Name of the price matrix',
+    example: 'Wholesale Tier',
+  })
   @IsString()
   @IsNotEmpty()
   name: string;
 
-  @ApiProperty({ description: 'Type of pricing (e.g., percentage, fixed)', example: 'percentage' })
+  @ApiProperty({
+    description: 'Type of pricing (e.g., percentage, fixed)',
+    example: 'percentage',
+  })
   @IsString()
   @IsNotEmpty()
   priceType: string;
 
-  @ApiProperty({ description: 'List of price tiers to create with the matrix', type: [CreatePriceTierDto] })
+  @ApiProperty({
+    description: 'List of price tiers to create with the matrix',
+    type: [CreatePriceTierDto],
+  })
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => CreatePriceTierDto)
@@ -39,7 +56,9 @@ export class CreatePriceMatrixDto {
 }
 
 export class UpdatePriceTierDto {
-  @ApiPropertyOptional({ description: 'The ID of the price tier (provide if updating existing tier)' })
+  @ApiPropertyOptional({
+    description: 'The ID of the price tier (provide if updating existing tier)',
+  })
   @IsString()
   @IsOptional()
   priceTierId?: string;
@@ -49,24 +68,30 @@ export class UpdatePriceTierDto {
   @IsNotEmpty()
   quantity: number;
 
-  @ApiProperty({ description: 'Base price of the tier', example: 100.00 })
+  @ApiProperty({ description: 'Base price of the tier', example: 100.0 })
   @IsNumber()
   @IsNotEmpty()
   basePrice: number;
 
-  @ApiProperty({ description: 'Markup percentage or amount', example: 10.00 })
+  @ApiProperty({ description: 'Markup percentage or amount', example: 10.0 })
   @IsNumber()
   @IsNotEmpty()
   markup: number;
 }
 
 export class UpdatePriceMatrixDto {
-  @ApiPropertyOptional({ description: 'Name of the price matrix', example: 'Wholesale Tier' })
+  @ApiPropertyOptional({
+    description: 'Name of the price matrix',
+    example: 'Wholesale Tier',
+  })
   @IsString()
   @IsOptional()
   name?: string;
 
-  @ApiPropertyOptional({ description: 'Type of pricing', example: 'percentage' })
+  @ApiPropertyOptional({
+    description: 'Type of pricing',
+    example: 'percentage',
+  })
   @IsString()
   @IsOptional()
   priceType?: string;

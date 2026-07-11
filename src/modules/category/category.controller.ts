@@ -15,7 +15,7 @@ import { CreateCategoryDto, UpdateCategoryDto } from './dto/category.dto';
 @ApiBearerAuth()
 @Controller('category')
 export class CategoryController {
-  constructor(private readonly categoryService: CategoryService) { }
+  constructor(private readonly categoryService: CategoryService) {}
 
   @Post()
   @ApiOperation({ summary: 'Create a new category' })
@@ -24,7 +24,7 @@ export class CategoryController {
     return {
       message: 'Category created successfully',
       data,
-    }
+    };
   }
 
   @Get()
@@ -34,7 +34,7 @@ export class CategoryController {
     return {
       message: 'Categories fetched successfully',
       data,
-    }
+    };
   }
 
   @Get(':id')
@@ -44,7 +44,7 @@ export class CategoryController {
     return {
       message: 'Category fetched successfully',
       data,
-    }
+    };
   }
 
   @Patch(':id')
@@ -54,7 +54,7 @@ export class CategoryController {
     return {
       message: 'Category updated successfully',
       data,
-    }
+    };
   }
 
   @Delete(':id')
@@ -64,6 +64,6 @@ export class CategoryController {
     return {
       message: 'Category deleted successfully',
       data,
-    }
+    };
   }
 }

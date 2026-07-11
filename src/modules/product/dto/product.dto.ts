@@ -23,7 +23,10 @@ export class CreateProductColorDto {
 }
 
 export class CreateProductDto {
-  @ApiProperty({ description: 'Product name', example: 'Classic Leather Sneakers' })
+  @ApiProperty({
+    description: 'Product name',
+    example: 'Classic Leather Sneakers',
+  })
   @IsString()
   @IsNotEmpty()
   productName: string;
@@ -48,7 +51,10 @@ export class CreateProductDto {
   @IsOptional()
   itemNo?: string;
 
-  @ApiPropertyOptional({ description: 'Material', example: 'Full-Grain Leather' })
+  @ApiPropertyOptional({
+    description: 'Material',
+    example: 'Full-Grain Leather',
+  })
   @IsString()
   @IsOptional()
   material?: string;
@@ -64,17 +70,29 @@ export class CreateProductDto {
   @IsOptional()
   style?: string;
 
-  @ApiPropertyOptional({ type: 'array', items: { type: 'string', format: 'binary' }, description: 'Image files' })
+  @ApiPropertyOptional({
+    type: 'array',
+    items: { type: 'string', format: 'binary' },
+    description: 'Image files',
+  })
   @IsOptional()
   images?: any[];
 
-  @ApiPropertyOptional({ type: 'string', description: 'Available sizes as JSON string. Example: ["S", "M", "L", "XL"]' })
+  @ApiPropertyOptional({
+    type: 'string',
+    description:
+      'Available sizes as JSON string. Example: ["S", "M", "L", "XL"]',
+  })
   @Transform(({ value }) => {
-    if (!value || typeof value !== 'string' || value.trim() === '') return undefined;
+    if (!value || typeof value !== 'string' || value.trim() === '')
+      return undefined;
     try {
       return JSON.parse(value);
     } catch (e) {
-      const parts = value.split(',').map(s => s.trim()).filter(Boolean);
+      const parts = value
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
       return parts.length > 0 ? parts : undefined;
     }
   })
@@ -83,14 +101,19 @@ export class CreateProductDto {
   @IsOptional()
   availableSizes?: string[];
 
-  @ApiPropertyOptional({ type: 'string', description: 'Product colors as JSON string. Example: [{"name": "Midnight Black", "code": "#000"}]' })
+  @ApiPropertyOptional({
+    type: 'string',
+    description:
+      'Product colors as JSON string. Example: [{"name": "Midnight Black", "code": "#000"}]',
+  })
   @Transform(({ value }) => {
-    if (!value || typeof value !== 'string' || value.trim() === '') return undefined;
+    if (!value || typeof value !== 'string' || value.trim() === '')
+      return undefined;
     try {
       const parsed = JSON.parse(value);
       if (!Array.isArray(parsed)) return [];
       const uniqueNames = new Set();
-      const uniqueColors = parsed.filter(color => {
+      const uniqueColors = parsed.filter((color) => {
         if (!color.name) return true;
         if (uniqueNames.has(color.name)) return false;
         uniqueNames.add(color.name);
@@ -109,7 +132,10 @@ export class CreateProductDto {
 }
 
 export class UpdateProductDto {
-  @ApiPropertyOptional({ description: 'Product name', example: 'Updated Sneakers' })
+  @ApiPropertyOptional({
+    description: 'Product name',
+    example: 'Updated Sneakers',
+  })
   @IsString()
   @IsOptional()
   productName?: string;
@@ -150,13 +176,21 @@ export class UpdateProductDto {
   @IsOptional()
   style?: string;
 
-  @ApiPropertyOptional({ type: 'string', description: 'Existing image URLs as JSON string or comma-separated string. example(["img1.jpg", "img2.jpg"])' })
+  @ApiPropertyOptional({
+    type: 'string',
+    description:
+      'Existing image URLs as JSON string or comma-separated string. example(["img1.jpg", "img2.jpg"])',
+  })
   @Transform(({ value }) => {
-    if (!value || typeof value !== 'string' || value.trim() === '') return undefined;
+    if (!value || typeof value !== 'string' || value.trim() === '')
+      return undefined;
     try {
       return JSON.parse(value);
     } catch (e) {
-      const parts = value.split(',').map(s => s.trim()).filter(Boolean);
+      const parts = value
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
       return parts.length > 0 ? parts : undefined;
     }
   })
@@ -165,17 +199,29 @@ export class UpdateProductDto {
   @IsOptional()
   existingImages?: string[];
 
-  @ApiPropertyOptional({ type: 'array', items: { type: 'string', format: 'binary' }, description: 'Image files' })
+  @ApiPropertyOptional({
+    type: 'array',
+    items: { type: 'string', format: 'binary' },
+    description: 'Image files',
+  })
   @IsOptional()
   images?: any[];
 
-  @ApiPropertyOptional({ type: 'string', description: 'Available sizes as JSON string. Example: ["S", "M", "L", "XL"]' })
+  @ApiPropertyOptional({
+    type: 'string',
+    description:
+      'Available sizes as JSON string. Example: ["S", "M", "L", "XL"]',
+  })
   @Transform(({ value }) => {
-    if (!value || typeof value !== 'string' || value.trim() === '') return undefined;
+    if (!value || typeof value !== 'string' || value.trim() === '')
+      return undefined;
     try {
       return JSON.parse(value);
     } catch (e) {
-      const parts = value.split(',').map(s => s.trim()).filter(Boolean);
+      const parts = value
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
       return parts.length > 0 ? parts : undefined;
     }
   })
@@ -184,10 +230,16 @@ export class UpdateProductDto {
   @IsOptional()
   availableSizes?: string[];
 
-  @ApiPropertyOptional({ description: 'Soft delete flag. Send "true" or "false"', example: false, type: 'boolean' })
+  @ApiPropertyOptional({
+    description: 'Soft delete flag. Send "true" or "false"',
+    example: false,
+    type: 'boolean',
+  })
   @Transform(({ value }) => {
-    if (value === 'true' || value === true || value === 1 || value === '1') return true;
-    if (value === 'false' || value === false || value === 0 || value === '0') return false;
+    if (value === 'true' || value === true || value === 1 || value === '1')
+      return true;
+    if (value === 'false' || value === false || value === 0 || value === '0')
+      return false;
     return undefined; // ignore empty strings or invalid values
   })
   @IsOptional()

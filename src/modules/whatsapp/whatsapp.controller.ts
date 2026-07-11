@@ -19,7 +19,11 @@ import {
 } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import { WhatsAppService } from './whatsapp.service';
-import { ReplyDto, SendMessageDto, SendTemplateMessageDto } from './dto/whatsapp.dto';
+import {
+  ReplyDto,
+  SendMessageDto,
+  SendTemplateMessageDto,
+} from './dto/whatsapp.dto';
 import { Public } from '../../common/decorators/public.decorator';
 
 @ApiTags('WhatsApp Tracker')
@@ -48,15 +52,23 @@ export class WhatsAppController {
       'It verifies you own the endpoint by checking the verify_token and returning the challenge. ' +
       'No auth required — this must be publicly accessible.',
   })
-  @ApiResponse({ status: 200, description: 'Challenge returned. Webhook verified.' })
-  @ApiResponse({ status: 403, description: 'Token mismatch. Verification failed.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Challenge returned. Webhook verified.',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Token mismatch. Verification failed.',
+  })
   verifyWebhook(@Query() query: Record<string, string>, @Res() res: any) {
     const mode = query['hub.mode'];
     const token = query['hub.verify_token'];
     const challenge = query['hub.challenge'];
 
     // Read verify token from config (never from process.env directly)
-    const expectedToken = this.configService.get<string>('whatsapp.verifyToken');
+    const expectedToken = this.configService.get<string>(
+      'whatsapp.verifyToken',
+    );
 
     if (mode === 'subscribe' && token === expectedToken) {
       this.logger.log('WhatsApp webhook verified successfully.');
@@ -104,7 +116,8 @@ export class WhatsAppController {
   @Get('conversations')
   @ApiOperation({
     summary: 'Get all WhatsApp conversations',
-    description: 'Returns all conversations ordered by latest activity with contact info and last message preview.',
+    description:
+      'Returns all conversations ordered by latest activity with contact info and last message preview.',
   })
   @ApiResponse({ status: 200, description: 'Conversations list returned.' })
   getConversations() {
@@ -114,7 +127,8 @@ export class WhatsAppController {
   @Get('conversations/:id/messages')
   @ApiOperation({
     summary: 'Get all messages in a conversation',
-    description: 'Returns all messages for the given conversation ID, ordered chronologically.',
+    description:
+      'Returns all messages for the given conversation ID, ordered chronologically.',
   })
   @ApiParam({ name: 'id', description: 'Conversation UUID' })
   @ApiResponse({ status: 200, description: 'Messages list returned.' })
@@ -143,7 +157,8 @@ export class WhatsAppController {
   @Get('contacts')
   @ApiOperation({
     summary: 'Get all WhatsApp contacts',
-    description: 'Returns all WhatsApp contacts with their latest conversation.',
+    description:
+      'Returns all WhatsApp contacts with their latest conversation.',
   })
   @ApiResponse({ status: 200, description: 'Contacts list returned.' })
   getContacts() {
@@ -166,6 +181,10 @@ export class WhatsAppController {
   @ApiBody({ type: SendTemplateMessageDto })
   @ApiResponse({ status: 201, description: 'Template message sent.' })
   async sendTemplateMessage(@Body() dto: SendTemplateMessageDto) {
-    return this.whatsAppService.sendTemplateMessage(dto.to, dto.templateName, dto.languageCode);
+    return this.whatsAppService.sendTemplateMessage(
+      dto.to,
+      dto.templateName,
+      dto.languageCode,
+    );
   }
 }

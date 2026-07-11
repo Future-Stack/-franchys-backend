@@ -50,7 +50,7 @@ async function bootstrap() {
     }
   });
 
-  console.log("Update global prefix");
+  console.log('Update global prefix');
 
   await app.listen(displayPort);
   logger.log(

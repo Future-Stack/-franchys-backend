@@ -10,7 +10,7 @@ import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   async create(createUserDto: CreateUserDto) {
     const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
@@ -168,14 +168,13 @@ export class UsersService {
   }
 
   async findAll() {
-    const result = await this.prisma.user.findMany({
-    });
+    const result = await this.prisma.user.findMany({});
     return result;
   }
 
   async findOne(userId: string) {
     const user = await this.prisma.user.findUnique({
-      where: { userId }
+      where: { userId },
     });
     if (!user) {
       throw new NotFoundException(`User with ID ${userId} not found`);

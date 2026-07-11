@@ -16,9 +16,13 @@ export class WhatsAppHttpClient {
   private readonly phoneNumberId: string;
 
   constructor(private readonly configService: ConfigService) {
-    this.phoneNumberId = this.configService.get<string>('whatsapp.phoneNumberId')!;
+    this.phoneNumberId = this.configService.get<string>(
+      'whatsapp.phoneNumberId',
+    )!;
     const accessToken = this.configService.get<string>('whatsapp.accessToken')!;
-    const graphApiBaseUrl = this.configService.get<string>('whatsapp.graphApiBaseUrl')!;
+    const graphApiBaseUrl = this.configService.get<string>(
+      'whatsapp.graphApiBaseUrl',
+    )!;
 
     this.axios = axios.create({
       baseURL: `${graphApiBaseUrl}/${this.phoneNumberId}`,
@@ -32,36 +36,41 @@ export class WhatsAppHttpClient {
       (response) => response,
       (error) => {
         if (axios.isAxiosError(error) && error.response?.data) {
-          const metaError = error.response.data as any;
+          const metaError = error.response.data;
           this.logger.error(`WhatsApp API Error: ${JSON.stringify(metaError)}`);
-          
+
           const errData = metaError?.error || {};
           let errorMessage = errData.message || 'WhatsApp API request failed';
-          
+
           // Enhance Meta's generic error messages based on known API codes
           switch (errData.code) {
             case 190:
-              errorMessage = 'WhatsApp Authentication Failed (Code 190): Your Access Token is invalid or has expired. Please generate a new System User Token in Meta Business Suite and update WHATSAPP_ACCESS_TOKEN in your .env file.';
+              errorMessage =
+                'WhatsApp Authentication Failed (Code 190): Your Access Token is invalid or has expired. Please generate a new System User Token in Meta Business Suite and update WHATSAPP_ACCESS_TOKEN in your .env file.';
               break;
             case 131047:
-              errorMessage = 'WhatsApp 24-Hour Window Exceeded (Code 131047): You cannot send a free-form text message because more than 24 hours have passed since the customer last replied. You must send an approved Template message instead.';
+              errorMessage =
+                'WhatsApp 24-Hour Window Exceeded (Code 131047): You cannot send a free-form text message because more than 24 hours have passed since the customer last replied. You must send an approved Template message instead.';
               break;
             case 133010:
-              errorMessage = 'WhatsApp Invalid Recipient (Code 133010): The destination phone number is not registered on WhatsApp or the format is invalid.';
+              errorMessage =
+                'WhatsApp Invalid Recipient (Code 133010): The destination phone number is not registered on WhatsApp or the format is invalid.';
               break;
             case 131009:
-              errorMessage = 'WhatsApp Invalid Parameter (Code 131009): A parameter is missing or invalid. If sending a template, ensure the template name and language code exactly match what is approved in Meta Business Suite.';
+              errorMessage =
+                'WhatsApp Invalid Parameter (Code 131009): A parameter is missing or invalid. If sending a template, ensure the template name and language code exactly match what is approved in Meta Business Suite.';
               break;
             case 132000:
-              errorMessage = 'WhatsApp Template Paused/Disabled (Code 132000): The message template you are trying to use has been paused or disabled by Meta.';
+              errorMessage =
+                'WhatsApp Template Paused/Disabled (Code 132000): The message template you are trying to use has been paused or disabled by Meta.';
               break;
           }
-          
+
           throw new HttpException(
-            { 
+            {
               ...errData,
               message: errorMessage,
-              originalMetaMessage: errData.message
+              originalMetaMessage: errData.message,
             },
             error.response.status || HttpStatus.INTERNAL_SERVER_ERROR,
           );
@@ -75,7 +84,10 @@ export class WhatsAppHttpClient {
    * Send a plain text message to a WhatsApp number.
    * Used for replies within the 24-hour customer service window.
    */
-  async sendTextMessage(to: string, body: string): Promise<{ messageId: string }> {
+  async sendTextMessage(
+    to: string,
+    body: string,
+  ): Promise<{ messageId: string }> {
     const response = await this.axios.post('/messages', {
       messaging_product: 'whatsapp',
       recipient_type: 'individual',
@@ -109,10 +121,12 @@ export class WhatsAppHttpClient {
       },
     });
 
-    console.log("Template message sent successfully", response);
+    console.log('Template message sent successfully', response);
 
     const wamid: string = response.data?.messages?.[0]?.id ?? '';
-    this.logger.log(`Template message [${templateName}] sent to ${to}. wamid=${wamid}`);
+    this.logger.log(
+      `Template message [${templateName}] sent to ${to}. wamid=${wamid}`,
+    );
     return { messageId: wamid };
   }
 

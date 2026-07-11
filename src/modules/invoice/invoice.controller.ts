@@ -1,7 +1,18 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { InvoiceService } from './invoice.service';
-import { CreateInvoiceFeeDto, UpdateInvoiceFeeDto } from './dto/invoice-fees.dto';
+import {
+  CreateInvoiceFeeDto,
+  UpdateInvoiceFeeDto,
+} from './dto/invoice-fees.dto';
 import { UpdateInvoiceInformationDto } from './dto/invoice-information.dto';
 
 @ApiTags('Invoice')
@@ -55,8 +66,9 @@ export class InvoiceController {
 
   @Patch('information')
   @ApiOperation({ summary: 'Update active invoice information' })
-  updateInformation(@Body() updateInvoiceInformationDto: UpdateInvoiceInformationDto) {
+  updateInformation(
+    @Body() updateInvoiceInformationDto: UpdateInvoiceInformationDto,
+  ) {
     return this.invoiceService.updateInformation(updateInvoiceInformationDto);
   }
 }
-

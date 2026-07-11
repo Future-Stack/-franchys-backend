@@ -8,14 +8,16 @@ import { CreateBrandDto, UpdateBrandDto } from './dto/brand.dto';
 
 @Injectable()
 export class BrandService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   async create(dto: CreateBrandDto) {
     const existing = await this.prisma.brand.findUnique({
       where: { name: dto.name },
     });
     if (existing) {
-      throw new ConflictException(`Brand with name "${dto.name}" already exists`);
+      throw new ConflictException(
+        `Brand with name "${dto.name}" already exists`,
+      );
     }
     return this.prisma.brand.create({ data: dto });
   }
@@ -42,7 +44,9 @@ export class BrandService {
         where: { name: dto.name },
       });
       if (existing && existing.id !== id) {
-        throw new ConflictException(`Brand with name "${dto.name}" already exists`);
+        throw new ConflictException(
+          `Brand with name "${dto.name}" already exists`,
+        );
       }
     }
     return this.prisma.brand.update({ where: { id }, data: dto });
