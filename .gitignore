@@ -38,6 +38,3 @@ uploads-file/
 
 # Prisma
 prisma/migrations/*.sql.bak
-
-# Misc
-*.tsbuildinfo

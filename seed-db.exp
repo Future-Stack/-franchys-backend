@@ -1,0 +1,20 @@
+#!/usr/bin/expect -f
+
+set timeout -1
+set password "123Mak@1013."
+set ip "2.25.176.128"
+
+spawn ssh -o StrictHostKeyChecking=no root@$ip
+expect "*?assword:*"
+send "$password\r"
+
+expect "# "
+send "cd /root/francys\r"
+
+expect "# "
+# We temporarily install ts-node and typescript so the seed script can run in the production container
+send "docker compose run --rm api sh -c \"npm install ts-node typescript --no-save --legacy-peer-deps && npx ts-node prisma/seeds/index.ts\"\r"
+
+expect "# "
+send "exit\r"
+expect eof

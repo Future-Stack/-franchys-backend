@@ -1,0 +1,35 @@
+// WhatsApp Business Cloud API — Tracking Models
+// Mirrors the email-tracking.prisma pattern:
+//   Contact → Thread/Conversation → Message
+// but keyed by phone number (E.164 format) instead of email.
+
+model WhatsAppContact {
+  id            String                 @id @default(uuid())
+  phone         String                 @unique  // E.164 e.g. +8801711123456
+  name          String?
+  conversations WhatsAppConversation[]
+  createdAt     DateTime               @default(now())
+}
+
+model WhatsAppConversation {
+  id           String               @id @default(uuid())
+  contactId    String
+  contact      WhatsAppContact      @relation(fields: [contactId], references: [id])
+  messages     WhatsAppMessage[]
+  lastActivity DateTime             @default(now())
+  createdAt    DateTime             @default(now())
+}
+
+model WhatsAppMessage {
+  id             String               @id @default(uuid())
+  conversationId String
+  conversation   WhatsAppConversation @relation(fields: [conversationId], references: [id])
+  direction      String               // "INBOUND" or "OUTBOUND"
+  from           String               // sender phone number
+  to             String               // recipient phone number
+  body           String               @db.Text
+  messageId      String               @unique  // Meta wamid (wa_message_id)
+  type           String               @default("text") // text, image, document, etc.
+  status         String               @default("received") // received, sent, delivered, read
+  createdAt      DateTime             @default(now())
+}

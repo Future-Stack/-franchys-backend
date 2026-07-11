@@ -1,0 +1,28 @@
+model Contact {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  threads   Thread[]
+}
+
+model Thread {
+  id           String    @id @default(uuid())
+  subject      String
+  contactId    String
+  contact      Contact   @relation(fields: [contactId], references: [id])
+  messages     Message[]
+  lastActivity DateTime  @default(now())
+}
+
+model Message {
+  id          String   @id @default(uuid())
+  threadId    String
+  thread      Thread   @relation(fields: [threadId], references: [id])
+  direction   String   // "INBOUND" or "OUTBOUND"
+  from        String
+  to          String
+  body        String
+  messageId   String   @unique
+  inReplyTo   String?
+  createdAt   DateTime @default(now())
+}
