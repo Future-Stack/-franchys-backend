@@ -27,6 +27,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { EmailTrackerModule } from './modules/email-tracker/email-tracker.module';
 import { CloudinaryModule } from './modules/cloudinary/cloudinary.module';
 import { WhatsAppModule } from './modules/whatsapp/whatsapp.module';
+import { QuoteModule } from './modules/quote/quote.module';
 
 @Module({
   imports: [
@@ -54,6 +55,7 @@ import { WhatsAppModule } from './modules/whatsapp/whatsapp.module';
     EmailTrackerModule,
     CloudinaryModule,
     WhatsAppModule,
+    QuoteModule,
   ],
   controllers: [AppController],
   providers: [

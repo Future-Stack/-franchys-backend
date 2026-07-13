@@ -1,0 +1,52 @@
+enum QuoteStatus {
+  DRAFT
+  SENT
+  APPROVED
+  REVISION_REQUESTED
+  DECLINED
+}
+
+model Quote {
+  id             String      @id @default(uuid())
+  quoteNumber    String      @unique // Q-1001, etc.
+  customerId     String
+  customer       Customer    @relation(fields: [customerId], references: [id])
+  repId          String // User / Representative creator
+  rep            User        @relation(fields: [repId], references: [userId])
+  poNumber       String?
+  deliveryMethod String?
+  dueDate        DateTime?
+  status         QuoteStatus @default(DRAFT)
+  subtotal       Decimal     @default(0.00) @db.Decimal(10, 2)
+  discount       Decimal     @default(0.00) @db.Decimal(10, 2)
+  taxRate        Decimal     @default(7.00) @db.Decimal(5, 2)
+  taxAmount      Decimal     @default(0.00) @db.Decimal(10, 2)
+  total          Decimal     @default(0.00) @db.Decimal(10, 2)
+  notes          String?     @db.Text
+
+  // Relations
+  lineItems QuoteLineItem[]
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+}
+
+model QuoteLineItem {
+  id          String    @id @default(uuid())
+  quoteId     String
+  quote       Quote     @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  groupName   String    @default("Group 1")
+  categoryId  String?
+  category    Category? @relation(fields: [categoryId], references: [id])
+  itemNumber  String?
+  color       String?
+  description String?   @db.Text
+  sizeM       Int       @default(0)
+  sizeL       Int       @default(0)
+  sizeXL      Int       @default(0)
+  itemsCount  Int       @default(0)
+  markupPrice Decimal   @default(0.00) @db.Decimal(5, 2)
+  unitPrice   Decimal   @default(0.00) @db.Decimal(10, 2)
+  isTaxed     Boolean   @default(false)
+  total       Decimal   @default(0.00) @db.Decimal(10, 2)
+  imprintType String?
+}
