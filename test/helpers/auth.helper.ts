@@ -16,7 +16,9 @@ export interface AuthTokens {
  * - Login returns { accessToken, refreshToken } — userId/email are decoded from the JWT payload.
  * - NestJS POST endpoints return HTTP 201 by default.
  */
-export async function registerAndLogin(app: INestApplication): Promise<AuthTokens> {
+export async function registerAndLogin(
+  app: INestApplication,
+): Promise<AuthTokens> {
   const email = `e2e-admin-${uid()}@franchys-test.com`;
   const password = 'Test@12345';
 
@@ -76,8 +78,9 @@ export async function seedTestCustomer(): Promise<{
   cleanup: () => Promise<void>;
 }> {
   const prisma = createTestPrisma();
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { seedCustomer, cleanupTest: ct } = require('../setup/test-helpers') as typeof import('../setup/test-helpers');
+
+  const { seedCustomer, cleanupTest: ct } =
+    require('../setup/test-helpers') as typeof import('../setup/test-helpers');
   const customer = await seedCustomer(prisma);
   return {
     id: customer.id,

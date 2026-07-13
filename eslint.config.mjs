@@ -41,13 +41,15 @@ export default defineConfig([
   // creates noise without safety benefit, so we relax those rules here.
   // This is the accepted pattern in enterprise NestJS / TypeScript projects.
   {
-    files: ['**/*.spec.ts', '**/*.test.ts'],
+    files: ['test/**/*.ts', '**/*.spec.ts', '**/*.test.ts'],
     rules: {
       '@typescript-eslint/no-unsafe-assignment': 'off',
       '@typescript-eslint/no-unsafe-member-access': 'off',
       '@typescript-eslint/no-unsafe-call': 'off',
       '@typescript-eslint/no-unsafe-return': 'off',
       '@typescript-eslint/no-unsafe-argument': 'off',
+      '@typescript-eslint/no-require-imports': 'off',
+      '@typescript-eslint/no-var-requires': 'off',
     },
   },
 ]);

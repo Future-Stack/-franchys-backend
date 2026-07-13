@@ -1,7 +1,11 @@
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { createE2EApp } from '../helpers/app.helper';
-import { registerAndLogin, cleanupUser, AuthTokens } from '../helpers/auth.helper';
+import {
+  registerAndLogin,
+  cleanupUser,
+  AuthTokens,
+} from '../helpers/auth.helper';
 import { createTestPrisma, cleanupTest } from '../setup/test-helpers';
 
 // ─── E2E: Job Endpoints ───────────────────────────────────────────────────────
@@ -57,7 +61,10 @@ describe('Job (e2e)', () => {
     });
 
     it('should return 401 without token', async () => {
-      await request(app.getHttpServer()).post('/api/v1/job').send({}).expect(401);
+      await request(app.getHttpServer())
+        .post('/api/v1/job')
+        .send({})
+        .expect(401);
     });
   });
 
@@ -80,7 +87,9 @@ describe('Job (e2e)', () => {
         .set('Authorization', `Bearer ${tokens.accessToken}`)
         .expect(200);
 
-      expect(res.body.data.every((j: { status: string }) => j.status === 'QUOTE')).toBe(true);
+      expect(
+        res.body.data.every((j: { status: string }) => j.status === 'QUOTE'),
+      ).toBe(true);
     });
   });
 

@@ -1,7 +1,11 @@
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { createE2EApp } from '../helpers/app.helper';
-import { registerAndLogin, cleanupUser, AuthTokens } from '../helpers/auth.helper';
+import {
+  registerAndLogin,
+  cleanupUser,
+  AuthTokens,
+} from '../helpers/auth.helper';
 
 // ─── E2E: Auth Endpoints ─────────────────────────────────────────────────────
 // Tests the full HTTP layer: validation pipe, response envelope, status codes.

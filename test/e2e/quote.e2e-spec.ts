@@ -83,7 +83,10 @@ describe('Quote (e2e)', () => {
     });
 
     it('should return 401 when no token is provided', async () => {
-      await request(app.getHttpServer()).post('/api/v1/quote').send({}).expect(401);
+      await request(app.getHttpServer())
+        .post('/api/v1/quote')
+        .send({})
+        .expect(401);
     });
   });
 
@@ -106,7 +109,9 @@ describe('Quote (e2e)', () => {
         .set('Authorization', `Bearer ${tokens.accessToken}`)
         .expect(200);
 
-      expect(res.body.data.every((q: { status: string }) => q.status === 'DRAFT')).toBe(true);
+      expect(
+        res.body.data.every((q: { status: string }) => q.status === 'DRAFT'),
+      ).toBe(true);
     });
   });
 

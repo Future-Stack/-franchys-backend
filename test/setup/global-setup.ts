@@ -14,7 +14,7 @@ export default async function globalSetup() {
   );
 
   // Clean up all tables to ensure a fresh, conflict-free test run
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
+
   const { createTestPrisma } =
     require('./test-helpers') as typeof import('./test-helpers');
   const prisma = createTestPrisma();
