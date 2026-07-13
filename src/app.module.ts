@@ -30,6 +30,7 @@ import { WhatsAppModule } from './modules/whatsapp/whatsapp.module';
 import { QuoteModule } from './modules/quote/quote.module';
 import { JobModule } from './modules/job/job.module';
 import { CampaignModule } from './modules/campaign/campaign.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
 
 @Module({
   imports: [
@@ -60,6 +61,7 @@ import { CampaignModule } from './modules/campaign/campaign.module';
     QuoteModule,
     JobModule,
     CampaignModule,
+    AnalyticsModule,
   ],
   controllers: [AppController],
   providers: [
