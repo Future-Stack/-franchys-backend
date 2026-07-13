@@ -16,6 +16,7 @@ import {
 } from '@nestjs/swagger';
 import { CampaignService } from './campaign.service';
 import { CreateCampaignDto, UpdateCampaignDto } from './dto/campaign.dto';
+import { ValidateDiscountDto } from './dto/validate-discount.dto';
 
 @ApiTags('Campaign')
 @ApiBearerAuth()
@@ -27,6 +28,12 @@ export class CampaignController {
   @ApiOperation({ summary: 'Create a new campaign draft' })
   create(@Body() dto: CreateCampaignDto) {
     return this.campaignService.create(dto);
+  }
+
+  @Post('validate-code')
+  @ApiOperation({ summary: 'Validate a promotional discount code' })
+  validateDiscountCode(@Body() dto: ValidateDiscountDto) {
+    return this.campaignService.validateDiscountCode(dto);
   }
 
   @Get()

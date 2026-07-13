@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import {
   Prisma,
   CampaignType as PrismaCampaignType,
@@ -6,6 +10,7 @@ import {
 } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateCampaignDto, UpdateCampaignDto } from './dto/campaign.dto';
+import { ValidateDiscountDto } from './dto/validate-discount.dto';
 
 @Injectable()
 export class CampaignService {
@@ -106,6 +111,64 @@ export class CampaignService {
             : Math.floor(Math.random() * 1000) + 100,
       },
     });
+  }
+
+  async validateDiscountCode(dto: ValidateDiscountDto) {
+    const campaign = await this.prisma.campaign.findFirst({
+      where: { promoCode: { equals: dto.code, mode: 'insensitive' } },
+    });
+
+    if (!campaign) {
+      throw new NotFoundException(`Promo code "${dto.code}" is invalid`);
+    }
+
+    if (campaign.status !== PrismaCampaignStatus.SENT) {
+      throw new BadRequestException(`Promo code "${dto.code}" is not active`);
+    }
+
+    const now = new Date();
+    if (campaign.startDate && new Date(campaign.startDate) > now) {
+      throw new BadRequestException(
+        `Promo code "${dto.code}" is not yet active`,
+      );
+    }
+
+    if (campaign.endDate && new Date(campaign.endDate) < now) {
+      throw new BadRequestException(`Promo code "${dto.code}" has expired`);
+    }
+
+    if (
+      campaign.minOrderAmount &&
+      dto.orderAmount < Number(campaign.minOrderAmount)
+    ) {
+      throw new BadRequestException(
+        `Minimum order amount of $${campaign.minOrderAmount.toString()} required for this code`,
+      );
+    }
+
+    // Determine discount value
+    let discountAmount = 0;
+    if (campaign.discountType === 'percentage' && campaign.percentage) {
+      discountAmount = dto.orderAmount * (Number(campaign.percentage) / 100);
+    } else if (campaign.discountType === 'flat') {
+      discountAmount = Number(campaign.percentage) || 10;
+    } else {
+      discountAmount = Number(campaign.percentage) || 0;
+    }
+
+    // Ensure discount doesn't exceed order amount
+    if (discountAmount > dto.orderAmount) {
+      discountAmount = dto.orderAmount;
+    }
+
+    return {
+      valid: true,
+      code: dto.code,
+      discountType: campaign.discountType,
+      discountValue: Number(campaign.percentage),
+      discountAmount,
+      finalAmount: dto.orderAmount - discountAmount,
+    };
   }
 
   async remove(id: string) {

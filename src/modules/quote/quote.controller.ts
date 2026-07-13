@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   Query,
+  Req,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -47,6 +48,48 @@ export class QuoteController {
   @ApiOperation({ summary: 'Update a quote by ID' })
   update(@Param('id') id: string, @Body() dto: UpdateQuoteDto) {
     return this.quoteService.update(id, dto);
+  }
+
+  @Post(':id/approve')
+  @ApiOperation({ summary: 'Approve a quote' })
+  approve(
+    @Param('id') id: string,
+    @Req() req: { user: { userId: string; email: string; role: string } },
+  ) {
+    const user = req.user;
+    return this.quoteService.updateStatusWithPermissionCheck(
+      id,
+      'APPROVED',
+      user,
+    );
+  }
+
+  @Post(':id/request-revision')
+  @ApiOperation({ summary: 'Request revision on a quote' })
+  requestRevision(
+    @Param('id') id: string,
+    @Req() req: { user: { userId: string; email: string; role: string } },
+  ) {
+    const user = req.user;
+    return this.quoteService.updateStatusWithPermissionCheck(
+      id,
+      'REVISION_REQUESTED',
+      user,
+    );
+  }
+
+  @Post(':id/decline')
+  @ApiOperation({ summary: 'Decline a quote' })
+  decline(
+    @Param('id') id: string,
+    @Req() req: { user: { userId: string; email: string; role: string } },
+  ) {
+    const user = req.user;
+    return this.quoteService.updateStatusWithPermissionCheck(
+      id,
+      'DECLINED',
+      user,
+    );
   }
 
   @Delete(':id')

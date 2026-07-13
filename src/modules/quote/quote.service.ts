@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { Prisma, QuoteStatus } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateQuoteDto, UpdateQuoteDto } from './dto/quote.dto';
@@ -377,6 +381,46 @@ export class QuoteService {
     }
 
     return updatedQuote;
+  }
+
+  async updateStatusWithPermissionCheck(
+    id: string,
+    status: string,
+    user: { userId: string; email: string; role: string },
+  ) {
+    if (user.role !== 'SUPER_ADMIN' && user.role !== 'ADMIN') {
+      const permissions = await this.prisma.userPermission.findFirst({
+        where: { userId: user.userId },
+      });
+
+      if (!permissions || !permissions.canApproveQuotes) {
+        throw new ForbiddenException(
+          'You do not have permission to approve or change quote status',
+        );
+      }
+    }
+
+    const quote = await this.prisma.quote.update({
+      where: { id },
+      data: { status: status as QuoteStatus },
+      include: {
+        lineItems: true,
+        customer: true,
+        rep: {
+          select: {
+            userId: true,
+            email: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    if (quote.status === QuoteStatus.APPROVED) {
+      await this.jobService.createOrUpdateJobFromQuote(quote.id);
+    }
+
+    return quote;
   }
 
   async remove(id: string) {
