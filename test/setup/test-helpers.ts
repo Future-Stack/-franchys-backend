@@ -122,6 +122,86 @@ export async function seedJob(
   });
 }
 
+/** Creates a Brand row. */
+export async function seedBrand(
+  prisma: PrismaClient,
+  overrides: Record<string, unknown> = {},
+) {
+  return prisma.brand.create({
+    data: {
+      name: `Test Brand ${uid()}`,
+      description: 'Test Brand Description',
+      ...overrides,
+    },
+  });
+}
+
+/** Creates a Category row. */
+export async function seedCategory(
+  prisma: PrismaClient,
+  overrides: Record<string, unknown> = {},
+) {
+  return prisma.category.create({
+    data: {
+      name: `Test Category ${uid()}`,
+      description: 'Test Category Description',
+      ...overrides,
+    },
+  });
+}
+
+/** Creates a Product row with nested Category and Brand if none provided. */
+export async function seedProduct(
+  prisma: PrismaClient,
+  overrides: Record<string, unknown> = {},
+) {
+  let categoryId = overrides.categoryId as string | undefined;
+  if (!categoryId) {
+    const cat = await seedCategory(prisma);
+    categoryId = cat.id;
+  }
+
+  let brandId = overrides.brandId as string | undefined;
+  if (!brandId) {
+    const brand = await seedBrand(prisma);
+    brandId = brand.id;
+  }
+
+  return prisma.product.create({
+    data: {
+      productName: `Test Product ${uid()}`,
+      itemNo: `ITEM-${uid()}`,
+      price: 29.99,
+      categoryId,
+      brandId,
+      ...overrides,
+    } as any, // Cast to any to make overrides simple
+  });
+}
+
+/** Creates a Vendors row. */
+export async function seedVendor(
+  prisma: PrismaClient,
+  overrides: Record<string, unknown> = {},
+) {
+  return prisma.vendors.create({
+    data: {
+      companyName: `Test Company ${uid()}`,
+      contactName: 'Test Contact',
+      email: `test-vendor-${uid()}@example.com`,
+      phone: '5551112222',
+      fax: '5551112223',
+      accountNumber: `ACC-${uid()}`,
+      mainAddress: '123 Vendor Lane',
+      city: 'Vendor City',
+      state: 'VS',
+      country: 'USA',
+      zip: '12345',
+      ...overrides,
+    },
+  });
+}
+
 // ─── Cleanup ──────────────────────────────────────────────────────────────────
 
 /**
@@ -137,6 +217,10 @@ export async function cleanupTest(
     customerIds?: string[];
     userIds?: string[];
     permissionIds?: string[];
+    brandIds?: string[];
+    categoryIds?: string[];
+    productIds?: string[];
+    vendorIds?: string[];
   },
 ) {
   if (ids.jobIds?.length) {
@@ -161,6 +245,29 @@ export async function cleanupTest(
   if (ids.customerIds?.length) {
     await prisma.customer.deleteMany({
       where: { id: { in: ids.customerIds } },
+    });
+  }
+  if (ids.productIds?.length) {
+    await prisma.productColor.deleteMany({
+      where: { productId: { in: ids.productIds } },
+    });
+    await prisma.product.deleteMany({
+      where: { id: { in: ids.productIds } },
+    });
+  }
+  if (ids.categoryIds?.length) {
+    await prisma.category.deleteMany({
+      where: { id: { in: ids.categoryIds } },
+    });
+  }
+  if (ids.brandIds?.length) {
+    await prisma.brand.deleteMany({
+      where: { id: { in: ids.brandIds } },
+    });
+  }
+  if (ids.vendorIds?.length) {
+    await prisma.vendors.deleteMany({
+      where: { vendorId: { in: ids.vendorIds } },
     });
   }
   if (ids.userIds?.length) {
