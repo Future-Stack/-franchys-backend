@@ -164,6 +164,9 @@ export async function cleanupTest(
     });
   }
   if (ids.userIds?.length) {
+    await prisma.userPermission.deleteMany({
+      where: { userId: { in: ids.userIds } },
+    });
     await prisma.user.deleteMany({ where: { userId: { in: ids.userIds } } });
   }
 }
