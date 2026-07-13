@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { CampaignService } from './campaign.service';
@@ -105,7 +106,9 @@ describe('CampaignService', () => {
     it('should throw NotFoundException when campaign not found', async () => {
       mockPrisma.campaign.findUnique.mockResolvedValue(null);
 
-      await expect(service.findOne('missing')).rejects.toThrow(NotFoundException);
+      await expect(service.findOne('missing')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -142,7 +145,10 @@ describe('CampaignService', () => {
     it('should set status to SENT', async () => {
       const campaign = buildCampaign({ recipientsCount: 250 });
       mockPrisma.campaign.findUnique.mockResolvedValue(campaign);
-      const sentCampaign = buildCampaign({ status: PrismaCampaignStatus.SENT, recipientsCount: 250 });
+      const sentCampaign = buildCampaign({
+        status: PrismaCampaignStatus.SENT,
+        recipientsCount: 250,
+      });
       mockPrisma.campaign.update.mockResolvedValue(sentCampaign);
 
       const result = await service.send('camp-1');
@@ -159,7 +165,10 @@ describe('CampaignService', () => {
       const campaign = buildCampaign({ recipientsCount: 350 });
       mockPrisma.campaign.findUnique.mockResolvedValue(campaign);
       mockPrisma.campaign.update.mockResolvedValue(
-        buildCampaign({ status: PrismaCampaignStatus.SENT, recipientsCount: 350 }),
+        buildCampaign({
+          status: PrismaCampaignStatus.SENT,
+          recipientsCount: 350,
+        }),
       );
 
       await service.send('camp-1');
@@ -196,7 +205,9 @@ describe('CampaignService', () => {
     });
 
     it('should throw BadRequestException if campaign is not SENT (e.g. DRAFT)', async () => {
-      mockPrisma.campaign.findFirst.mockResolvedValue(buildCampaign({ status: PrismaCampaignStatus.DRAFT }));
+      mockPrisma.campaign.findFirst.mockResolvedValue(
+        buildCampaign({ status: PrismaCampaignStatus.DRAFT }),
+      );
 
       await expect(
         service.validateDiscountCode({ code: 'SUMMER10', orderAmount: 100 }),
@@ -206,7 +217,9 @@ describe('CampaignService', () => {
     it('should throw BadRequestException if campaign start date is in the future', async () => {
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
-      mockPrisma.campaign.findFirst.mockResolvedValue(sentCampaign({ startDate: tomorrow }));
+      mockPrisma.campaign.findFirst.mockResolvedValue(
+        sentCampaign({ startDate: tomorrow }),
+      );
 
       await expect(
         service.validateDiscountCode({ code: 'SUMMER10', orderAmount: 100 }),
@@ -216,7 +229,9 @@ describe('CampaignService', () => {
     it('should throw BadRequestException if campaign end date has passed', async () => {
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
-      mockPrisma.campaign.findFirst.mockResolvedValue(sentCampaign({ endDate: yesterday }));
+      mockPrisma.campaign.findFirst.mockResolvedValue(
+        sentCampaign({ endDate: yesterday }),
+      );
 
       await expect(
         service.validateDiscountCode({ code: 'SUMMER10', orderAmount: 100 }),
@@ -224,7 +239,9 @@ describe('CampaignService', () => {
     });
 
     it('should throw BadRequestException if order amount is below minOrderAmount', async () => {
-      mockPrisma.campaign.findFirst.mockResolvedValue(sentCampaign({ minOrderAmount: 200 }));
+      mockPrisma.campaign.findFirst.mockResolvedValue(
+        sentCampaign({ minOrderAmount: 200 }),
+      );
 
       await expect(
         service.validateDiscountCode({ code: 'SUMMER10', orderAmount: 150 }),
@@ -232,13 +249,18 @@ describe('CampaignService', () => {
     });
 
     it('should correctly calculate percentage discount', async () => {
-      mockPrisma.campaign.findFirst.mockResolvedValue(sentCampaign({ percentage: 10 }));
+      mockPrisma.campaign.findFirst.mockResolvedValue(
+        sentCampaign({ percentage: 10 }),
+      );
 
-      const result = await service.validateDiscountCode({ code: 'SUMMER10', orderAmount: 200 });
+      const result = await service.validateDiscountCode({
+        code: 'SUMMER10',
+        orderAmount: 200,
+      });
 
       expect(result.valid).toBe(true);
       expect(result.discountAmount).toBe(20); // 10% of 200
-      expect(result.finalAmount).toBe(180);   // 200 - 20
+      expect(result.finalAmount).toBe(180); // 200 - 20
     });
 
     it('should correctly calculate flat discount', async () => {
@@ -246,17 +268,25 @@ describe('CampaignService', () => {
         sentCampaign({ discountType: 'flat', percentage: 25 }),
       );
 
-      const result = await service.validateDiscountCode({ code: 'SUMMER10', orderAmount: 200 });
+      const result = await service.validateDiscountCode({
+        code: 'SUMMER10',
+        orderAmount: 200,
+      });
 
       expect(result.valid).toBe(true);
-      expect(result.discountAmount).toBe(25);  // flat $25
-      expect(result.finalAmount).toBe(175);    // 200 - 25
+      expect(result.discountAmount).toBe(25); // flat $25
+      expect(result.finalAmount).toBe(175); // 200 - 25
     });
 
     it('should cap discount at the order amount (no negative final)', async () => {
-      mockPrisma.campaign.findFirst.mockResolvedValue(sentCampaign({ percentage: 200 }));
+      mockPrisma.campaign.findFirst.mockResolvedValue(
+        sentCampaign({ percentage: 200 }),
+      );
 
-      const result = await service.validateDiscountCode({ code: 'SUMMER10', orderAmount: 100 });
+      const result = await service.validateDiscountCode({
+        code: 'SUMMER10',
+        orderAmount: 100,
+      });
 
       // 200% of 100 = 200, capped to 100
       expect(result.discountAmount).toBe(100);
@@ -266,7 +296,10 @@ describe('CampaignService', () => {
     it('should return valid=true with correct structure on success', async () => {
       mockPrisma.campaign.findFirst.mockResolvedValue(sentCampaign());
 
-      const result = await service.validateDiscountCode({ code: 'SUMMER10', orderAmount: 300 });
+      const result = await service.validateDiscountCode({
+        code: 'SUMMER10',
+        orderAmount: 300,
+      });
 
       expect(result).toMatchObject({
         valid: true,
@@ -286,7 +319,10 @@ describe('CampaignService', () => {
         sentCampaign({ startDate: yesterday, endDate: tomorrow }),
       );
 
-      const result = await service.validateDiscountCode({ code: 'SUMMER10', orderAmount: 100 });
+      const result = await service.validateDiscountCode({
+        code: 'SUMMER10',
+        orderAmount: 100,
+      });
 
       expect(result.valid).toBe(true);
     });
@@ -301,14 +337,21 @@ describe('CampaignService', () => {
 
       const result = await service.remove('camp-1');
 
-      expect(mockPrisma.campaign.delete).toHaveBeenCalledWith({ where: { id: 'camp-1' } });
-      expect(result).toEqual({ message: 'Campaign deleted successfully', id: 'camp-1' });
+      expect(mockPrisma.campaign.delete).toHaveBeenCalledWith({
+        where: { id: 'camp-1' },
+      });
+      expect(result).toEqual({
+        message: 'Campaign deleted successfully',
+        id: 'camp-1',
+      });
     });
 
     it('should throw NotFoundException if campaign does not exist', async () => {
       mockPrisma.campaign.findUnique.mockResolvedValue(null);
 
-      await expect(service.remove('missing')).rejects.toThrow(NotFoundException);
+      await expect(service.remove('missing')).rejects.toThrow(
+        NotFoundException,
+      );
       expect(mockPrisma.campaign.delete).not.toHaveBeenCalled();
     });
   });

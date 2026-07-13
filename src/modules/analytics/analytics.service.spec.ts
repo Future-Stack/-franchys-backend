@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import { Test, TestingModule } from '@nestjs/testing';
 import { AnalyticsService } from './analytics.service';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -47,16 +48,30 @@ describe('AnalyticsService', () => {
   // ─── getDashboardStats ────────────────────────────────────────────────────
 
   describe('getDashboardStats', () => {
-    const setupMocks = (overrides: {
-      approvedQuotes?: { total: number; createdAt: Date; customerId: string }[];
-      totalQuotes?: number;
-      activeJobs?: number;
-      campaignsSent?: number;
-      topCustomerGroups?: { customerId: string; _sum: { total: number | null } }[];
-      customers?: Record<string, { firstName: string; lastName: string; companyName: string | null }>;
-      categoryGroups?: { categoryId: string; _sum: { itemsCount: number | null } }[];
-      categories?: Record<string, { name: string }>;
-    } = {}) => {
+    type ApprovedQuote = { total: number; createdAt: Date; customerId: string };
+    type CustomerRecord = {
+      firstName: string;
+      lastName: string;
+      companyName: string | null;
+    };
+    type CustomerGroup = { customerId: string; _sum: { total: number | null } };
+    type CategoryGroup = {
+      categoryId: string;
+      _sum: { itemsCount: number | null };
+    };
+
+    const setupMocks = (
+      overrides: {
+        approvedQuotes?: ApprovedQuote[];
+        totalQuotes?: number;
+        activeJobs?: number;
+        campaignsSent?: number;
+        topCustomerGroups?: CustomerGroup[];
+        customers?: Record<string, CustomerRecord>;
+        categoryGroups?: CategoryGroup[];
+        categories?: Record<string, { name: string }>;
+      } = {},
+    ) => {
       const approvedQuotes = overrides.approvedQuotes ?? [];
       mockPrisma.quote.findMany.mockResolvedValue(approvedQuotes);
       mockPrisma.quote.count.mockResolvedValue(overrides.totalQuotes ?? 0);
@@ -164,7 +179,20 @@ describe('AnalyticsService', () => {
 
       const result = await service.getDashboardStats();
 
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+      ];
       const currentMonthLabel = `${months[now.getMonth()]} ${now.getFullYear()}`;
       const currentMonthEntry = result.revenueTrends.find(
         (t) => t.month === currentMonthLabel,
@@ -176,9 +204,7 @@ describe('AnalyticsService', () => {
     it('should return topCustomers populated with customer names', async () => {
       setupMocks({
         approvedQuotes: [],
-        topCustomerGroups: [
-          { customerId: 'cust-1', _sum: { total: 1000 } },
-        ],
+        topCustomerGroups: [{ customerId: 'cust-1', _sum: { total: 1000 } }],
         customers: {
           'cust-1': { firstName: 'Jane', lastName: 'Smith', companyName: null },
         },
@@ -197,11 +223,13 @@ describe('AnalyticsService', () => {
     it('should prefer companyName over firstName+lastName for topCustomers', async () => {
       setupMocks({
         approvedQuotes: [],
-        topCustomerGroups: [
-          { customerId: 'cust-1', _sum: { total: 500 } },
-        ],
+        topCustomerGroups: [{ customerId: 'cust-1', _sum: { total: 500 } }],
         customers: {
-          'cust-1': { firstName: 'Jane', lastName: 'Smith', companyName: 'Acme Corp' },
+          'cust-1': {
+            firstName: 'Jane',
+            lastName: 'Smith',
+            companyName: 'Acme Corp',
+          },
         },
       });
 
@@ -213,9 +241,7 @@ describe('AnalyticsService', () => {
     it('should return categoryPerformance with category names', async () => {
       setupMocks({
         approvedQuotes: [],
-        categoryGroups: [
-          { categoryId: 'cat-1', _sum: { itemsCount: 150 } },
-        ],
+        categoryGroups: [{ categoryId: 'cat-1', _sum: { itemsCount: 150 } }],
         categories: {
           'cat-1': { name: 'T-Shirts' },
         },

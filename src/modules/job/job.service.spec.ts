@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { JobService } from './job.service';
@@ -43,9 +44,7 @@ const buildQuote = (overrides: Record<string, unknown> = {}) => ({
   total: 470.8,
   dueDate: new Date('2026-09-01'),
   customer: { firstName: 'John', lastName: 'Doe', companyName: null },
-  lineItems: [
-    { description: 'T-Shirt', itemsCount: 20 },
-  ],
+  lineItems: [{ description: 'T-Shirt', itemsCount: 20 }],
   ...overrides,
 });
 
@@ -56,10 +55,7 @@ describe('JobService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        JobService,
-        { provide: PrismaService, useValue: mockPrisma },
-      ],
+      providers: [JobService, { provide: PrismaService, useValue: mockPrisma }],
     }).compile();
 
     service = module.get<JobService>(JobService);
@@ -100,6 +96,7 @@ describe('JobService', () => {
       await service.create({
         jobId: 'Q-1001',
         clientName: 'Acme Corp',
+        description: 'T-Shirts',
         dueDate: '2026-09-01',
         amount: 100,
       });
@@ -126,10 +123,13 @@ describe('JobService', () => {
     it('should apply status filter', async () => {
       mockPrisma.job.findMany.mockResolvedValue([]);
 
-      await service.findAll('IN_PROGRESS');
+      // Pass a valid status string that Prisma accepts at runtime
+      await service.findAll('PRODUCTION');
 
       expect(mockPrisma.job.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({ where: expect.objectContaining({ status: 'IN_PROGRESS' }) }),
+        expect.objectContaining({
+          where: expect.objectContaining({ status: 'PRODUCTION' }),
+        }),
       );
     });
 
@@ -160,7 +160,9 @@ describe('JobService', () => {
     it('should throw NotFoundException when job not found', async () => {
       mockPrisma.job.findUnique.mockResolvedValue(null);
 
-      await expect(service.findOne('missing-id')).rejects.toThrow(NotFoundException);
+      await expect(service.findOne('missing-id')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -169,12 +171,15 @@ describe('JobService', () => {
   describe('update', () => {
     it('should update job fields', async () => {
       mockPrisma.job.findUnique.mockResolvedValue(buildJob());
-      const updatedJob = buildJob({ clientName: 'New Corp', status: JobStatus.IN_PROGRESS });
+      const updatedJob = buildJob({
+        clientName: 'New Corp',
+        status: JobStatus.PRODUCTION,
+      });
       mockPrisma.job.update.mockResolvedValue(updatedJob);
 
       const result = await service.update('job-1', {
         clientName: 'New Corp',
-        status: JobStatus.IN_PROGRESS,
+        status: JobStatus.PRODUCTION,
       });
 
       expect(mockPrisma.job.update).toHaveBeenCalledWith(
@@ -226,14 +231,21 @@ describe('JobService', () => {
 
       const result = await service.remove('job-1');
 
-      expect(mockPrisma.job.delete).toHaveBeenCalledWith({ where: { id: 'job-1' } });
-      expect(result).toEqual({ message: 'Job deleted successfully', id: 'job-1' });
+      expect(mockPrisma.job.delete).toHaveBeenCalledWith({
+        where: { id: 'job-1' },
+      });
+      expect(result).toEqual({
+        message: 'Job deleted successfully',
+        id: 'job-1',
+      });
     });
 
     it('should throw NotFoundException if job does not exist', async () => {
       mockPrisma.job.findUnique.mockResolvedValue(null);
 
-      await expect(service.remove('missing')).rejects.toThrow(NotFoundException);
+      await expect(service.remove('missing')).rejects.toThrow(
+        NotFoundException,
+      );
       expect(mockPrisma.job.delete).not.toHaveBeenCalled();
     });
   });
@@ -244,7 +256,9 @@ describe('JobService', () => {
     it('should throw NotFoundException if quote does not exist', async () => {
       mockPrisma.quote.findUnique.mockResolvedValue(null);
 
-      await expect(service.createOrUpdateJobFromQuote('bad-quote')).rejects.toThrow(NotFoundException);
+      await expect(
+        service.createOrUpdateJobFromQuote('bad-quote'),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('should create a new job if none exists for the quote', async () => {
@@ -268,11 +282,17 @@ describe('JobService', () => {
 
     it('should use companyName when available', async () => {
       const quote = buildQuote({
-        customer: { firstName: 'John', lastName: 'Doe', companyName: 'Acme Corp' },
+        customer: {
+          firstName: 'John',
+          lastName: 'Doe',
+          companyName: 'Acme Corp',
+        },
       });
       mockPrisma.quote.findUnique.mockResolvedValue(quote);
       mockPrisma.job.findFirst.mockResolvedValue(null);
-      mockPrisma.job.create.mockResolvedValue(buildJob({ clientName: 'Acme Corp' }));
+      mockPrisma.job.create.mockResolvedValue(
+        buildJob({ clientName: 'Acme Corp' }),
+      );
 
       await service.createOrUpdateJobFromQuote('quote-1');
 
