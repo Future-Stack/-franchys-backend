@@ -29,6 +29,7 @@ import { CloudinaryModule } from './modules/cloudinary/cloudinary.module';
 import { WhatsAppModule } from './modules/whatsapp/whatsapp.module';
 import { QuoteModule } from './modules/quote/quote.module';
 import { JobModule } from './modules/job/job.module';
+import { CampaignModule } from './modules/campaign/campaign.module';
 
 @Module({
   imports: [
@@ -58,6 +59,7 @@ import { JobModule } from './modules/job/job.module';
     WhatsAppModule,
     QuoteModule,
     JobModule,
+    CampaignModule,
   ],
   controllers: [AppController],
   providers: [

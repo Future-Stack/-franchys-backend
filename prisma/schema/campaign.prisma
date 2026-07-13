@@ -1,0 +1,35 @@
+enum CampaignType {
+  NEWSLETTER
+  PROMOTION
+  DISCOUNT
+}
+
+enum CampaignStatus {
+  DRAFT
+  SENT
+}
+
+model Campaign {
+  id              String         @id @default(uuid())
+  title           String
+  type            CampaignType
+  status          CampaignStatus @default(DRAFT)
+  recipientsCount Int            @default(0)
+  targetAudience  String?
+
+  // Promotion / Discount details
+  promoCode       String?
+  discountType    String?        // e.g. "flat", "percentage"
+  percentage      Decimal?       @db.Decimal(5, 2)
+  minOrderAmount  Decimal?       @db.Decimal(10, 2)
+  usageLimit      Int?
+  startDate       DateTime?
+  endDate         DateTime?
+  termsCondition  String?        @db.Text
+
+  // Featured Products
+  featuredProducts String[]      // Array of product IDs
+
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+}
