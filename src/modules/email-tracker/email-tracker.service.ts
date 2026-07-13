@@ -181,6 +181,7 @@ export class EmailTrackerService {
   }
 
   async handleWebhook(body: any) {
+    this.logger.log(`Received webhook notification: ${JSON.stringify(body)}`);
     // Keep this function so the controller doesn't break,
     // but just forward it to the syncEmails function to pull immediately.
     return this.syncEmails();

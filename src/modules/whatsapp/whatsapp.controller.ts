@@ -19,7 +19,7 @@ import {
 } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import { WhatsAppService } from './whatsapp.service';
-import { ReplyDto, SendMessageDto, SendTemplateMessageDto } from './dto/whatsapp.dto';
+import { ReplyDto, SendTemplateMessageDto } from './dto/whatsapp.dto';
 import { Public } from '../../common/decorators/public.decorator';
 
 @ApiTags('WhatsApp Tracker')

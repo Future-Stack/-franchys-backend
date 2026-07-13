@@ -12,7 +12,14 @@ import {
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes, ApiBody, getSchemaPath, ApiExtraModels } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiConsumes,
+  ApiBody,
+  ApiExtraModels,
+} from '@nestjs/swagger';
 import { ProductService } from './product.service';
 import {
   CreateProductDto,
