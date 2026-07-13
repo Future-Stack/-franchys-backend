@@ -1,8 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException, ConflictException } from '@nestjs/common';
-import { PrismaClient, CustomerType } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { CustomerService } from 'src/modules/customer/customer.service';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { CustomerType } from 'src/modules/customer/dto/customer.dto';
 import {
   createTestPrisma,
   cleanupTest,

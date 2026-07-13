@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException, ConflictException } from '@nestjs/common';
 import { CustomerService } from './customer.service';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { CustomerType } from '@prisma/client';
+import { CustomerType } from './dto/customer.dto';
 
 const mockPrisma = {
   customer: {
