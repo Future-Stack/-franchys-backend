@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, QuoteStatus } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateQuoteDto, UpdateQuoteDto } from './dto/quote.dto';
+import { JobService } from '../job/job.service';
 
 interface CalcLineItemInput {
   groupName?: string;
@@ -37,7 +38,10 @@ interface CalcLineItemOutput {
 
 @Injectable()
 export class QuoteService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly jobService: JobService,
+  ) {}
 
   private async generateNextQuoteNumber(): Promise<string> {
     const lastQuote = await this.prisma.quote.findFirst({
@@ -141,7 +145,7 @@ export class QuoteService {
       dto.taxRate,
     );
 
-    return this.prisma.quote.create({
+    const quote = await this.prisma.quote.create({
       data: {
         quoteNumber,
         customerId: dto.customerId,
@@ -187,6 +191,12 @@ export class QuoteService {
         },
       },
     });
+
+    if (quote.status === QuoteStatus.APPROVED) {
+      await this.jobService.createOrUpdateJobFromQuote(quote.id);
+    }
+
+    return quote;
   }
 
   async findAll(status?: string, search?: string) {
@@ -294,7 +304,7 @@ export class QuoteService {
     }
 
     // Run in a transaction to safely update and recreate line items if provided
-    return this.prisma.$transaction(async (tx) => {
+    const updatedQuote = await this.prisma.$transaction(async (tx) => {
       if (dto.lineItems) {
         // Delete existing line items
         await tx.quoteLineItem.deleteMany({
@@ -361,6 +371,12 @@ export class QuoteService {
         },
       });
     });
+
+    if (updatedQuote.status === QuoteStatus.APPROVED) {
+      await this.jobService.createOrUpdateJobFromQuote(updatedQuote.id);
+    }
+
+    return updatedQuote;
   }
 
   async remove(id: string) {

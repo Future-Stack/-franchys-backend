@@ -28,6 +28,7 @@ import { EmailTrackerModule } from './modules/email-tracker/email-tracker.module
 import { CloudinaryModule } from './modules/cloudinary/cloudinary.module';
 import { WhatsAppModule } from './modules/whatsapp/whatsapp.module';
 import { QuoteModule } from './modules/quote/quote.module';
+import { JobModule } from './modules/job/job.module';
 
 @Module({
   imports: [
@@ -56,6 +57,7 @@ import { QuoteModule } from './modules/quote/quote.module';
     CloudinaryModule,
     WhatsAppModule,
     QuoteModule,
+    JobModule,
   ],
   controllers: [AppController],
   providers: [
