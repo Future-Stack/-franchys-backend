@@ -1,8 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
-import { PrismaClient, CampaignType } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { CampaignService } from 'src/modules/campaign/campaign.service';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { CampaignType } from 'src/modules/campaign/dto/campaign.dto';
 import {
   createTestPrisma,
   seedCampaign,
