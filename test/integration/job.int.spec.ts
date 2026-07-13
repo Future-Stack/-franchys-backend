@@ -24,10 +24,7 @@ describe('JobService (integration)', () => {
     prisma = createTestPrisma();
 
     module = await Test.createTestingModule({
-      providers: [
-        JobService,
-        { provide: PrismaService, useValue: prisma },
-      ],
+      providers: [JobService, { provide: PrismaService, useValue: prisma }],
     }).compile();
 
     service = module.get<JobService>(JobService);
@@ -106,7 +103,9 @@ describe('JobService (integration)', () => {
 
     it('should search by clientName', async () => {
       const result = await service.findAll(undefined, 'SearchTarget');
-      expect(result.some((j) => j.clientName === 'SearchTarget Corp')).toBe(true);
+      expect(result.some((j) => j.clientName === 'SearchTarget Corp')).toBe(
+        true,
+      );
     });
   });
 
@@ -170,7 +169,10 @@ describe('JobService (integration)', () => {
 
     it('should throw NotFoundException for unknown id', async () => {
       await expect(
-        service.updateStatus('00000000-0000-0000-0000-000000000000', JobStatus.COMPLETED),
+        service.updateStatus(
+          '00000000-0000-0000-0000-000000000000',
+          JobStatus.COMPLETED,
+        ),
       ).rejects.toThrow(NotFoundException);
     });
   });
@@ -220,7 +222,9 @@ describe('JobService (integration)', () => {
 
     it('should throw NotFoundException for unknown quoteId', async () => {
       await expect(
-        service.createOrUpdateJobFromQuote('00000000-0000-0000-0000-000000000000'),
+        service.createOrUpdateJobFromQuote(
+          '00000000-0000-0000-0000-000000000000',
+        ),
       ).rejects.toThrow(NotFoundException);
     });
   });
@@ -237,7 +241,10 @@ describe('JobService (integration)', () => {
 
     it('should delete the job and return success message', async () => {
       const result = await service.remove(jobId);
-      expect(result).toEqual({ message: 'Job deleted successfully', id: jobId });
+      expect(result).toEqual({
+        message: 'Job deleted successfully',
+        id: jobId,
+      });
 
       const row = await prisma.job.findUnique({ where: { id: jobId } });
       expect(row).toBeNull();

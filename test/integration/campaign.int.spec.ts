@@ -1,9 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, CampaignType } from '@prisma/client';
 import { CampaignService } from 'src/modules/campaign/campaign.service';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { createTestPrisma, seedCampaign, cleanupTest } from '../setup/test-helpers';
+import {
+  createTestPrisma,
+  seedCampaign,
+  cleanupTest,
+} from '../setup/test-helpers';
 
 // ─── Integration Test: CampaignService ───────────────────────────────────────
 
@@ -42,7 +46,7 @@ describe('CampaignService (integration)', () => {
     it('should persist a campaign with DRAFT status', async () => {
       const campaign = await service.create({
         title: 'Summer Sale',
-        type: 'DISCOUNT',
+        type: CampaignType.DISCOUNT,
         promoCode: 'SUMMER20',
         discountType: 'percentage',
         percentage: 20,
@@ -59,7 +63,7 @@ describe('CampaignService (integration)', () => {
     it('should persist featuredProducts as a string array', async () => {
       const campaign = await service.create({
         title: 'Product Feature',
-        type: 'PROMOTION',
+        type: CampaignType.PROMOTION,
         featuredProducts: ['prod-1', 'prod-2'],
       });
 
@@ -74,8 +78,14 @@ describe('CampaignService (integration)', () => {
     const campaignIds: string[] = [];
 
     beforeAll(async () => {
-      const c1 = await seedCampaign(prisma, { type: 'DISCOUNT', status: 'DRAFT' });
-      const c2 = await seedCampaign(prisma, { type: 'NEWSLETTER', status: 'SENT' });
+      const c1 = await seedCampaign(prisma, {
+        type: 'DISCOUNT',
+        status: 'DRAFT',
+      });
+      const c2 = await seedCampaign(prisma, {
+        type: 'NEWSLETTER',
+        status: 'SENT',
+      });
       const c3 = await seedCampaign(prisma, {
         title: 'SearchableCampaign-XYZ',
         type: 'PROMOTION',
@@ -103,8 +113,14 @@ describe('CampaignService (integration)', () => {
     });
 
     it('should search by title keyword', async () => {
-      const result = await service.findAll(undefined, undefined, 'SearchableCampaign');
-      expect(result.some((c) => c.title.includes('SearchableCampaign-XYZ'))).toBe(true);
+      const result = await service.findAll(
+        undefined,
+        undefined,
+        'SearchableCampaign',
+      );
+      expect(
+        result.some((c) => c.title.includes('SearchableCampaign-XYZ')),
+      ).toBe(true);
     });
   });
 
@@ -160,7 +176,10 @@ describe('CampaignService (integration)', () => {
 
     it('should throw NotFoundException for unknown promo code', async () => {
       await expect(
-        service.validateDiscountCode({ code: 'DOESNOTEXIST', orderAmount: 100 }),
+        service.validateDiscountCode({
+          code: 'DOESNOTEXIST',
+          orderAmount: 100,
+        }),
       ).rejects.toThrow(NotFoundException);
     });
 
@@ -172,7 +191,10 @@ describe('CampaignService (integration)', () => {
       campaignIds.push(campaign.id);
 
       await expect(
-        service.validateDiscountCode({ code: campaign.promoCode!, orderAmount: 100 }),
+        service.validateDiscountCode({
+          code: campaign.promoCode!,
+          orderAmount: 100,
+        }),
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -182,7 +204,10 @@ describe('CampaignService (integration)', () => {
       const campaign = await createSentCampaign({ startDate: tomorrow });
 
       await expect(
-        service.validateDiscountCode({ code: campaign.promoCode!, orderAmount: 100 }),
+        service.validateDiscountCode({
+          code: campaign.promoCode!,
+          orderAmount: 100,
+        }),
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -192,7 +217,10 @@ describe('CampaignService (integration)', () => {
       const campaign = await createSentCampaign({ endDate: yesterday });
 
       await expect(
-        service.validateDiscountCode({ code: campaign.promoCode!, orderAmount: 100 }),
+        service.validateDiscountCode({
+          code: campaign.promoCode!,
+          orderAmount: 100,
+        }),
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -200,7 +228,10 @@ describe('CampaignService (integration)', () => {
       const campaign = await createSentCampaign({ minOrderAmount: 500 });
 
       await expect(
-        service.validateDiscountCode({ code: campaign.promoCode!, orderAmount: 200 }),
+        service.validateDiscountCode({
+          code: campaign.promoCode!,
+          orderAmount: 200,
+        }),
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -216,8 +247,8 @@ describe('CampaignService (integration)', () => {
       });
 
       expect(result.valid).toBe(true);
-      expect(result.discountAmount).toBe(30);  // 10% of 300
-      expect(result.finalAmount).toBe(270);    // 300 - 30
+      expect(result.discountAmount).toBe(30); // 10% of 300
+      expect(result.finalAmount).toBe(270); // 300 - 30
     });
 
     it('should return correct flat discount result', async () => {
@@ -232,8 +263,8 @@ describe('CampaignService (integration)', () => {
       });
 
       expect(result.valid).toBe(true);
-      expect(result.discountAmount).toBe(50);  // flat $50
-      expect(result.finalAmount).toBe(250);    // 300 - 50
+      expect(result.discountAmount).toBe(50); // flat $50
+      expect(result.finalAmount).toBe(250); // 300 - 50
     });
 
     it('should validate successfully within active date window', async () => {
@@ -268,9 +299,14 @@ describe('CampaignService (integration)', () => {
 
     it('should delete campaign and return success message', async () => {
       const result = await service.remove(campaignId);
-      expect(result).toEqual({ message: 'Campaign deleted successfully', id: campaignId });
+      expect(result).toEqual({
+        message: 'Campaign deleted successfully',
+        id: campaignId,
+      });
 
-      const row = await prisma.campaign.findUnique({ where: { id: campaignId } });
+      const row = await prisma.campaign.findUnique({
+        where: { id: campaignId },
+      });
       expect(row).toBeNull();
     });
 

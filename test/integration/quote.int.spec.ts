@@ -80,8 +80,6 @@ describe('QuoteService (integration)', () => {
             sizeXL: 5,
             isTaxed: false,
             imprintType: 'Screen Print',
-            itemsCount: 20,
-            total: 440,
           },
         ],
         taxRate: 7,
@@ -247,8 +245,6 @@ describe('QuoteService (integration)', () => {
             sizeXL: 5,
             isTaxed: false,
             imprintType: 'Screen Print',
-            itemsCount: 20,
-            total: 440,
           },
         ],
       });

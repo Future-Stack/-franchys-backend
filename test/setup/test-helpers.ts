@@ -143,11 +143,15 @@ export async function cleanupTest(
     await prisma.job.deleteMany({ where: { id: { in: ids.jobIds } } });
   }
   if (ids.quoteIds?.length) {
-    await prisma.quoteLineItem.deleteMany({ where: { quoteId: { in: ids.quoteIds } } });
+    await prisma.quoteLineItem.deleteMany({
+      where: { quoteId: { in: ids.quoteIds } },
+    });
     await prisma.quote.deleteMany({ where: { id: { in: ids.quoteIds } } });
   }
   if (ids.campaignIds?.length) {
-    await prisma.campaign.deleteMany({ where: { id: { in: ids.campaignIds } } });
+    await prisma.campaign.deleteMany({
+      where: { id: { in: ids.campaignIds } },
+    });
   }
   if (ids.permissionIds?.length) {
     await prisma.userPermission.deleteMany({
@@ -155,7 +159,9 @@ export async function cleanupTest(
     });
   }
   if (ids.customerIds?.length) {
-    await prisma.customer.deleteMany({ where: { id: { in: ids.customerIds } } });
+    await prisma.customer.deleteMany({
+      where: { id: { in: ids.customerIds } },
+    });
   }
   if (ids.userIds?.length) {
     await prisma.user.deleteMany({ where: { userId: { in: ids.userIds } } });

@@ -136,7 +136,9 @@ describe('AnalyticsService (integration)', () => {
 
     it('should include topCustomers with our customer', async () => {
       const result = await service.getDashboardStats();
-      const found = result.topCustomers.find((c) => c.customerId === customerId);
+      const found = result.topCustomers.find(
+        (c) => c.customerId === customerId,
+      );
       expect(found).toBeDefined();
       expect(found?.totalSpent).toBeGreaterThanOrEqual(800);
     });
@@ -156,13 +158,25 @@ describe('AnalyticsService (integration)', () => {
       const result = await service.getDashboardStats();
 
       const months = [
-        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
       ];
       const now = new Date();
       const currentMonthLabel = `${months[now.getMonth()]} ${now.getFullYear()}`;
 
-      const currentEntry = result.revenueTrends.find((t) => t.month === currentMonthLabel);
+      const currentEntry = result.revenueTrends.find(
+        (t) => t.month === currentMonthLabel,
+      );
       // Our two APPROVED quotes were created just now, so current month revenue >= 800
       expect(currentEntry?.revenue).toBeGreaterThanOrEqual(800);
     });
