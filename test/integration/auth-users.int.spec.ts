@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException, ConflictException } from '@nestjs/common';
+import { ConflictException } from '@nestjs/common';
 import { PrismaClient, Role, Status } from '@prisma/client';
 import { UsersService } from 'src/modules/users/users.service';
 import { AuthService } from 'src/modules/auth/auth.service';
@@ -139,7 +139,7 @@ describe('Auth & Users (integration)', () => {
       });
 
       expect(updated.name).toBe('Name Changed');
-      expect(updated.permissions.canApproveQuotes).toBe(false);
+      expect(updated.permissions?.canApproveQuotes).toBe(false);
 
       const dbPerm = await prisma.userPermission.findUnique({
         where: { userId: admin.userId },
