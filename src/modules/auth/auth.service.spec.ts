@@ -53,6 +53,8 @@ describe('AuthService (unit)', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
+    mockJwtService.signAsync.mockReset();
+    mockJwtService.verifyAsync.mockReset();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -186,7 +188,7 @@ describe('AuthService (unit)', () => {
 
   describe('refresh', () => {
     it('should refresh tokens successfully', async () => {
-      mockJwtService.verify.mockReturnValue({ sub: 'user-1' });
+      mockJwtService.verifyAsync.mockResolvedValue({ sub: 'user-1' });
       mockPrisma.user.findUnique.mockResolvedValue({
         userId: 'user-1',
         email: 'test@test.com',
@@ -206,7 +208,7 @@ describe('AuthService (unit)', () => {
     });
 
     it('should throw UnauthorizedException on invalid token verify', async () => {
-      mockJwtService.verify.mockImplementation(() => {
+      mockJwtService.verifyAsync.mockImplementation(() => {
         throw new Error();
       });
 
