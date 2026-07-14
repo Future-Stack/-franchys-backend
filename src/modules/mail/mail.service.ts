@@ -5,7 +5,7 @@ import { MailerService } from '@nestjs-modules/mailer';
 export class MailService {
   private readonly logger = new Logger(MailService.name);
 
-  constructor(private mailerService: MailerService) { }
+  constructor(private mailerService: MailerService) {}
 
   async sendVerificationCode(email: string, code: string) {
     // Log code to terminal for easy local testing
@@ -21,7 +21,9 @@ export class MailService {
         },
       });
     } catch (error: any) {
-      this.logger.warn(`Failed to send verification email (likely SMTP is not configured): ${error.message}`);
+      this.logger.warn(
+        `Failed to send verification email (likely SMTP is not configured): ${error.message}`,
+      );
     }
   }
 
@@ -39,7 +41,9 @@ export class MailService {
         },
       });
     } catch (error: any) {
-      this.logger.warn(`Failed to send password reset email (likely SMTP is not configured): ${error.message}`);
+      this.logger.warn(
+        `Failed to send password reset email (likely SMTP is not configured): ${error.message}`,
+      );
     }
   }
 }

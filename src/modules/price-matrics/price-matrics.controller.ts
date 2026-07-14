@@ -1,13 +1,25 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { PriceMatricsService } from './price-matrics.service';
-import { CreatePriceMatrixDto, UpdatePriceMatrixDto, CreatePriceTierDto } from './dto/price-matrix.dto';
+import {
+  CreatePriceMatrixDto,
+  UpdatePriceMatrixDto,
+  CreatePriceTierDto,
+} from './dto/price-matrix.dto';
 
 @ApiTags('Price Matrices')
 @ApiBearerAuth()
 @Controller('price-matrics')
 export class PriceMatricsController {
-  constructor(private readonly priceMatricsService: PriceMatricsService) { }
+  constructor(private readonly priceMatricsService: PriceMatricsService) {}
 
   @Post()
   @ApiOperation({ summary: 'Create a new price matrix with optional tiers' })
@@ -37,7 +49,9 @@ export class PriceMatricsController {
   }
 
   @Delete(':priceMatrixId')
-  @ApiOperation({ summary: 'Delete a price matrix and all its associated tiers' })
+  @ApiOperation({
+    summary: 'Delete a price matrix and all its associated tiers',
+  })
   remove(@Param('priceMatrixId') priceMatrixId: string) {
     return this.priceMatricsService.remove(priceMatrixId);
   }

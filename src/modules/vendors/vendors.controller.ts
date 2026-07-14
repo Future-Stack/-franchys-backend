@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+} from '@nestjs/common';
 import { VendorsService } from './vendors.service';
 import { CreateVendorDto } from './dto/create-vendor.dto';
 import { UpdateVendorDto } from './dto/update-vendor.dto';
@@ -10,7 +19,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 @ApiBearerAuth()
 @Controller('vendors')
 export class VendorsController {
-  constructor(private readonly vendorsService: VendorsService) { }
+  constructor(private readonly vendorsService: VendorsService) {}
 
   @Post()
   @ApiOperation({ summary: 'Create vendor' })
@@ -38,7 +47,10 @@ export class VendorsController {
 
   @Patch(':id/status')
   @ApiOperation({ summary: 'Update vendor status' })
-  updateStatus(@Param('id') id: string, @Body() updateVendorStatusDto: UpdateVendorStatusDto) {
+  updateStatus(
+    @Param('id') id: string,
+    @Body() updateVendorStatusDto: UpdateVendorStatusDto,
+  ) {
     return this.vendorsService.updateStatus(id, updateVendorStatusDto);
   }
 }

@@ -20,7 +20,7 @@ export class VendorsService {
     const skip = (page - 1) * limit;
 
     const where: any = { isDeleted: false };
-    
+
     if (search) {
       where.OR = [
         { companyName: { contains: search, mode: 'insensitive' } },
