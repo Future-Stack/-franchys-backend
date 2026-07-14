@@ -50,8 +50,8 @@ describe('PriceMatricsService (integration)', () => {
         name: 'Bulk Tier Pricing',
         priceType: 'markup',
         priceTiers: [
-          { quantity: 10, basePrice: 20.0 as any, markup: 5.0 as any },
-          { quantity: 50, basePrice: 18.0 as any, markup: 4.0 as any },
+          { quantity: 10, basePrice: 20.0, markup: 5.0 },
+          { quantity: 50, basePrice: 18.0, markup: 4.0 },
         ],
       });
 
@@ -112,8 +112,8 @@ describe('PriceMatricsService (integration)', () => {
       // Add tier
       const tier = await service.addTier(seeded.priceMatrixId, {
         quantity: 100,
-        basePrice: 12.5 as any,
-        markup: 3.5 as any,
+        basePrice: 12.5,
+        markup: 3.5,
       });
       priceTierIds.push(tier.priceTierId);
       expect(tier.quantity).toBe(100);
@@ -121,8 +121,8 @@ describe('PriceMatricsService (integration)', () => {
       // Update tier
       const updated = await service.updateTier(tier.priceTierId, {
         quantity: 120,
-        basePrice: 11.0 as any,
-        markup: 3.0 as any,
+        basePrice: 11.0,
+        markup: 3.0,
       });
       expect(updated.quantity).toBe(120);
 

@@ -167,8 +167,8 @@ describe('PriceMatricsService (unit)', () => {
 
       const result = await service.addTier('matrix-1', {
         quantity: 20,
-        basePrice: 4.0 as any,
-        markup: 1.0 as any,
+        basePrice: 4.0,
+        markup: 1.0,
       });
 
       expect(mockPrisma.priceTier.create).toHaveBeenCalledWith({
@@ -195,8 +195,8 @@ describe('PriceMatricsService (unit)', () => {
 
       const result = await service.updateTier('tier-1', {
         quantity: 25,
-        basePrice: 4.5 as any,
-        markup: 1.2 as any,
+        basePrice: 4.5,
+        markup: 1.2,
       });
 
       expect(mockPrisma.priceTier.update).toHaveBeenCalledWith({
@@ -212,8 +212,8 @@ describe('PriceMatricsService (unit)', () => {
       await expect(
         service.updateTier('tier-1', {
           quantity: 25,
-          basePrice: 4.5 as any,
-          markup: 1.2 as any,
+          basePrice: 4.5,
+          markup: 1.2,
         }),
       ).rejects.toThrow(NotFoundException);
     });
