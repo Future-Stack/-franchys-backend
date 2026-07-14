@@ -28,12 +28,12 @@ export async function registerAndLogin(
     .send({ name: 'E2E Admin', email, password })
     .expect(201);
 
-  // Elevate registered user to ADMIN role in database
+  // Elevate registered user to SUPER_ADMIN role in database
   const prisma = createTestPrisma();
   try {
     await prisma.user.update({
       where: { email },
-      data: { role: 'ADMIN' },
+      data: { role: 'SUPER_ADMIN' },
     });
   } finally {
     await prisma.$disconnect();

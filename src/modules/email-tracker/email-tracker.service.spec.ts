@@ -73,8 +73,11 @@ describe('EmailTrackerService (unit)', () => {
 
   describe('startGmailWatch', () => {
     it('should invoke watch successfully with topic name', async () => {
-      process.env.GOOGLE_PUB_SUB_TOPIC = 'projects/test-proj/topics/gmail-topic';
-      gmailMock.users.watch.mockResolvedValue({ data: { expiration: '12345' } });
+      process.env.GOOGLE_PUB_SUB_TOPIC =
+        'projects/test-proj/topics/gmail-topic';
+      gmailMock.users.watch.mockResolvedValue({
+        data: { expiration: '12345' },
+      });
 
       await service.startGmailWatch();
 
@@ -98,7 +101,9 @@ describe('EmailTrackerService (unit)', () => {
 
   describe('syncEmails', () => {
     it('should sync recent messages in inbox/sent folder', async () => {
-      gmailMock.users.getProfile.mockResolvedValue({ data: { emailAddress: 'jane@test.com' } });
+      gmailMock.users.getProfile.mockResolvedValue({
+        data: { emailAddress: 'jane@test.com' },
+      });
       gmailMock.users.messages.list.mockResolvedValue({
         data: {
           messages: [{ id: 'msg-1' }],
@@ -120,7 +125,10 @@ describe('EmailTrackerService (unit)', () => {
       });
 
       mockPrisma.message.findUnique.mockResolvedValue(null);
-      mockPrisma.contact.findUnique.mockResolvedValue({ id: 'contact-1', email: 'client@client.com' });
+      mockPrisma.contact.findUnique.mockResolvedValue({
+        id: 'contact-1',
+        email: 'client@client.com',
+      });
       mockPrisma.thread.create.mockResolvedValue({ id: 'thread-1' });
       mockPrisma.message.create.mockResolvedValue({ id: 'msg-row-1' });
 

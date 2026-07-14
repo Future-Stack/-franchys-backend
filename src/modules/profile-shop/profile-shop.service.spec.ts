@@ -40,11 +40,16 @@ describe('ProfileShopService (unit)', () => {
     it('should initialize and seed shop information if it does not exist', async () => {
       process.env.SHOP_NAME = 'Francys';
       mockPrisma.shopInformation.findUnique.mockResolvedValue(null);
-      mockPrisma.shopInformation.create.mockResolvedValue({ shopId: 'shop-1', shopIdentifier: 'Francys' });
+      mockPrisma.shopInformation.create.mockResolvedValue({
+        shopId: 'shop-1',
+        shopIdentifier: 'Francys',
+      });
 
       await service.onModuleInit();
 
-      expect(mockPrisma.shopInformation.findUnique).toHaveBeenCalledWith({ where: { shopIdentifier: 'Francys' } });
+      expect(mockPrisma.shopInformation.findUnique).toHaveBeenCalledWith({
+        where: { shopIdentifier: 'Francys' },
+      });
       expect(mockPrisma.shopInformation.create).toHaveBeenCalledWith({
         data: {
           shopIdentifier: 'Francys',
@@ -65,7 +70,10 @@ describe('ProfileShopService (unit)', () => {
   describe('getActiveShop', () => {
     it('should return shop details when found in the database', async () => {
       process.env.SHOP_NAME = 'Francys';
-      mockPrisma.shopInformation.findUnique.mockResolvedValue({ shopId: 'shop-1', shopIdentifier: 'Francys' });
+      mockPrisma.shopInformation.findUnique.mockResolvedValue({
+        shopId: 'shop-1',
+        shopIdentifier: 'Francys',
+      });
 
       const result = await service.getActiveShop();
 
@@ -89,10 +97,18 @@ describe('ProfileShopService (unit)', () => {
   describe('updateActiveShop', () => {
     it('should update shop information successfully', async () => {
       process.env.SHOP_NAME = 'Francys';
-      mockPrisma.shopInformation.findUnique.mockResolvedValue({ shopId: 'shop-1', shopIdentifier: 'Francys' });
-      mockPrisma.shopInformation.update.mockResolvedValue({ shopId: 'shop-1', companyName: 'Francys Updated' });
+      mockPrisma.shopInformation.findUnique.mockResolvedValue({
+        shopId: 'shop-1',
+        shopIdentifier: 'Francys',
+      });
+      mockPrisma.shopInformation.update.mockResolvedValue({
+        shopId: 'shop-1',
+        companyName: 'Francys Updated',
+      });
 
-      const result = await service.updateActiveShop({ companyName: 'Francys Updated' });
+      const result = await service.updateActiveShop({
+        companyName: 'Francys Updated',
+      });
 
       expect(mockPrisma.shopInformation.update).toHaveBeenCalledWith({
         where: { shopId: 'shop-1' },

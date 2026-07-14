@@ -59,9 +59,15 @@ describe('EmailTrackerService (integration)', () => {
 
   afterAll(async () => {
     // Teardown any entities created during test execution
-    await prisma.message.deleteMany({ where: { from: { contains: '@test-e-tracker.com' } } });
-    await prisma.thread.deleteMany({ where: { subject: { contains: 'Integration Subject' } } });
-    await prisma.contact.deleteMany({ where: { email: { contains: '@test-e-tracker.com' } } });
+    await prisma.message.deleteMany({
+      where: { from: { contains: '@test-e-tracker.com' } },
+    });
+    await prisma.thread.deleteMany({
+      where: { subject: { contains: 'Integration Subject' } },
+    });
+    await prisma.contact.deleteMany({
+      where: { email: { contains: '@test-e-tracker.com' } },
+    });
 
     await prisma.$disconnect();
     await module.close();
@@ -71,7 +77,9 @@ describe('EmailTrackerService (integration)', () => {
     it('should create new Contact, Thread, and Message row when syncing matching email', async () => {
       const contactEmail = `client-${Date.now()}@test-e-tracker.com`;
 
-      gmailMock.users.getProfile.mockResolvedValue({ data: { emailAddress: 'my-shop@shop.com' } });
+      gmailMock.users.getProfile.mockResolvedValue({
+        data: { emailAddress: 'my-shop@shop.com' },
+      });
       gmailMock.users.messages.list.mockResolvedValue({
         data: {
           messages: [{ id: 'msg-int-1' }],
@@ -95,14 +103,20 @@ describe('EmailTrackerService (integration)', () => {
       await service.syncEmails();
 
       // Check DB directly
-      const contact = await prisma.contact.findUnique({ where: { email: contactEmail } });
+      const contact = await prisma.contact.findUnique({
+        where: { email: contactEmail },
+      });
       expect(contact).toBeDefined();
 
-      const threads = await prisma.thread.findMany({ where: { contactId: contact?.id } });
+      const threads = await prisma.thread.findMany({
+        where: { contactId: contact?.id },
+      });
       expect(threads).toHaveLength(1);
       expect(threads[0].subject).toContain('Integration Subject');
 
-      const messages = await prisma.message.findMany({ where: { threadId: threads[0].id } });
+      const messages = await prisma.message.findMany({
+        where: { threadId: threads[0].id },
+      });
       expect(messages).toHaveLength(1);
       expect(messages[0].body).toBe('Can I get a quote on 20 hoodies?');
     });

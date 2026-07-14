@@ -3,7 +3,11 @@ import { NotFoundException } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { ProfileShopService } from 'src/modules/profile-shop/profile-shop.service';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { createTestPrisma, cleanupTest, seedShopInformation } from '../setup/test-helpers';
+import {
+  createTestPrisma,
+  cleanupTest,
+  seedShopInformation,
+} from '../setup/test-helpers';
 
 describe('ProfileShopService (integration)', () => {
   let module: TestingModule;
@@ -44,7 +48,9 @@ describe('ProfileShopService (integration)', () => {
       const identifier = `Francys-int-${Date.now()}`;
       process.env.SHOP_NAME = identifier;
 
-      const shop = await seedShopInformation(prisma, { shopIdentifier: identifier });
+      const shop = await seedShopInformation(prisma, {
+        shopIdentifier: identifier,
+      });
       shopInformationIds.push(shop.shopId);
 
       const active = await service.getActiveShop();
@@ -63,7 +69,9 @@ describe('ProfileShopService (integration)', () => {
       const identifier = `Francys-upd-${Date.now()}`;
       process.env.SHOP_NAME = identifier;
 
-      const shop = await seedShopInformation(prisma, { shopIdentifier: identifier });
+      const shop = await seedShopInformation(prisma, {
+        shopIdentifier: identifier,
+      });
       shopInformationIds.push(shop.shopId);
 
       const updated = await service.updateActiveShop({

@@ -40,10 +40,14 @@ describe('MailService (unit)', () => {
     });
 
     it('should catch sendMail errors silently and log a warning', async () => {
-      mockMailerService.sendMail.mockRejectedValue(new Error('SMTP connection error'));
+      mockMailerService.sendMail.mockRejectedValue(
+        new Error('SMTP connection error'),
+      );
 
       // Should not throw
-      await expect(service.sendVerificationCode('jane@test.com', '123456')).resolves.not.toThrow();
+      await expect(
+        service.sendVerificationCode('jane@test.com', '123456'),
+      ).resolves.not.toThrow();
     });
   });
 
