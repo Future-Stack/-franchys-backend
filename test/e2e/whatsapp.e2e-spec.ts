@@ -12,7 +12,6 @@ import { WhatsAppHttpClient } from 'src/modules/whatsapp/whatsapp.http';
 describe('WhatsApp Tracker (e2e)', () => {
   let app: INestApplication;
   let tokens: AuthTokens;
-  let seededContactId: string;
   let seededConversationId: string;
   let seededMessageId: string;
   const whatsAppContactIds: string[] = [];
@@ -48,7 +47,6 @@ describe('WhatsApp Tracker (e2e)', () => {
     const contact = await prisma.whatsAppContact.create({
       data: { phone: `+88017${Date.now()}`, name: 'E2E John' },
     });
-    seededContactId = contact.id;
     whatsAppContactIds.push(contact.id);
 
     const conv = await prisma.whatsAppConversation.create({
