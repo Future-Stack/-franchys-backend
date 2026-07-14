@@ -9,7 +9,7 @@ services:
     container_name: francys_api
     restart: always
     ports:
-      - "3000:3000"
+      - "3001:3000"
     environment:
       # Database connection via the docker-compose postgres service
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public
