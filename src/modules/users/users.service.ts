@@ -46,7 +46,8 @@ export class UsersService {
       });
 
       // Remove password before returning
-      const { password, ...result } = user;
+      const result = { ...user };
+      delete (result as any).password;
       return { ...result, permissions: userPermission };
     });
   }
@@ -79,7 +80,11 @@ export class UsersService {
     ]);
 
     // Remove passwords from response
-    const sanitizedData = data.map(({ password, ...user }) => user);
+    const sanitizedData = data.map((user) => {
+      const u = { ...user };
+      delete (u as any).password;
+      return u;
+    });
 
     return {
       data: sanitizedData,
@@ -123,7 +128,8 @@ export class UsersService {
         });
       }
 
-      const { password, ...result } = updatedUser;
+      const result = { ...updatedUser };
+      delete (result as any).password;
       return { ...result, permissions: updatedPermissions };
     });
   }

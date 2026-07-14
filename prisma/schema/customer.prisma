@@ -8,7 +8,7 @@ model Customer {
 
     firstName String
     lastName  String
-    email     String  @unique
+    email     String @unique
     phone     String
 
     language String?
@@ -37,7 +37,9 @@ model Customer {
     eventDate    DateTime?
 
     profileImage String?
-    
+
+    quotes Quote[]
+
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 }

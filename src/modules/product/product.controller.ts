@@ -12,7 +12,14 @@ import {
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes, ApiBody, getSchemaPath, ApiExtraModels } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiConsumes,
+  ApiBody,
+  ApiExtraModels,
+} from '@nestjs/swagger';
 import { ProductService } from './product.service';
 import {
   CreateProductDto,
@@ -28,7 +35,7 @@ import { validate } from 'class-validator';
 @ApiExtraModels(CreateProductColorDto)
 @Controller('product')
 export class ProductController {
-  constructor(private readonly productService: ProductService) { }
+  constructor(private readonly productService: ProductService) {}
 
   // ─── Product Endpoints ───────────────────────────────────────────────────────
 
@@ -48,7 +55,7 @@ export class ProductController {
     return {
       message: 'Product created successfully',
       data,
-    }
+    };
   }
 
   @Get()
@@ -58,7 +65,7 @@ export class ProductController {
     return {
       message: 'Products fetched successfully',
       data,
-    }
+    };
   }
 
   @Get(':id')
@@ -68,7 +75,7 @@ export class ProductController {
     return {
       message: 'Product fetched successfully',
       data,
-    }
+    };
   }
 
   @Patch(':id')
@@ -88,7 +95,7 @@ export class ProductController {
     return {
       message: 'Product updated successfully',
       data,
-    }
+    };
   }
 
   @Delete(':id')
@@ -98,7 +105,7 @@ export class ProductController {
     return {
       message: 'Product deleted successfully',
       data,
-    }
+    };
   }
 
   // ─── Product Color Endpoints ─────────────────────────────────────────────────
@@ -126,7 +133,9 @@ export class ProductController {
 
     const data = await this.productService.addColor(id, dto);
     return {
-      message: isArray ? 'Colors added successfully' : 'Color added successfully',
+      message: isArray
+        ? 'Colors added successfully'
+        : 'Color added successfully',
       data,
     };
   }
@@ -138,7 +147,7 @@ export class ProductController {
     return {
       message: 'Colors fetched successfully',
       data,
-    }
+    };
   }
 
   @Patch(':id/colors/:colorId')
@@ -152,16 +161,19 @@ export class ProductController {
     return {
       message: 'Color updated successfully',
       data,
-    }
+    };
   }
 
   @Delete(':id/colors/:colorId')
   @ApiOperation({ summary: 'Remove a specific color from a product' })
-  async removeColor(@Param('id') id: string, @Param('colorId') colorId: string) {
+  async removeColor(
+    @Param('id') id: string,
+    @Param('colorId') colorId: string,
+  ) {
     const data = await this.productService.removeColor(id, colorId);
     return {
       message: 'Color deleted successfully',
       data,
-    }
+    };
   }
 }
