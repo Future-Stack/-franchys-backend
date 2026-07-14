@@ -1,0 +1,145 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  # ─── TEST JOB ───────────────────────────────────────────────────────────────
+  test:
+    name: Lint, Compile & Run Specs
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
+
+      - name: Run Prisma Database Migrations
+        run: npx prisma db push --force-reset
+        env:
+          DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_db?sslmode=disable
+
+      - name: Verify Lint Rules
+        run: npm run lint
+
+      - name: Verify TypeScript Compilation
+        run: npx tsc --noEmit
+
+      - name: Run Unit Tests
+        run: npm run test
+
+      - name: Run Integration Tests
+        run: npm run test:int
+        env:
+          DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_db?sslmode=disable
+
+      - name: Run End-to-End (E2E) Tests
+        run: npm run test:e2e
+        env:
+          DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_db?sslmode=disable
+          JWT_SECRET: test-super-secret-key-at-least-32-chars-long
+          SHOP_NAME: Francys
+
+      - name: Build Code Artifacts
+        run: npm run build
+
+  # ─── BUILD & PUSH JOB ───────────────────────────────────────────────────────
+  build-and-push:
+    name: Build & Push Docker Image
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/shuvo-dev')
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_HUB_USERNAME }}/francys-backend:latest
+            ${{ secrets.DOCKER_HUB_USERNAME }}/francys-backend:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ─── DEPLOY JOB ─────────────────────────────────────────────────────────────
+  deploy:
+    name: SSH Deploy to Server
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/shuvo-dev')
+
+    steps:
+      - name: Execute Remote SSH Commands
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_SSH_HOST }}
+          username: ${{ secrets.SERVER_SSH_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            cd ${{ secrets.SERVER_PATH }}
+            
+            # Login to Docker Hub
+            echo "${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin
+            
+            # Pull latest image
+            docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/francys-backend:latest
+            
+            # Stop and remove existing container if running
+            docker stop francys-backend || true
+            docker rm francys-backend || true
+            
+            # Start new container
+            docker run -d \
+              --name francys-backend \
+              -p 3000:3000 \
+              --restart unless-stopped \
+              --env-file .env \
+              ${{ secrets.DOCKER_HUB_USERNAME }}/francys-backend:latest
+            
+            # Clean up dangling images
+            docker image prune -f

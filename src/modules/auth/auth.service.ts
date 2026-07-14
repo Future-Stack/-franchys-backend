@@ -81,7 +81,7 @@ export class AuthService {
       }
 
       return this.generateTokens(user.userId, user.email, user.role);
-    } catch (e) {
+    } catch {
       throw new UnauthorizedException();
     }
   }

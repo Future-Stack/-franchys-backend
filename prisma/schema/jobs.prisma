@@ -1,0 +1,26 @@
+enum JobStatus {
+  QUOTE
+  APPROVED
+  ART
+  NEED_TO_ORDER
+  ORDER_ARRIVED
+  PRODUCTION
+  PAYMENT
+  SHIP
+  COMPLETED
+}
+
+model Job {
+  id          String    @id @default(uuid())
+  jobId       String    @unique // e.g. Q-1001, INV-1008
+  clientName  String
+  description String
+  status      JobStatus @default(QUOTE)
+  dueDate     DateTime
+  amount      Decimal   @db.Decimal(10, 2)
+  quoteId     String?
+  quote       Quote?    @relation(fields: [quoteId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
