@@ -119,7 +119,7 @@ jobs:
         with:
           host: ${{ secrets.SERVER_SSH_HOST }}
           username: ${{ secrets.SERVER_SSH_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
+          password: ${{ secrets.SERVER_SSH_PASSWORD }}
           script: |
             cd ${{ secrets.SERVER_PATH }}
             
