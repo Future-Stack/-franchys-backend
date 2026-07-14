@@ -12,17 +12,26 @@ export class UpdateInvoiceInformationDto {
   @IsOptional()
   language?: string;
 
-  @ApiPropertyOptional({ description: 'Terms and conditions text', example: 'Payment is due within 30 days.' })
+  @ApiPropertyOptional({
+    description: 'Terms and conditions text',
+    example: 'Payment is due within 30 days.',
+  })
   @IsString()
   @IsOptional()
   termsAndCondition?: string;
 
-  @ApiPropertyOptional({ description: 'Payment terms and conditions text', example: 'Bank transfer details...' })
+  @ApiPropertyOptional({
+    description: 'Payment terms and conditions text',
+    example: 'Bank transfer details...',
+  })
   @IsString()
   @IsOptional()
   paymentTramsAndCondition?: string;
 
-  @ApiPropertyOptional({ description: 'Invoice tax rate percentage', example: 15 })
+  @ApiPropertyOptional({
+    description: 'Invoice tax rate percentage',
+    example: 15,
+  })
   @IsInt()
   @IsOptional()
   invoiceTaxRate?: number;

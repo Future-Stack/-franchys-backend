@@ -15,7 +15,9 @@ export class CustomerService {
       where: { email: dto.email },
     });
     if (existing) {
-      throw new ConflictException(`Customer with email "${dto.email}" already exists`);
+      throw new ConflictException(
+        `Customer with email "${dto.email}" already exists`,
+      );
     }
     const { eventDate, ...rest } = dto;
     return this.prisma.customer.create({
@@ -47,7 +49,9 @@ export class CustomerService {
         where: { email: dto.email },
       });
       if (existing && existing.id !== id) {
-        throw new ConflictException(`Customer with email "${dto.email}" already exists`);
+        throw new ConflictException(
+          `Customer with email "${dto.email}" already exists`,
+        );
       }
     }
     const { eventDate, ...rest } = dto;

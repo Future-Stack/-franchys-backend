@@ -1,11 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { CreatePriceMatrixDto, UpdatePriceMatrixDto, CreatePriceTierDto } from './dto/price-matrix.dto';
+import {
+  CreatePriceMatrixDto,
+  UpdatePriceMatrixDto,
+  CreatePriceTierDto,
+} from './dto/price-matrix.dto';
 
 @Injectable()
 export class PriceMatricsService {
-  constructor(private readonly prisma: PrismaService) { }
-
+  constructor(private readonly prisma: PrismaService) {}
 
   async create(createPriceMatrixDto: CreatePriceMatrixDto) {
     const { name, priceType, priceTiers } = createPriceMatrixDto;
@@ -16,12 +19,12 @@ export class PriceMatricsService {
         priceType,
         priceTiers: priceTiers
           ? {
-            create: priceTiers.map((tier) => ({
-              quantity: tier.quantity,
-              basePrice: tier.basePrice,
-              markup: tier.markup,
-            })),
-          }
+              create: priceTiers.map((tier) => ({
+                quantity: tier.quantity,
+                basePrice: tier.basePrice,
+                markup: tier.markup,
+              })),
+            }
           : undefined,
       },
       include: {
@@ -47,13 +50,18 @@ export class PriceMatricsService {
     });
 
     if (!matrix) {
-      throw new NotFoundException(`Price Matrix with ID ${priceMatrixId} not found`);
+      throw new NotFoundException(
+        `Price Matrix with ID ${priceMatrixId} not found`,
+      );
     }
 
     return matrix;
   }
 
-  async update(priceMatrixId: string, updatePriceMatrixDto: UpdatePriceMatrixDto) {
+  async update(
+    priceMatrixId: string,
+    updatePriceMatrixDto: UpdatePriceMatrixDto,
+  ) {
     // Ensure the matrix exists first
     await this.findOne(priceMatrixId);
 
@@ -64,7 +72,7 @@ export class PriceMatricsService {
       data: {
         name,
         priceType,
-      }
+      },
     });
   }
 
@@ -92,13 +100,18 @@ export class PriceMatricsService {
     });
   }
 
-  async updateTier(priceTierId: string, updatePriceTierDto: CreatePriceTierDto) {
+  async updateTier(
+    priceTierId: string,
+    updatePriceTierDto: CreatePriceTierDto,
+  ) {
     const tier = await this.prisma.priceTier.findUnique({
       where: { priceTierId },
     });
 
     if (!tier) {
-      throw new NotFoundException(`Price Tier with ID ${priceTierId} not found`);
+      throw new NotFoundException(
+        `Price Tier with ID ${priceTierId} not found`,
+      );
     }
 
     return this.prisma.priceTier.update({
@@ -117,7 +130,9 @@ export class PriceMatricsService {
     });
 
     if (!tier) {
-      throw new NotFoundException(`Price Tier with ID ${priceTierId} not found`);
+      throw new NotFoundException(
+        `Price Tier with ID ${priceTierId} not found`,
+      );
     }
 
     await this.prisma.priceTier.delete({

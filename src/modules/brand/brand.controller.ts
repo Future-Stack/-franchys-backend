@@ -15,7 +15,7 @@ import { CreateBrandDto, UpdateBrandDto } from './dto/brand.dto';
 @ApiBearerAuth()
 @Controller('brand')
 export class BrandController {
-  constructor(private readonly brandService: BrandService) { }
+  constructor(private readonly brandService: BrandService) {}
 
   @Post()
   @ApiOperation({ summary: 'Create a new brand' })

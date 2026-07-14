@@ -1,5 +1,20 @@
-import { Controller, Post, Body, UseGuards, Get, Query, Patch, Param, Delete } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import {
+  Controller,
+  Post,
+  Body,
+  UseGuards,
+  Get,
+  Query,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { CreateAdminDto } from './dto/create-admin.dto';
 import { GetAdminsDto } from './dto/get-admins.dto';
@@ -18,14 +33,19 @@ export class UsersController {
 
   @Post('admin')
   @Roles(Role.SUPER_ADMIN)
-  @ApiOperation({ summary: 'Create a new admin/employee with custom permissions (Super Admin only)' })
+  @ApiOperation({
+    summary:
+      'Create a new admin/employee with custom permissions (Super Admin only)',
+  })
   createAdmin(@Body() createAdminDto: CreateAdminDto) {
     return this.usersService.createAdmin(createAdminDto);
   }
 
   @Get('admin')
   @Roles(Role.SUPER_ADMIN)
-  @ApiOperation({ summary: 'Get all admins with search and pagination (Super Admin only)' })
+  @ApiOperation({
+    summary: 'Get all admins with search and pagination (Super Admin only)',
+  })
   @ApiQuery({ name: 'search', required: false })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -35,7 +55,9 @@ export class UsersController {
 
   @Patch('admin/:id')
   @Roles(Role.SUPER_ADMIN)
-  @ApiOperation({ summary: 'Update an admin and their permissions (Super Admin only)' })
+  @ApiOperation({
+    summary: 'Update an admin and their permissions (Super Admin only)',
+  })
   updateAdmin(@Param('id') id: string, @Body() updateAdminDto: UpdateAdminDto) {
     return this.usersService.updateAdmin(id, updateAdminDto);
   }

@@ -1,5 +1,11 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsInt, IsBoolean, IsOptional } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsInt,
+  IsBoolean,
+  IsOptional,
+} from 'class-validator';
 
 export class CreateInvoiceFeeDto {
   @ApiProperty({ description: 'Name of the fee', example: 'Shipping Fee' })
@@ -12,19 +18,30 @@ export class CreateInvoiceFeeDto {
   @IsNotEmpty()
   amount: number;
 
-  @ApiPropertyOptional({ description: 'Indicates if this fee is tax-related', example: false, default: false })
+  @ApiPropertyOptional({
+    description: 'Indicates if this fee is tax-related',
+    example: false,
+    default: false,
+  })
   @IsBoolean()
   @IsOptional()
   isTax?: boolean;
 
-  @ApiPropertyOptional({ description: 'Indicates if this fee is automatically added by default', example: false, default: false })
+  @ApiPropertyOptional({
+    description: 'Indicates if this fee is automatically added by default',
+    example: false,
+    default: false,
+  })
   @IsBoolean()
   @IsOptional()
   isDefaultAutoAdd?: boolean;
 }
 
 export class UpdateInvoiceFeeDto {
-  @ApiPropertyOptional({ description: 'Name of the fee', example: 'Shipping Fee' })
+  @ApiPropertyOptional({
+    description: 'Name of the fee',
+    example: 'Shipping Fee',
+  })
   @IsString()
   @IsOptional()
   feeName?: string;
@@ -34,12 +51,18 @@ export class UpdateInvoiceFeeDto {
   @IsOptional()
   amount?: number;
 
-  @ApiPropertyOptional({ description: 'Indicates if this fee is tax-related', example: false })
+  @ApiPropertyOptional({
+    description: 'Indicates if this fee is tax-related',
+    example: false,
+  })
   @IsBoolean()
   @IsOptional()
   isTax?: boolean;
 
-  @ApiPropertyOptional({ description: 'Indicates if this fee is automatically added by default', example: false })
+  @ApiPropertyOptional({
+    description: 'Indicates if this fee is automatically added by default',
+    example: false,
+  })
   @IsBoolean()
   @IsOptional()
   isDefaultAutoAdd?: boolean;

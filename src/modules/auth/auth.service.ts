@@ -1,10 +1,23 @@
-import { Injectable, UnauthorizedException, BadRequestException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  BadRequestException,
+  ConflictException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { UsersService } from '../users/users.service';
 import { MailService } from '../mail/mail.service';
 import { PrismaService } from '../../prisma/prisma.service';
-import { RegisterDto, LoginDto, ForgotPasswordDto, ResetPasswordDto, VerificationDto, ChangePasswordDto, VerifyResetCodeDto } from './dto/auth.dto';
+import {
+  RegisterDto,
+  LoginDto,
+  ForgotPasswordDto,
+  ResetPasswordDto,
+  VerificationDto,
+  ChangePasswordDto,
+  VerifyResetCodeDto,
+} from './dto/auth.dto';
 
 @Injectable()
 export class AuthService {
@@ -14,7 +27,7 @@ export class AuthService {
     private configService: ConfigService,
     private mailService: MailService,
     private prisma: PrismaService,
-  ) { }
+  ) {}
 
   async register(registerDto: RegisterDto) {
     const existingUser = await this.usersService.findByEmail(registerDto.email);
@@ -31,7 +44,10 @@ export class AuthService {
 
     await this.mailService.sendVerificationCode(user.email, otp.toString());
 
-    return { message: 'Registration successful. Your account has been verified automatically and a verification email has been sent.' };
+    return {
+      message:
+        'Registration successful. Your account has been verified automatically and a verification email has been sent.',
+    };
   }
 
   async verify(verificationDto: VerificationDto) {
@@ -60,7 +76,10 @@ export class AuthService {
       throw new UnauthorizedException('Email not verified');
     }
 
-    const isPasswordValid = await this.usersService.verifyPassword(loginDto.password, user.password);
+    const isPasswordValid = await this.usersService.verifyPassword(
+      loginDto.password,
+      user.password,
+    );
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
@@ -74,7 +93,9 @@ export class AuthService {
         secret: this.configService.get('jwt.refreshSecret'),
       });
 
-      const user = await this.prisma.user.findUnique({ where: { userId: payload.sub } });
+      const user = await this.prisma.user.findUnique({
+        where: { userId: payload.sub },
+      });
 
       if (!user || user.refreshToken !== refreshToken) {
         throw new UnauthorizedException();
@@ -108,7 +129,12 @@ export class AuthService {
 
   async verifyResetCode(verifyResetCodeDto: VerifyResetCodeDto) {
     const user = await this.usersService.findByEmail(verifyResetCodeDto.email);
-    if (!user || user.resetToken !== verifyResetCodeDto.code || !user.resetTokenExpires || user.resetTokenExpires < new Date()) {
+    if (
+      !user ||
+      user.resetToken !== verifyResetCodeDto.code ||
+      !user.resetTokenExpires ||
+      user.resetTokenExpires < new Date()
+    ) {
       throw new BadRequestException('Invalid or expired reset code');
     }
 
@@ -122,16 +148,20 @@ export class AuthService {
     );
 
     return {
-      message: 'OTP verified successfully. Use the provided reset token to change your password.',
+      message:
+        'OTP verified successfully. Use the provided reset token to change your password.',
       resetToken,
     };
   }
 
   async resetPassword(resetPasswordDto: ResetPasswordDto) {
     try {
-      const payload = await this.jwtService.verifyAsync(resetPasswordDto.token, {
-        secret: this.configService.get('jwt.secret'),
-      });
+      const payload = await this.jwtService.verifyAsync(
+        resetPasswordDto.token,
+        {
+          secret: this.configService.get('jwt.secret'),
+        },
+      );
 
       if (payload.purpose !== 'reset-password') {
         throw new BadRequestException('Invalid token');
@@ -143,7 +173,9 @@ export class AuthService {
       }
 
       if (!user.resetToken) {
-        throw new BadRequestException('Token has already been used or is invalid');
+        throw new BadRequestException(
+          'Token has already been used or is invalid',
+        );
       }
 
       await this.usersService.update(user.userId, {
@@ -154,7 +186,9 @@ export class AuthService {
 
       return { message: 'Password reset successful' };
     } catch (e: any) {
-      throw new BadRequestException(e.message || 'Invalid or expired reset token');
+      throw new BadRequestException(
+        e.message || 'Invalid or expired reset token',
+      );
     }
   }
 
@@ -164,7 +198,10 @@ export class AuthService {
       throw new UnauthorizedException('User not found');
     }
 
-    const isPasswordValid = await this.usersService.verifyPassword(changePasswordDto.oldPassword, user.password);
+    const isPasswordValid = await this.usersService.verifyPassword(
+      changePasswordDto.oldPassword,
+      user.password,
+    );
     if (!isPasswordValid) {
       throw new BadRequestException('Incorrect current password');
     }

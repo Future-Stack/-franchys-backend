@@ -20,7 +20,9 @@ import { ConfigService } from '@nestjs/config';
           },
         },
         defaults: {
-          from: config.get('MAIL_FROM') || `"No Reply" <${config.get('MAIL_USER') || 'no-reply@example.com'}>`,
+          from:
+            config.get('MAIL_FROM') ||
+            `"No Reply" <${config.get('MAIL_USER') || 'no-reply@example.com'}>`,
         },
         template: {
           dir: join(__dirname, 'templates'),
@@ -35,4 +37,4 @@ import { ConfigService } from '@nestjs/config';
   providers: [MailService],
   exports: [MailService],
 })
-export class MailModule { }
+export class MailModule {}

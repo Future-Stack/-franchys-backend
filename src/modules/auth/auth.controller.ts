@@ -55,7 +55,9 @@ export class AuthController {
 
   @Public()
   @Post('verify-reset-code')
-  @ApiOperation({ summary: 'Verify password reset code and issue temporary token' })
+  @ApiOperation({
+    summary: 'Verify password reset code and issue temporary token',
+  })
   verifyResetCode(@Body() verifyResetCodeDto: VerifyResetCodeDto) {
     return this.authService.verifyResetCode(verifyResetCodeDto);
   }

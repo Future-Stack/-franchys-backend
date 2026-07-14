@@ -1,11 +1,28 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, IsOptional, IsString, MinLength, ValidateNested, IsBoolean } from 'class-validator';
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MinLength,
+  ValidateNested,
+  IsBoolean,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class AdminPermissionsDto {
-  @ApiPropertyOptional() @IsOptional() @IsBoolean() canCreateCustomers?: boolean;
-  @ApiPropertyOptional() @IsOptional() @IsBoolean() canUpdateCustomers?: boolean;
-  @ApiPropertyOptional() @IsOptional() @IsBoolean() canDeleteCustomers?: boolean;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  canCreateCustomers?: boolean;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  canUpdateCustomers?: boolean;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  canDeleteCustomers?: boolean;
 
   @ApiPropertyOptional() @IsOptional() @IsBoolean() canCreateQuotes?: boolean;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() canUpdateQuotes?: boolean;
@@ -27,16 +44,34 @@ export class AdminPermissionsDto {
   @ApiPropertyOptional() @IsOptional() @IsBoolean() canCreateInvoices?: boolean;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() canUpdateInvoices?: boolean;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() canDeleteInvoices?: boolean;
-  @ApiPropertyOptional() @IsOptional() @IsBoolean() canApproveInvoices?: boolean;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  canApproveInvoices?: boolean;
 
   @ApiPropertyOptional() @IsOptional() @IsBoolean() canTakePayment?: boolean;
 
-  @ApiPropertyOptional() @IsOptional() @IsBoolean() canCreateInvoiceFees?: boolean;
-  @ApiPropertyOptional() @IsOptional() @IsBoolean() canUpdateInvoiceFees?: boolean;
-  @ApiPropertyOptional() @IsOptional() @IsBoolean() canDeleteInvoiceFees?: boolean;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  canCreateInvoiceFees?: boolean;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  canUpdateInvoiceFees?: boolean;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  canDeleteInvoiceFees?: boolean;
 
-  @ApiPropertyOptional() @IsOptional() @IsBoolean() canChangeInvoiceInformation?: boolean;
-  @ApiPropertyOptional() @IsOptional() @IsBoolean() canChangeShopInformation?: boolean;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  canChangeInvoiceInformation?: boolean;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  canChangeShopInformation?: boolean;
 
   @ApiPropertyOptional() @IsOptional() @IsBoolean() canCreateVendor?: boolean;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() canUpdateVendor?: boolean;
