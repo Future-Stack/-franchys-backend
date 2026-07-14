@@ -60,6 +60,8 @@ jobs:
         run: npm run test:int
         env:
           DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_db?sslmode=disable
+          JWT_SECRET: test-super-secret-key-at-least-32-chars-long
+          SHOP_NAME: Francys
 
       - name: Run End-to-End (E2E) Tests
         run: npm run test:e2e
