@@ -6,6 +6,7 @@ import {
   Param,
   Res,
   HttpStatus,
+  Logger,
 } from '@nestjs/common';
 import { EmailTrackerService } from './email-tracker.service';
 import { Public } from '../../common/decorators/public.decorator';
@@ -23,6 +24,8 @@ import { ReplyDto } from './dto/email-tracker.dto';
 @Controller('emails')
 @ApiBearerAuth()
 export class EmailTrackerController {
+  private readonly logger = new Logger(EmailTrackerController.name);
+
   constructor(private readonly emailTrackerService: EmailTrackerService) {}
 
   @Public()
@@ -44,7 +47,7 @@ export class EmailTrackerController {
     try {
       await this.emailTrackerService.handleWebhook(body);
     } catch (err) {
-      console.error('Failed to process webhook asynchronously', err);
+      this.logger.error('Failed to process webhook asynchronously', err);
     }
   }
 

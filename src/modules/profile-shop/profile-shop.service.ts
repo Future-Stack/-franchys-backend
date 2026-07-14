@@ -1,17 +1,22 @@
-import { Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  OnModuleInit,
+} from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UpdateShopDto } from './dto/update-shop.dto';
 
 @Injectable()
 export class ProfileShopService implements OnModuleInit {
+  private readonly logger = new Logger(ProfileShopService.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
   async onModuleInit() {
     const shopIdentifier = process.env.SHOP_NAME;
     if (!shopIdentifier) {
-      console.warn(
-        '[ProfileShopService] SHOP_NAME environment variable is not defined.',
-      );
+      this.logger.warn('SHOP_NAME environment variable is not defined.');
       return;
     }
 
@@ -28,13 +33,11 @@ export class ProfileShopService implements OnModuleInit {
           companyName: shopIdentifier,
         },
       });
-      console.log(
-        `[ProfileShopService] Automatically created shop information for: ${shopIdentifier}`,
+      this.logger.log(
+        `Automatically created shop information for: ${shopIdentifier}`,
       );
     } else {
-      console.log(
-        `[ProfileShopService] Shop information already exists for: ${shopIdentifier}`,
-      );
+      this.logger.log(`Shop information already exists for: ${shopIdentifier}`);
     }
   }
 

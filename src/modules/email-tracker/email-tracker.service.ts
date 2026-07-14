@@ -43,7 +43,6 @@ export class EmailTrackerService {
           labelIds: ['INBOX', 'SENT'],
         },
       });
-      console.log('Success email automation');
       this.logger.log(`Watch started till: ${response.data.expiration}`);
     } catch (error) {
       this.logger.error('Failed to renew Gmail watch', error);

@@ -121,8 +121,6 @@ export class WhatsAppHttpClient {
       },
     });
 
-    console.log('Template message sent successfully', response);
-
     const wamid: string = response.data?.messages?.[0]?.id ?? '';
     this.logger.log(
       `Template message [${templateName}] sent to ${to}. wamid=${wamid}`,
