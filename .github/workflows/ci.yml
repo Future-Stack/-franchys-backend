@@ -3,12 +3,10 @@ name: CI/CD Pipeline
 on:
   push:
     branches:
-      - main
-      - shuvo-dev
+      - '**'
   pull_request:
     branches:
-      - main
-      - shuvo-dev
+      - '**'
 
 jobs:
   # ─── TEST JOB ───────────────────────────────────────────────────────────────
