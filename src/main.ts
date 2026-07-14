@@ -53,8 +53,6 @@ async function bootstrap() {
     }
   });
 
-  console.log('Update global prefix');
-
   await app.listen(displayPort);
   logger.log(
     `🚀 Application is running on: http://localhost:${displayPort}/${apiPrefix}`,

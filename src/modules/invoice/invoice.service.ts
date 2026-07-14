@@ -1,10 +1,20 @@
-import { Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  OnModuleInit,
+} from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { CreateInvoiceFeeDto, UpdateInvoiceFeeDto } from './dto/invoice-fees.dto';
+import {
+  CreateInvoiceFeeDto,
+  UpdateInvoiceFeeDto,
+} from './dto/invoice-fees.dto';
 import { UpdateInvoiceInformationDto } from './dto/invoice-information.dto';
 
 @Injectable()
 export class InvoiceService implements OnModuleInit {
+  private readonly logger = new Logger(InvoiceService.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
   async onModuleInit() {
@@ -20,9 +30,9 @@ export class InvoiceService implements OnModuleInit {
           invoiceSeed: 1,
         },
       });
-      console.log('[InvoiceService] Automatically created default invoice information.');
+      this.logger.log('Automatically created default invoice information.');
     } else {
-      console.log('[InvoiceService] Invoice information already exists.');
+      this.logger.log('Invoice information already exists.');
     }
   }
 
@@ -99,4 +109,3 @@ export class InvoiceService implements OnModuleInit {
     });
   }
 }
-

@@ -15,7 +15,9 @@ export class CategoryService {
       where: { name: dto.name },
     });
     if (existing) {
-      throw new ConflictException(`Category with name "${dto.name}" already exists`);
+      throw new ConflictException(
+        `Category with name "${dto.name}" already exists`,
+      );
     }
     return this.prisma.category.create({ data: dto });
   }
@@ -42,7 +44,9 @@ export class CategoryService {
         where: { name: dto.name },
       });
       if (existing && existing.id !== id) {
-        throw new ConflictException(`Category with name "${dto.name}" already exists`);
+        throw new ConflictException(
+          `Category with name "${dto.name}" already exists`,
+        );
       }
     }
     return this.prisma.category.update({ where: { id }, data: dto });

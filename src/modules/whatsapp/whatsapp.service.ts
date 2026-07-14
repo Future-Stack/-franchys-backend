@@ -39,11 +39,13 @@ export class WhatsAppService {
       return;
     }
 
-    const myPhoneNumberId = this.configService.get<string>('whatsapp.phoneNumberId')!;
+    const myPhoneNumberId = this.configService.get<string>(
+      'whatsapp.phoneNumberId',
+    )!;
 
     for (const message of value.messages) {
-      const wamid: string = message.id;      // Meta's unique message ID
-      const from: string = message.from;     // Sender's phone (E.164 format)
+      const wamid: string = message.id; // Meta's unique message ID
+      const from: string = message.from; // Sender's phone (E.164 format)
       const messageType: string = message.type || 'text';
 
       // Only process text messages (others: image, document, etc. — extend as needed)
@@ -66,13 +68,16 @@ export class WhatsAppService {
         where: { phone: from },
       });
       if (!contact) {
-        const profileName: string | undefined =
-          value.contacts?.find((c: any) => c.wa_id === from)?.profile?.name;
+        const profileName: string | undefined = value.contacts?.find(
+          (c: any) => c.wa_id === from,
+        )?.profile?.name;
 
         contact = await this.prisma.whatsAppContact.create({
           data: { phone: from, name: profileName },
         });
-        this.logger.log(`New WhatsApp contact created: ${from} (${profileName ?? 'unnamed'})`);
+        this.logger.log(
+          `New WhatsApp contact created: ${from} (${profileName ?? 'unnamed'})`,
+        );
       }
 
       // Find or create conversation (equivalent to email Thread, grouped by phone number)
@@ -84,7 +89,9 @@ export class WhatsAppService {
         conversation = await this.prisma.whatsAppConversation.create({
           data: { contactId: contact.id },
         });
-        this.logger.log(`New WhatsApp conversation created for contact ${contact.id}`);
+        this.logger.log(
+          `New WhatsApp conversation created for contact ${contact.id}`,
+        );
       } else {
         // Update lastActivity timestamp
         await this.prisma.whatsAppConversation.update({
@@ -107,13 +114,17 @@ export class WhatsAppService {
         },
       });
 
-      this.logger.log(`Saved INBOUND message ${wamid} from ${from} to conversation ${conversation.id}`);
+      this.logger.log(
+        `Saved INBOUND message ${wamid} from ${from} to conversation ${conversation.id}`,
+      );
 
       // Mark as read (shows double blue ticks on sender's device)
       try {
         await this.client.markAsRead(wamid);
       } catch (e) {
-        this.logger.warn(`Could not mark message ${wamid} as read: ${e.message}`);
+        this.logger.warn(
+          `Could not mark message ${wamid} as read: ${e.message}`,
+        );
       }
     }
   }
@@ -134,7 +145,10 @@ export class WhatsAppService {
   // SEND: Reply to an existing conversation (within 24-hour window)
   // ─────────────────────────────────────────────────────────────────────────────
 
-  async sendReply(conversationId: string, text: string): Promise<{ success: boolean }> {
+  async sendReply(
+    conversationId: string,
+    text: string,
+  ): Promise<{ success: boolean }> {
     const conversation = await this.prisma.whatsAppConversation.findUnique({
       where: { id: conversationId },
       include: { contact: true },
@@ -145,7 +159,9 @@ export class WhatsAppService {
     }
 
     const to = conversation.contact.phone;
-    const myPhoneNumberId = this.configService.get<string>('whatsapp.phoneNumberId')!;
+    const myPhoneNumberId = this.configService.get<string>(
+      'whatsapp.phoneNumberId',
+    )!;
 
     const { messageId: wamid } = await this.client.sendTextMessage(to, text);
 
@@ -168,7 +184,9 @@ export class WhatsAppService {
       data: { lastActivity: new Date() },
     });
 
-    this.logger.log(`OUTBOUND message sent to ${to} in conversation ${conversationId}`);
+    this.logger.log(
+      `OUTBOUND message sent to ${to} in conversation ${conversationId}`,
+    );
     return { success: true };
   }
 
@@ -182,13 +200,23 @@ export class WhatsAppService {
     templateName: string,
     languageCode: string,
   ): Promise<{ success: boolean }> {
-    const myPhoneNumberId = this.configService.get<string>('whatsapp.phoneNumberId')!;
-    const { messageId: wamid } = await this.client.sendTemplateMessage(to, templateName, languageCode);
+    const myPhoneNumberId = this.configService.get<string>(
+      'whatsapp.phoneNumberId',
+    )!;
+    const { messageId: wamid } = await this.client.sendTemplateMessage(
+      to,
+      templateName,
+      languageCode,
+    );
 
     // Find or create contact + conversation for this number
-    let contact = await this.prisma.whatsAppContact.findUnique({ where: { phone: to } });
+    let contact = await this.prisma.whatsAppContact.findUnique({
+      where: { phone: to },
+    });
     if (!contact) {
-      contact = await this.prisma.whatsAppContact.create({ data: { phone: to } });
+      contact = await this.prisma.whatsAppContact.create({
+        data: { phone: to },
+      });
     }
 
     let conversation = await this.prisma.whatsAppConversation.findFirst({

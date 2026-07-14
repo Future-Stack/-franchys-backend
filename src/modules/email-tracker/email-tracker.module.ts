@@ -7,4 +7,4 @@ import { EmailTrackerService } from './email-tracker.service';
   providers: [EmailTrackerService],
   exports: [EmailTrackerService],
 })
-export class EmailTrackerModule { }
+export class EmailTrackerModule {}

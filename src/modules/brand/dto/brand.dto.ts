@@ -7,19 +7,28 @@ export class CreateBrandDto {
   @IsNotEmpty()
   name: string;
 
-  @ApiPropertyOptional({ description: 'Brand description', example: 'Just Do It' })
+  @ApiPropertyOptional({
+    description: 'Brand description',
+    example: 'Just Do It',
+  })
   @IsString()
   @IsOptional()
   description?: string;
 }
 
 export class UpdateBrandDto {
-  @ApiPropertyOptional({ description: 'Brand name (must be unique)', example: 'Adidas' })
+  @ApiPropertyOptional({
+    description: 'Brand name (must be unique)',
+    example: 'Adidas',
+  })
   @IsString()
   @IsOptional()
   name?: string;
 
-  @ApiPropertyOptional({ description: 'Brand description', example: 'Impossible is Nothing' })
+  @ApiPropertyOptional({
+    description: 'Brand description',
+    example: 'Impossible is Nothing',
+  })
   @IsString()
   @IsOptional()
   description?: string;
