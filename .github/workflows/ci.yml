@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - shuvo-dev
 
 jobs:
   # ─── TEST JOB ───────────────────────────────────────────────────────────────
@@ -79,7 +78,7 @@ jobs:
     name: Build & Push Docker Image
     needs: test
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/shuvo-dev')
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     steps:
       - name: Checkout Code
@@ -114,7 +113,7 @@ jobs:
     name: SSH Deploy to Server
     needs: build-and-push
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/shuvo-dev')
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     steps:
       - name: Execute Remote SSH Commands
