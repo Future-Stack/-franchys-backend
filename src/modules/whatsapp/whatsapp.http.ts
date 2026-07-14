@@ -36,7 +36,7 @@ export class WhatsAppHttpClient {
       (response) => response,
       (error) => {
         if (axios.isAxiosError(error) && error.response?.data) {
-          const metaError = error.response.data as any;
+          const metaError = error.response.data;
           this.logger.error(`WhatsApp API Error: ${JSON.stringify(metaError)}`);
 
           const errData = metaError?.error || {};

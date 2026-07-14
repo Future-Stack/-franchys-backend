@@ -152,7 +152,7 @@ export class EmailTrackerService {
         const isOutbound = from.includes(emailAddress);
         const direction = isOutbound ? 'OUTBOUND' : 'INBOUND';
 
-        let contactString = isOutbound ? to : from;
+        const contactString = isOutbound ? to : from;
         const emailMatch = contactString.match(/<([^>]+)>/);
         const contactEmail = emailMatch
           ? emailMatch[1].trim()
