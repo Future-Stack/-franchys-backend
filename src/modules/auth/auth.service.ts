@@ -208,7 +208,7 @@ export class AuthService {
 
     await this.usersService.update(userId, {
       password: changePasswordDto.newPassword,
-    } as any);
+    });
 
     return { message: 'Password changed successfully' };
   }
