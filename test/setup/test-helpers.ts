@@ -267,6 +267,21 @@ export async function seedPriceTier(
   });
 }
 
+/** Creates a ShopInformation row. */
+export async function seedShopInformation(
+  prisma: PrismaClient,
+  overrides: Record<string, unknown> = {},
+) {
+  return prisma.shopInformation.create({
+    data: {
+      shopIdentifier: `shop-${uid()}`,
+      companyName: 'Test Shop LLC',
+      companyEmail: 'info@testshop.com',
+      ...overrides,
+    },
+  });
+}
+
 // ─── Cleanup ──────────────────────────────────────────────────────────────────
 
 /**
@@ -290,6 +305,7 @@ export async function cleanupTest(
     invoiceInformationIds?: string[];
     priceMatrixIds?: string[];
     priceTierIds?: string[];
+    shopInformationIds?: string[];
   },
 ) {
   if (ids.jobIds?.length) {
@@ -357,6 +373,11 @@ export async function cleanupTest(
   if (ids.priceMatrixIds?.length) {
     await prisma.priceMatrix.deleteMany({
       where: { priceMatrixId: { in: ids.priceMatrixIds } },
+    });
+  }
+  if (ids.shopInformationIds?.length) {
+    await prisma.shopInformation.deleteMany({
+      where: { shopId: { in: ids.shopInformationIds } },
     });
   }
   if (ids.userIds?.length) {
