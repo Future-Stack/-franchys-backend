@@ -282,6 +282,53 @@ export async function seedShopInformation(
   });
 }
 
+/** Creates a WhatsAppContact row. */
+export async function seedWhatsAppContact(
+  prisma: PrismaClient,
+  overrides: Record<string, unknown> = {},
+) {
+  return prisma.whatsAppContact.create({
+    data: {
+      phone: `+88017${Math.floor(10000000 + Math.random() * 90000000)}`,
+      name: `WA Contact ${uid()}`,
+      ...overrides,
+    },
+  });
+}
+
+/** Creates a WhatsAppConversation row. */
+export async function seedWhatsAppConversation(
+  prisma: PrismaClient,
+  contactId: string,
+  overrides: Record<string, unknown> = {},
+) {
+  return prisma.whatsAppConversation.create({
+    data: {
+      contactId,
+      ...overrides,
+    },
+  });
+}
+
+/** Creates a WhatsAppMessage row. */
+export async function seedWhatsAppMessage(
+  prisma: PrismaClient,
+  conversationId: string,
+  overrides: Record<string, unknown> = {},
+) {
+  return prisma.whatsAppMessage.create({
+    data: {
+      conversationId,
+      direction: 'INBOUND',
+      from: '+8801700000000',
+      to: '123456789',
+      body: 'Test WhatsApp message body',
+      messageId: `wamid.HBgL${uid()}`,
+      ...overrides,
+    },
+  });
+}
+
 // ─── Cleanup ──────────────────────────────────────────────────────────────────
 
 /**
@@ -306,6 +353,9 @@ export async function cleanupTest(
     priceMatrixIds?: string[];
     priceTierIds?: string[];
     shopInformationIds?: string[];
+    whatsAppContactIds?: string[];
+    whatsAppConversationIds?: string[];
+    whatsAppMessageIds?: string[];
   },
 ) {
   if (ids.jobIds?.length) {
@@ -378,6 +428,21 @@ export async function cleanupTest(
   if (ids.shopInformationIds?.length) {
     await prisma.shopInformation.deleteMany({
       where: { shopId: { in: ids.shopInformationIds } },
+    });
+  }
+  if (ids.whatsAppMessageIds?.length) {
+    await prisma.whatsAppMessage.deleteMany({
+      where: { id: { in: ids.whatsAppMessageIds } },
+    });
+  }
+  if (ids.whatsAppConversationIds?.length) {
+    await prisma.whatsAppConversation.deleteMany({
+      where: { id: { in: ids.whatsAppConversationIds } },
+    });
+  }
+  if (ids.whatsAppContactIds?.length) {
+    await prisma.whatsAppContact.deleteMany({
+      where: { id: { in: ids.whatsAppContactIds } },
     });
   }
   if (ids.userIds?.length) {

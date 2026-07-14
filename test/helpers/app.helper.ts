@@ -11,10 +11,20 @@ import { TransformInterceptor } from 'src/common/interceptors/transform.intercep
  * Mirrors the bootstrap() configuration in main.ts so that
  * global prefix, pipes, filters, and interceptors match production.
  */
-export async function createE2EApp(): Promise<INestApplication> {
-  const moduleFixture: TestingModule = await Test.createTestingModule({
+import { TestingModuleBuilder } from '@nestjs/testing';
+
+export async function createE2EApp(
+  config?: (builder: TestingModuleBuilder) => void,
+): Promise<INestApplication> {
+  const builder = Test.createTestingModule({
     imports: [AppModule],
-  }).compile();
+  });
+
+  if (config) {
+    config(builder);
+  }
+
+  const moduleFixture: TestingModule = await builder.compile();
 
   const app = moduleFixture.createNestApplication();
 
