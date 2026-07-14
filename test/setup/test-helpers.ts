@@ -236,6 +236,37 @@ export async function seedInvoiceInformation(
   });
 }
 
+/** Creates a PriceMatrix row. */
+export async function seedPriceMatrix(
+  prisma: PrismaClient,
+  overrides: Record<string, unknown> = {},
+) {
+  return prisma.priceMatrix.create({
+    data: {
+      name: `Test Matrix ${uid()}`,
+      priceType: 'markup',
+      ...overrides,
+    },
+  });
+}
+
+/** Creates a PriceTier row. */
+export async function seedPriceTier(
+  prisma: PrismaClient,
+  priceMatrixId: string,
+  overrides: Record<string, unknown> = {},
+) {
+  return prisma.priceTier.create({
+    data: {
+      quantity: 50,
+      basePrice: 5.5,
+      markup: 1.5,
+      priceMatrixId,
+      ...overrides,
+    },
+  });
+}
+
 // ─── Cleanup ──────────────────────────────────────────────────────────────────
 
 /**
@@ -257,6 +288,8 @@ export async function cleanupTest(
     vendorIds?: string[];
     invoiceFeeIds?: string[];
     invoiceInformationIds?: string[];
+    priceMatrixIds?: string[];
+    priceTierIds?: string[];
   },
 ) {
   if (ids.jobIds?.length) {
@@ -314,6 +347,16 @@ export async function cleanupTest(
   if (ids.invoiceInformationIds?.length) {
     await prisma.invoiceInformation.deleteMany({
       where: { iniId: { in: ids.invoiceInformationIds } },
+    });
+  }
+  if (ids.priceTierIds?.length) {
+    await prisma.priceTier.deleteMany({
+      where: { priceTierId: { in: ids.priceTierIds } },
+    });
+  }
+  if (ids.priceMatrixIds?.length) {
+    await prisma.priceMatrix.deleteMany({
+      where: { priceMatrixId: { in: ids.priceMatrixIds } },
     });
   }
   if (ids.userIds?.length) {
