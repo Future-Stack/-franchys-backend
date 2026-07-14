@@ -202,6 +202,40 @@ export async function seedVendor(
   });
 }
 
+/** Creates an InvoiceFees row. */
+export async function seedInvoiceFee(
+  prisma: PrismaClient,
+  overrides: Record<string, unknown> = {},
+) {
+  return prisma.invoiceFees.create({
+    data: {
+      feeName: `Test Fee ${uid()}`,
+      amount: 15,
+      isTax: false,
+      isDefaultAutoAdd: false,
+      ...overrides,
+    },
+  });
+}
+
+/** Creates an InvoiceInformation row. */
+export async function seedInvoiceInformation(
+  prisma: PrismaClient,
+  overrides: Record<string, unknown> = {},
+) {
+  return prisma.invoiceInformation.create({
+    data: {
+      currency: 'USD',
+      language: 'English',
+      termsAndCondition: 'Default Terms and Conditions',
+      paymentTramsAndCondition: 'Default Payment Terms and Conditions',
+      invoiceTaxRate: 10,
+      invoiceSeed: 100,
+      ...overrides,
+    },
+  });
+}
+
 // ─── Cleanup ──────────────────────────────────────────────────────────────────
 
 /**
@@ -221,6 +255,8 @@ export async function cleanupTest(
     categoryIds?: string[];
     productIds?: string[];
     vendorIds?: string[];
+    invoiceFeeIds?: string[];
+    invoiceInformationIds?: string[];
   },
 ) {
   if (ids.jobIds?.length) {
@@ -268,6 +304,16 @@ export async function cleanupTest(
   if (ids.vendorIds?.length) {
     await prisma.vendors.deleteMany({
       where: { vendorId: { in: ids.vendorIds } },
+    });
+  }
+  if (ids.invoiceFeeIds?.length) {
+    await prisma.invoiceFees.deleteMany({
+      where: { infId: { in: ids.invoiceFeeIds } },
+    });
+  }
+  if (ids.invoiceInformationIds?.length) {
+    await prisma.invoiceInformation.deleteMany({
+      where: { iniId: { in: ids.invoiceInformationIds } },
     });
   }
   if (ids.userIds?.length) {
