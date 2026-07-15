@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, JobStatus as PrismaJobStatus } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateJobDto, UpdateJobDto, JobStatus } from './dto/job.dto';
+import { GetJobsDto } from './dto/get-jobs.dto';
 
 @Injectable()
 export class JobService {
@@ -21,11 +22,14 @@ export class JobService {
     });
   }
 
-  async findAll(status?: string, search?: string) {
+  async findAll(query: GetJobsDto) {
+    const { page = 1, limit = 10, search, status } = query;
+    const skip = (page - 1) * limit;
+
     const whereClause: Prisma.JobWhereInput = {};
 
     if (status) {
-      whereClause.status = status as PrismaJobStatus;
+      whereClause.status = status;
     }
 
     if (search) {
@@ -36,13 +40,28 @@ export class JobService {
       ];
     }
 
-    return await this.prisma.job.findMany({
-      where: whereClause,
-      include: {
-        quote: true,
+    const [data, total] = await Promise.all([
+      this.prisma.job.findMany({
+        where: whereClause,
+        skip,
+        take: limit,
+        include: {
+          quote: true,
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.job.count({ where: whereClause }),
+    ]);
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
       },
-      orderBy: { createdAt: 'desc' },
-    });
+    };
   }
 
   async findOne(id: string) {

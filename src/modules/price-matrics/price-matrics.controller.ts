@@ -6,6 +6,7 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { PriceMatricsService } from './price-matrics.service';
@@ -14,6 +15,7 @@ import {
   UpdatePriceMatrixDto,
   CreatePriceTierDto,
 } from './dto/price-matrix.dto';
+import { PaginationQueryDto } from '../../common/dto/pagination.dto';
 
 @ApiTags('Price Matrices')
 @ApiBearerAuth()
@@ -29,8 +31,8 @@ export class PriceMatricsController {
 
   @Get()
   @ApiOperation({ summary: 'Get all price matrices along with their tiers' })
-  findAll() {
-    return this.priceMatricsService.findAll();
+  findAll(@Query() query: PaginationQueryDto) {
+    return this.priceMatricsService.findAll(query);
   }
 
   @Get(':priceMatrixId')

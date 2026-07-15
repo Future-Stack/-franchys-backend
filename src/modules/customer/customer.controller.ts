@@ -6,10 +6,12 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { CustomerService } from './customer.service';
 import { CreateCustomerDto, UpdateCustomerDto } from './dto/customer.dto';
+import { GetCustomersDto } from './dto/get-customers.dto';
 
 @ApiTags('Customer')
 @ApiBearerAuth()
@@ -25,8 +27,8 @@ export class CustomerController {
 
   @Get()
   @ApiOperation({ summary: 'Get all customers' })
-  findAll() {
-    return this.customerService.findAll();
+  findAll(@Query() query: GetCustomersDto) {
+    return this.customerService.findAll(query);
   }
 
   @Get(':id')

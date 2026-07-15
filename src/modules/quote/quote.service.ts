@@ -6,6 +6,7 @@ import {
 import { Prisma, QuoteStatus } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateQuoteDto, UpdateQuoteDto } from './dto/quote.dto';
+import { GetQuotesDto } from './dto/get-quotes.dto';
 import { JobService } from '../job/job.service';
 
 interface CalcLineItemInput {
@@ -203,11 +204,14 @@ export class QuoteService {
     return quote;
   }
 
-  async findAll(status?: string, search?: string) {
+  async findAll(query: GetQuotesDto) {
+    const { page = 1, limit = 10, search, status } = query;
+    const skip = (page - 1) * limit;
+
     const whereClause: Prisma.QuoteWhereInput = {};
 
     if (status) {
-      whereClause.status = status as QuoteStatus;
+      whereClause.status = status;
     }
 
     if (search) {
@@ -221,14 +225,29 @@ export class QuoteService {
       ];
     }
 
-    return this.prisma.quote.findMany({
-      where: whereClause,
-      include: {
-        lineItems: true,
-        customer: true,
+    const [data, total] = await Promise.all([
+      this.prisma.quote.findMany({
+        where: whereClause,
+        skip,
+        take: limit,
+        include: {
+          lineItems: true,
+          customer: true,
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.quote.count({ where: whereClause }),
+    ]);
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
       },
-      orderBy: { createdAt: 'desc' },
-    });
+    };
   }
 
   async findOne(id: string) {

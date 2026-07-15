@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateCustomerDto, UpdateCustomerDto } from './dto/customer.dto';
+import { GetCustomersDto } from './dto/get-customers.dto';
 
 @Injectable()
 export class CustomerService {
@@ -28,10 +29,44 @@ export class CustomerService {
     });
   }
 
-  async findAll() {
-    return this.prisma.customer.findMany({
-      orderBy: { createdAt: 'desc' },
-    });
+  async findAll(query: GetCustomersDto) {
+    const { page = 1, limit = 10, search, customerType } = query;
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+
+    if (customerType) {
+      where.customerType = customerType;
+    }
+
+    if (search) {
+      where.OR = [
+        { firstName: { contains: search, mode: 'insensitive' } },
+        { lastName: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+        { companyName: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    const [data, total] = await Promise.all([
+      this.prisma.customer.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.customer.count({ where }),
+    ]);
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 
   async findOne(id: string) {

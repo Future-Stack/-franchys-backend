@@ -6,10 +6,12 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { BrandService } from './brand.service';
 import { CreateBrandDto, UpdateBrandDto } from './dto/brand.dto';
+import { PaginationQueryDto } from '../../common/dto/pagination.dto';
 
 @ApiTags('Brand')
 @ApiBearerAuth()
@@ -29,11 +31,11 @@ export class BrandController {
 
   @Get()
   @ApiOperation({ summary: 'Get all brands' })
-  async findAll() {
-    const data = await this.brandService.findAll();
+  async findAll(@Query() query: PaginationQueryDto) {
+    const data = await this.brandService.findAll(query);
     return {
       message: 'Brands fetched successfully',
-      data,
+      ...data,
     };
   }
 
