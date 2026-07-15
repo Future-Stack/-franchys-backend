@@ -11,6 +11,7 @@ import {
   UpdateProductColorDto,
 } from './dto/product.dto';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
+import { PaginationQueryDto } from '../../common/dto/pagination.dto';
 
 @Injectable()
 export class ProductService {
@@ -41,12 +42,41 @@ export class ProductService {
     });
   }
 
-  async findAll() {
-    return this.prisma.product.findMany({
-      where: { isDeleted: false },
-      include: { colors: true, category: true, brand: true },
-      orderBy: { createdAt: 'desc' },
-    });
+  async findAll(query: PaginationQueryDto) {
+    const { page = 1, limit = 10, search } = query;
+    const skip = (page - 1) * limit;
+
+    const where: any = { isDeleted: false };
+
+    if (search) {
+      where.OR = [
+        { productName: { contains: search, mode: 'insensitive' } },
+        { itemNo: { contains: search, mode: 'insensitive' } },
+        { material: { contains: search, mode: 'insensitive' } },
+        { style: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    const [data, total] = await Promise.all([
+      this.prisma.product.findMany({
+        where,
+        skip,
+        take: limit,
+        include: { colors: true, category: true, brand: true },
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.product.count({ where }),
+    ]);
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 
   async findOne(id: string) {

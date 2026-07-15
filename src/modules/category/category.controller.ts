@@ -6,10 +6,12 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { CategoryService } from './category.service';
 import { CreateCategoryDto, UpdateCategoryDto } from './dto/category.dto';
+import { PaginationQueryDto } from '../../common/dto/pagination.dto';
 
 @ApiTags('Category')
 @ApiBearerAuth()
@@ -29,11 +31,11 @@ export class CategoryController {
 
   @Get()
   @ApiOperation({ summary: 'Get all categories' })
-  async findAll() {
-    const data = await this.categoryService.findAll();
+  async findAll(@Query() query: PaginationQueryDto) {
+    const data = await this.categoryService.findAll(query);
     return {
       message: 'Categories fetched successfully',
-      data,
+      ...data,
     };
   }
 

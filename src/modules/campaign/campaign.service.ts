@@ -11,6 +11,7 @@ import {
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateCampaignDto, UpdateCampaignDto } from './dto/campaign.dto';
 import { ValidateDiscountDto } from './dto/validate-discount.dto';
+import { GetCampaignsDto } from './dto/get-campaigns.dto';
 
 @Injectable()
 export class CampaignService {
@@ -38,15 +39,18 @@ export class CampaignService {
     });
   }
 
-  async findAll(type?: string, status?: string, search?: string) {
+  async findAll(query: GetCampaignsDto) {
+    const { page = 1, limit = 10, search, type, status } = query;
+    const skip = (page - 1) * limit;
+
     const whereClause: Prisma.CampaignWhereInput = {};
 
     if (type) {
-      whereClause.type = type as PrismaCampaignType;
+      whereClause.type = type;
     }
 
     if (status) {
-      whereClause.status = status as PrismaCampaignStatus;
+      whereClause.status = status;
     }
 
     if (search) {
@@ -57,10 +61,25 @@ export class CampaignService {
       ];
     }
 
-    return await this.prisma.campaign.findMany({
-      where: whereClause,
-      orderBy: { createdAt: 'desc' },
-    });
+    const [data, total] = await Promise.all([
+      this.prisma.campaign.findMany({
+        where: whereClause,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.campaign.count({ where: whereClause }),
+    ]);
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 
   async findOne(id: string) {

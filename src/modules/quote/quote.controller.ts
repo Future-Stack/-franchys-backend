@@ -17,6 +17,7 @@ import {
 } from '@nestjs/swagger';
 import { QuoteService } from './quote.service';
 import { CreateQuoteDto, UpdateQuoteDto } from './dto/quote.dto';
+import { GetQuotesDto } from './dto/get-quotes.dto';
 
 @ApiTags('Quote')
 @ApiBearerAuth()
@@ -32,10 +33,8 @@ export class QuoteController {
 
   @Get()
   @ApiOperation({ summary: 'Get all quotes' })
-  @ApiQuery({ name: 'status', required: false, type: String })
-  @ApiQuery({ name: 'search', required: false, type: String })
-  findAll(@Query('status') status?: string, @Query('search') search?: string) {
-    return this.quoteService.findAll(status, search);
+  findAll(@Query() query: GetQuotesDto) {
+    return this.quoteService.findAll(query);
   }
 
   @Get(':id')

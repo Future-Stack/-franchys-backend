@@ -9,6 +9,7 @@ import {
   UseInterceptors,
   UploadedFiles,
   BadRequestException,
+  Query,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
@@ -29,6 +30,7 @@ import {
 } from './dto/product.dto';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
+import { PaginationQueryDto } from '../../common/dto/pagination.dto';
 
 @ApiTags('Product')
 @ApiBearerAuth()
@@ -60,11 +62,11 @@ export class ProductController {
 
   @Get()
   @ApiOperation({ summary: 'Get all products (with brand, category, colors)' })
-  async findAll() {
-    const data = await this.productService.findAll();
+  async findAll(@Query() query: PaginationQueryDto) {
+    const data = await this.productService.findAll(query);
     return {
       message: 'Products fetched successfully',
-      data,
+      ...data,
     };
   }
 

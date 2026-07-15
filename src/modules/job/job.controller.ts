@@ -16,6 +16,7 @@ import {
 } from '@nestjs/swagger';
 import { JobService } from './job.service';
 import { CreateJobDto, UpdateJobDto, UpdateJobStatusDto } from './dto/job.dto';
+import { GetJobsDto } from './dto/get-jobs.dto';
 
 @ApiTags('Job')
 @ApiBearerAuth()
@@ -31,10 +32,8 @@ export class JobController {
 
   @Get()
   @ApiOperation({ summary: 'Get all job cards' })
-  @ApiQuery({ name: 'status', required: false, type: String })
-  @ApiQuery({ name: 'search', required: false, type: String })
-  findAll(@Query('status') status?: string, @Query('search') search?: string) {
-    return this.jobService.findAll(status, search);
+  findAll(@Query() query: GetJobsDto) {
+    return this.jobService.findAll(query);
   }
 
   @Get(':id')

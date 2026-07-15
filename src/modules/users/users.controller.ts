@@ -53,6 +53,15 @@ export class UsersController {
     return this.usersService.findAllAdmins(query);
   }
 
+  @Get('admin/:id')
+  @Roles(Role.SUPER_ADMIN)
+  @ApiOperation({
+    summary: 'Get an admin/employee detail by ID (Super Admin only)',
+  })
+  findOneAdmin(@Param('id') id: string) {
+    return this.usersService.findOneAdmin(id);
+  }
+
   @Patch('admin/:id')
   @Roles(Role.SUPER_ADMIN)
   @ApiOperation({
