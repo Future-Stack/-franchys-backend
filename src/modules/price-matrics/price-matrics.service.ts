@@ -5,6 +5,7 @@ import {
   UpdatePriceMatrixDto,
   CreatePriceTierDto,
 } from './dto/price-matrix.dto';
+import { PaginationQueryDto } from '../../common/dto/pagination.dto';
 
 @Injectable()
 export class PriceMatricsService {
@@ -33,12 +34,38 @@ export class PriceMatricsService {
     });
   }
 
-  async findAll() {
-    return this.prisma.priceMatrix.findMany({
-      include: {
-        priceTiers: true,
+  async findAll(query: PaginationQueryDto) {
+    const { page = 1, limit = 10, search } = query;
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+
+    if (search) {
+      where.name = { contains: search, mode: 'insensitive' };
+    }
+
+    const [data, total] = await Promise.all([
+      this.prisma.priceMatrix.findMany({
+        where,
+        skip,
+        take: limit,
+        include: {
+          priceTiers: true,
+        },
+        orderBy: { name: 'asc' },
+      }),
+      this.prisma.priceMatrix.count({ where }),
+    ]);
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
       },
-    });
+    };
   }
 
   async findOne(priceMatrixId: string) {

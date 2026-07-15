@@ -134,6 +134,21 @@ export class UsersService {
     });
   }
 
+  async findOneAdmin(userId: string) {
+    const admin = await this.prisma.user.findFirst({
+      where: { userId, role: Role.ADMIN, isDeleted: false },
+      include: { userPermissions: true },
+    });
+
+    if (!admin) {
+      throw new NotFoundException('Admin not found or deleted');
+    }
+
+    const sanitized = { ...admin };
+    delete (sanitized as any).password;
+    return sanitized;
+  }
+
   async softDeleteAdmin(userId: string) {
     const admin = await this.prisma.user.findFirst({
       where: { userId, role: Role.ADMIN },

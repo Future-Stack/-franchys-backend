@@ -8,15 +8,11 @@ import {
   Delete,
   Query,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiBearerAuth,
-  ApiQuery,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { CampaignService } from './campaign.service';
 import { CreateCampaignDto, UpdateCampaignDto } from './dto/campaign.dto';
 import { ValidateDiscountDto } from './dto/validate-discount.dto';
+import { GetCampaignsDto } from './dto/get-campaigns.dto';
 
 @ApiTags('Campaign')
 @ApiBearerAuth()
@@ -38,15 +34,8 @@ export class CampaignController {
 
   @Get()
   @ApiOperation({ summary: 'Get all campaigns' })
-  @ApiQuery({ name: 'type', required: false, type: String })
-  @ApiQuery({ name: 'status', required: false, type: String })
-  @ApiQuery({ name: 'search', required: false, type: String })
-  findAll(
-    @Query('type') type?: string,
-    @Query('status') status?: string,
-    @Query('search') search?: string,
-  ) {
-    return this.campaignService.findAll(type, status, search);
+  findAll(@Query() query: GetCampaignsDto) {
+    return this.campaignService.findAll(query);
   }
 
   @Get(':id')
