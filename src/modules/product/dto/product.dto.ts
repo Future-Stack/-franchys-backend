@@ -30,15 +30,39 @@ export class CreateProductDto {
   @IsNotEmpty()
   productName: string;
 
-  @ApiProperty({ description: 'Category ID', example: 'uuid-here' })
+  @ApiPropertyOptional({
+    description: 'Category ID (UUID) or "other"',
+    example: 'uuid-here',
+  })
   @IsString()
-  @IsNotEmpty()
-  categoryId: string;
+  @IsOptional()
+  categoryId?: string;
 
-  @ApiProperty({ description: 'Brand ID', example: 'uuid-here' })
+  @ApiPropertyOptional({
+    description:
+      'Custom category name (used when categoryId is omitted, "other", or custom)',
+    example: 'Footwear',
+  })
   @IsString()
-  @IsNotEmpty()
-  brandId: string;
+  @IsOptional()
+  categoryName?: string;
+
+  @ApiPropertyOptional({
+    description: 'Brand ID (UUID) or "other"',
+    example: 'uuid-here',
+  })
+  @IsString()
+  @IsOptional()
+  brandId?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Custom brand name (used when brandId is omitted, "other", or custom)',
+    example: 'Nike',
+  })
+  @IsString()
+  @IsOptional()
+  brandName?: string;
 
   @ApiProperty({ description: 'Price (e.g. 99.99)', example: '99.99' })
   @IsNotEmpty()
@@ -139,15 +163,39 @@ export class UpdateProductDto {
   @IsOptional()
   productName?: string;
 
-  @ApiPropertyOptional({ description: 'Category ID', example: 'uuid-here' })
+  @ApiPropertyOptional({
+    description: 'Category ID (UUID) or "other"',
+    example: 'uuid-here',
+  })
   @IsString()
   @IsOptional()
   categoryId?: string;
 
-  @ApiPropertyOptional({ description: 'Brand ID', example: 'uuid-here' })
+  @ApiPropertyOptional({
+    description:
+      'Custom category name (used when categoryId is omitted, "other", or custom)',
+    example: 'Footwear',
+  })
+  @IsString()
+  @IsOptional()
+  categoryName?: string;
+
+  @ApiPropertyOptional({
+    description: 'Brand ID (UUID) or "other"',
+    example: 'uuid-here',
+  })
   @IsString()
   @IsOptional()
   brandId?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Custom brand name (used when brandId is omitted, "other", or custom)',
+    example: 'Nike',
+  })
+  @IsString()
+  @IsOptional()
+  brandName?: string;
 
   @ApiPropertyOptional({ description: 'Price', example: '129.99' })
   @Transform(({ value }) => Number(value))

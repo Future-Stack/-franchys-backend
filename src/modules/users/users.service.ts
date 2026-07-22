@@ -188,6 +188,25 @@ export class UsersService {
     });
   }
 
+  async updateUserRole(userId: string, role: Role) {
+    const user = await this.prisma.user.findFirst({
+      where: { userId, isDeleted: false },
+    });
+    if (!user) throw new NotFoundException('User not found or deleted');
+
+    return this.prisma.user.update({
+      where: { userId },
+      data: { role },
+      select: {
+        userId: true,
+        name: true,
+        email: true,
+        role: true,
+        updatedAt: true,
+      },
+    });
+  }
+
   async findAll() {
     const result = await this.prisma.user.findMany({});
     return result;

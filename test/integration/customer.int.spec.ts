@@ -4,6 +4,7 @@ import { PrismaClient } from '@prisma/client';
 import { CustomerService } from 'src/modules/customer/customer.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CustomerType } from 'src/modules/customer/dto/customer.dto';
+import { CloudinaryService } from 'src/modules/cloudinary/cloudinary.service';
 import {
   createTestPrisma,
   cleanupTest,
@@ -25,6 +26,14 @@ describe('CustomerService (integration)', () => {
         {
           provide: PrismaService,
           useValue: prisma,
+        },
+        {
+          provide: CloudinaryService,
+          useValue: {
+            uploadFile: jest.fn().mockResolvedValue({
+              secure_url: 'https://cloudinary.com/test.jpg',
+            }),
+          },
         },
       ],
     }).compile();
@@ -97,10 +106,11 @@ describe('CustomerService (integration)', () => {
       customerIds.push(c1.id, c2.id);
 
       const result = await service.findAll();
-      expect(result.length).toBeGreaterThanOrEqual(2);
+      const customers = result.data;
+      expect(customers.length).toBeGreaterThanOrEqual(2);
 
-      const idx1 = result.findIndex((c) => c.id === c1.id);
-      const idx2 = result.findIndex((c) => c.id === c2.id);
+      const idx1 = customers.findIndex((c) => c.id === c1.id);
+      const idx2 = customers.findIndex((c) => c.id === c2.id);
 
       // c2 is newer than c1, so it should appear before c1 in descending order (idx2 < idx1)
       expect(idx2).toBeLessThan(idx1);
@@ -169,10 +179,8 @@ describe('CustomerService (integration)', () => {
   });
 
   describe('remove', () => {
-    it('should delete from database', async () => {
+    it('should soft-delete customer in database', async () => {
       const seeded = await seedCustomer(prisma);
-      // We don't need to push to customerIds because we're deleting it during the test,
-      // but let's push just in case the delete fails so it gets cleaned up regardless.
       customerIds.push(seeded.id);
 
       const result = await service.remove(seeded.id);
@@ -184,7 +192,7 @@ describe('CustomerService (integration)', () => {
       const dbCust = await prisma.customer.findUnique({
         where: { id: seeded.id },
       });
-      expect(dbCust).toBeNull();
+      expect(dbCust?.isDeleted).toBe(true);
     });
 
     it('should throw NotFoundException for missing customer ID', async () => {

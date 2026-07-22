@@ -213,4 +213,44 @@ describe('UsersService (unit)', () => {
       expect(result.status).toBe(Status.SUSPEND);
     });
   });
+
+  describe('updateUserRole', () => {
+    it('should update user role successfully', async () => {
+      mockPrisma.user.findFirst.mockResolvedValue({
+        userId: 'u-1',
+        role: Role.USER,
+        isDeleted: false,
+      });
+      mockPrisma.user.update.mockResolvedValue({
+        userId: 'u-1',
+        name: 'User 1',
+        email: 'u1@test.com',
+        role: Role.SUPER_ADMIN,
+        updatedAt: new Date(),
+      });
+
+      const result = await service.updateUserRole('u-1', Role.SUPER_ADMIN);
+
+      expect(mockPrisma.user.update).toHaveBeenCalledWith({
+        where: { userId: 'u-1' },
+        data: { role: Role.SUPER_ADMIN },
+        select: {
+          userId: true,
+          name: true,
+          email: true,
+          role: true,
+          updatedAt: true,
+        },
+      });
+      expect(result.role).toBe(Role.SUPER_ADMIN);
+    });
+
+    it('should throw NotFoundException if user does not exist or is deleted', async () => {
+      mockPrisma.user.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.updateUserRole('bad-id', Role.SUPER_ADMIN),
+      ).rejects.toThrow(NotFoundException);
+    });
+  });
 });

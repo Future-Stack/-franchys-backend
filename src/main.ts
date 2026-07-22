@@ -61,4 +61,7 @@ async function bootstrap() {
     `📚 Swagger documentation: http://localhost:${displayPort}/${swaggerPath}`,
   );
 }
-void bootstrap();
+bootstrap().catch((err) => {
+  console.error('BOOTSTRAP ERROR:', err);
+  process.exit(1);
+});

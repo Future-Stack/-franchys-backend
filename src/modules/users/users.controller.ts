@@ -14,11 +14,13 @@ import {
   ApiOperation,
   ApiBearerAuth,
   ApiQuery,
+  ApiBody,
 } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { CreateAdminDto } from './dto/create-admin.dto';
 import { GetAdminsDto } from './dto/get-admins.dto';
 import { UpdateAdminDto } from './dto/update-admin.dto';
+import { UpdateRoleDto } from './dto/update-role.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -90,5 +92,16 @@ export class UsersController {
   @ApiOperation({ summary: 'Ban (suspend) an admin (Super Admin only)' })
   banAdmin(@Param('id') id: string) {
     return this.usersService.banAdmin(id);
+  }
+
+  @Patch(':id/role')
+  @Roles(Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Update user role (Super Admin only) roles can be ADMIN, SUPER_ADMIN' })
+  @ApiBody({ type: UpdateRoleDto })
+  updateRole(
+    @Param('id') id: string,
+    @Body() updateRoleDto: UpdateRoleDto,
+  ) {
+    return this.usersService.updateUserRole(id, updateRoleDto.role);
   }
 }
