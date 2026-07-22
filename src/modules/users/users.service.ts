@@ -57,7 +57,7 @@ export class UsersService {
     const skip = (page - 1) * limit;
 
     const where: Prisma.UserWhereInput = {
-      role: Role.ADMIN,
+      role: { in: [Role.ADMIN, Role.SUPER_ADMIN] },
       isDeleted: false,
     };
 
