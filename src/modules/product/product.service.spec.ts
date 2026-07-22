@@ -8,8 +8,19 @@ const mockPrisma = {
   product: {
     create: jest.fn(),
     findMany: jest.fn(),
+    count: jest.fn().mockResolvedValue(0),
     findUnique: jest.fn(),
     update: jest.fn(),
+  },
+  category: {
+    findUnique: jest.fn(),
+    findFirst: jest.fn(),
+    create: jest.fn(),
+  },
+  brand: {
+    findUnique: jest.fn(),
+    findFirst: jest.fn(),
+    create: jest.fn(),
   },
   productColor: {
     findUnique: jest.fn(),
@@ -53,6 +64,9 @@ describe('ProductService (unit)', () => {
     };
 
     it('should create a product with colors and images successfully', async () => {
+      mockPrisma.category.findUnique.mockResolvedValue({ id: 'cat-1' });
+      mockPrisma.brand.findUnique.mockResolvedValue({ id: 'brand-1' });
+
       const mockFiles = [{ filename: 'pic.jpg' }] as any;
       mockCloudinaryService.uploadMultipleFiles.mockResolvedValue([
         'http://cloud.com/pic.jpg',
@@ -82,6 +96,53 @@ describe('ProductService (unit)', () => {
       });
       expect(result.id).toBe('prod-1');
     });
+
+    it('should dynamically create category and brand when "other" is passed', async () => {
+      mockPrisma.category.findFirst.mockResolvedValue(null);
+      mockPrisma.category.create.mockResolvedValue({
+        id: 'new-cat-id',
+        name: 'Custom Category',
+      });
+      mockPrisma.brand.findFirst.mockResolvedValue(null);
+      mockPrisma.brand.create.mockResolvedValue({
+        id: 'new-brand-id',
+        name: 'Other',
+      });
+
+      mockPrisma.product.create.mockResolvedValue({
+        id: 'prod-2',
+        productName: 'Custom Product',
+      });
+
+      const customDto = {
+        productName: 'Custom Product',
+        price: 49.99 as any,
+        categoryId: 'other',
+        categoryName: 'Custom Category',
+        brandId: 'other',
+      };
+
+      const result = await service.create(customDto);
+
+      expect(mockPrisma.category.create).toHaveBeenCalledWith({
+        data: { name: 'Custom Category' },
+      });
+      expect(mockPrisma.brand.create).toHaveBeenCalledWith({
+        data: { name: 'Other' },
+      });
+      expect(mockPrisma.product.create).toHaveBeenCalledWith({
+        data: {
+          productName: 'Custom Product',
+          price: 49.99,
+          categoryId: 'new-cat-id',
+          brandId: 'new-brand-id',
+          images: [],
+          colors: undefined,
+        },
+        include: { colors: true, category: true, brand: true },
+      });
+      expect(result.id).toBe('prod-2');
+    });
   });
 
   describe('findAll', () => {
@@ -89,15 +150,18 @@ describe('ProductService (unit)', () => {
       mockPrisma.product.findMany.mockResolvedValue([
         { id: '1', productName: 'Tee' },
       ]);
+      mockPrisma.product.count.mockResolvedValue(1);
 
       const result = await service.findAll();
 
       expect(mockPrisma.product.findMany).toHaveBeenCalledWith({
         where: { isDeleted: false },
+        skip: 0,
+        take: 10,
         include: { colors: true, category: true, brand: true },
         orderBy: { createdAt: 'desc' },
       });
-      expect(result).toEqual([{ id: '1', productName: 'Tee' }]);
+      expect(result.data).toEqual([{ id: '1', productName: 'Tee' }]);
     });
   });
 

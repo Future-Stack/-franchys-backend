@@ -7,6 +7,7 @@ const mockPrisma = {
   category: {
     findUnique: jest.fn(),
     findMany: jest.fn(),
+    count: jest.fn().mockResolvedValue(2),
     create: jest.fn(),
     update: jest.fn(),
   },
@@ -69,14 +70,17 @@ describe('CategoryService (unit)', () => {
         { id: '2', name: 'Bags', isDeleted: false },
       ];
       mockPrisma.category.findMany.mockResolvedValue(mockCategories);
+      mockPrisma.category.count.mockResolvedValue(2);
 
       const result = await service.findAll();
 
       expect(mockPrisma.category.findMany).toHaveBeenCalledWith({
         where: { isDeleted: false },
+        skip: 0,
+        take: 10,
         orderBy: { createdAt: 'desc' },
       });
-      expect(result).toEqual(mockCategories);
+      expect(result.data).toEqual(mockCategories);
     });
   });
 

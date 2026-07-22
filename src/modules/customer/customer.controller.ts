@@ -7,8 +7,12 @@ import {
   Param,
   Delete,
   Query,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
 import { CustomerService } from './customer.service';
 import { CreateCustomerDto, UpdateCustomerDto } from './dto/customer.dto';
 import { GetCustomersDto } from './dto/get-customers.dto';
@@ -21,8 +25,17 @@ export class CustomerController {
 
   @Post()
   @ApiOperation({ summary: 'Create a new customer' })
-  create(@Body() dto: CreateCustomerDto) {
-    return this.customerService.create(dto);
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(
+    FileInterceptor('profileImage', {
+      storage: memoryStorage(),
+    }),
+  )
+  create(
+    @Body() dto: CreateCustomerDto,
+    @UploadedFile() file?: Express.Multer.File,
+  ) {
+    return this.customerService.create(dto, file);
   }
 
   @Get()
@@ -39,8 +52,18 @@ export class CustomerController {
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update a customer by ID' })
-  update(@Param('id') id: string, @Body() dto: UpdateCustomerDto) {
-    return this.customerService.update(id, dto);
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(
+    FileInterceptor('profileImage', {
+      storage: memoryStorage(),
+    }),
+  )
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateCustomerDto,
+    @UploadedFile() file?: Express.Multer.File,
+  ) {
+    return this.customerService.update(id, dto, file);
   }
 
   @Delete(':id')
