@@ -25,6 +25,9 @@ COPY . .
 # Build the NestJS application to /dist
 RUN npm run build
 
+# Compile database seed script to JS
+RUN npx tsc prisma/seeds/index.ts --outDir dist/prisma/seeds --module commonjs --moduleResolution node --esModuleInterop true --skipLibCheck true
+
 # Install only production dependencies and clear cache to keep image small
 RUN npm prune --production --legacy-peer-deps && npm cache clean --force
 
@@ -45,14 +48,8 @@ COPY --from=builder /usr/src/app/dist ./dist
 COPY --from=builder /usr/src/app/prisma ./prisma
 COPY --from=builder /usr/src/app/prisma.config.ts ./
 
-# Use the non-root 'node' user provided by Node.js base images for enhanced security
-# Ensure the node user owns the working directory
-RUN chown -R node:node /usr/src/app
-
-USER node
-
 # Expose NestJS default port
 EXPOSE 3000
 
-# Execute database schema push and start the NestJS application in production
-CMD ["sh", "-c", "npx -y prisma db push --accept-data-loss && node dist/src/main.js"]
+# Execute database schema sync, run seed script, and start the NestJS application
+CMD ["sh", "-c", "npx prisma db push --accept-data-loss && node dist/prisma/seeds/index.js && node dist/src/main.js"]
