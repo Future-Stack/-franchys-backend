@@ -192,6 +192,38 @@ export class AuthService {
     }
   }
 
+  async getMe(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { userId },
+      select: {
+        userId: true,
+        email: true,
+        name: true,
+        role: true,
+        status: true,
+        googleAuth: true,
+        language: true,
+        profileImage: true,
+        avatar: true,
+        operationsRole: true,
+        isVerified: true,
+        timezone: true,
+        phone: true,
+        address: true,
+        country: true,
+        tasksRemainderEmail: true,
+        taskAssignEmail: true,
+        createAt: true,
+        updatedAt: true,
+        userPermissions: true,
+      },
+    });
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+    return user;
+  }
+
   async changePassword(userId: string, changePasswordDto: ChangePasswordDto) {
     const user = await this.usersService.findOne(userId);
     if (!user) {

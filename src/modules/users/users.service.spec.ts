@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { PrismaService } from '../../prisma/prisma.service';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { Role, Status } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
@@ -22,6 +23,10 @@ const mockPrisma = {
   $transaction: jest.fn(),
 };
 
+const mockCloudinaryService = {
+  uploadFile: jest.fn(),
+};
+
 describe('UsersService (unit)', () => {
   let service: UsersService;
 
@@ -32,6 +37,7 @@ describe('UsersService (unit)', () => {
       providers: [
         UsersService,
         { provide: PrismaService, useValue: mockPrisma },
+        { provide: CloudinaryService, useValue: mockCloudinaryService },
       ],
     }).compile();
 
@@ -211,6 +217,24 @@ describe('UsersService (unit)', () => {
       const result = await service.banAdmin('admin-1');
 
       expect(result.status).toBe(Status.SUSPEND);
+    });
+  });
+
+  describe('unbanAdmin', () => {
+    it('should restore admin status to ACTIVE', async () => {
+      mockPrisma.user.findFirst.mockResolvedValue({
+        userId: 'admin-1',
+        role: Role.ADMIN,
+        isDeleted: false,
+      });
+      mockPrisma.user.update.mockResolvedValue({
+        userId: 'admin-1',
+        status: Status.ACTIVE,
+      });
+
+      const result = await service.unbanAdmin('admin-1');
+
+      expect(result.status).toBe(Status.ACTIVE);
     });
   });
 
