@@ -303,6 +303,32 @@ describe('AuthService (unit)', () => {
     });
   });
 
+  describe('getMe', () => {
+    it('should return user profile details', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue({
+        userId: 'user-1',
+        email: 'test@test.com',
+        name: 'Test User',
+      });
+
+      const result = await service.getMe('user-1');
+
+      expect(result).toEqual({
+        userId: 'user-1',
+        email: 'test@test.com',
+        name: 'Test User',
+      });
+    });
+
+    it('should throw UnauthorizedException if user not found', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue(null);
+
+      await expect(service.getMe('invalid-id')).rejects.toThrow(
+        UnauthorizedException,
+      );
+    });
+  });
+
   describe('changePassword', () => {
     it('should change password successfully', async () => {
       mockUsersService.findOne.mockResolvedValue({

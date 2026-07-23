@@ -6,11 +6,15 @@ import { GetAdminsDto } from './dto/get-admins.dto';
 import { UpdateAdminDto } from './dto/update-admin.dto';
 import { Role, Status, Prisma } from '@prisma/client';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private cloudinaryService: CloudinaryService,
+  ) {}
 
   async create(createUserDto: CreateUserDto) {
     const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
@@ -188,6 +192,19 @@ export class UsersService {
     });
   }
 
+  async unbanAdmin(userId: string) {
+    const admin = await this.prisma.user.findFirst({
+      where: { userId, role: Role.ADMIN, isDeleted: false },
+    });
+    if (!admin) throw new NotFoundException('Admin not found or deleted');
+
+    return this.prisma.user.update({
+      where: { userId },
+      data: { status: Status.ACTIVE },
+      select: { userId: true, name: true, email: true, status: true },
+    });
+  }
+
   async updateUserRole(userId: string, role: Role) {
     const user = await this.prisma.user.findFirst({
       where: { userId, isDeleted: false },
@@ -228,8 +245,27 @@ export class UsersService {
     });
   }
 
-  async update(userId: string, updateUserDto: UpdateUserDto) {
-    const data: any = { ...updateUserDto };
+  async update(
+    userId: string,
+    updateUserDto: UpdateUserDto,
+    file?: Express.Multer.File,
+  ) {
+    await this.findOne(userId);
+    const { profileImage: dtoProfileImage, ...rest } = updateUserDto as any;
+    const data: any = { ...rest };
+
+    if (file) {
+      const uploadRes = await this.cloudinaryService.uploadFile(
+        file,
+        'profiles',
+      );
+      data.profileImage = uploadRes.secure_url;
+      data.avatar = uploadRes.secure_url;
+    } else if (typeof dtoProfileImage === 'string') {
+      data.profileImage = dtoProfileImage;
+      data.avatar = dtoProfileImage;
+    }
+
     if (data.password) {
       data.password = await bcrypt.hash(data.password, 10);
     }

@@ -6,12 +6,16 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UpdateShopDto } from './dto/update-shop.dto';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
 
 @Injectable()
 export class ProfileShopService implements OnModuleInit {
   private readonly logger = new Logger(ProfileShopService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cloudinaryService: CloudinaryService,
+  ) {}
 
   async onModuleInit() {
     const shopIdentifier = process.env.SHOP_NAME;
@@ -62,11 +66,24 @@ export class ProfileShopService implements OnModuleInit {
     return result;
   }
 
-  async updateActiveShop(updateShopDto: UpdateShopDto) {
+  async updateActiveShop(
+    updateShopDto: UpdateShopDto,
+    file?: Express.Multer.File,
+  ) {
     const shop = await this.getActiveShop();
+    const { companyLogo: dtoCompanyLogo, ...rest } = updateShopDto;
+    const updateData: any = { ...rest };
+
+    if (file) {
+      const uploadRes = await this.cloudinaryService.uploadFile(file, 'shops');
+      updateData.companyLogo = uploadRes.secure_url;
+    } else if (typeof dtoCompanyLogo === 'string') {
+      updateData.companyLogo = dtoCompanyLogo;
+    }
+
     return this.prisma.shopInformation.update({
       where: { shopId: shop.shopId },
-      data: updateShopDto,
+      data: updateData,
     });
   }
 }

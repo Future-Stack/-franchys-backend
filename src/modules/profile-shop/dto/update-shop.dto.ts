@@ -66,4 +66,12 @@ export class UpdateShopDto {
   @IsString()
   @IsOptional()
   instagram?: string;
+
+  @ApiPropertyOptional({
+    type: 'string',
+    format: 'binary',
+    description: 'Company logo image file to upload to Cloudinary',
+  })
+  @IsOptional()
+  companyLogo?: any;
 }
