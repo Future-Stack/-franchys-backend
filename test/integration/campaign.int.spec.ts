@@ -100,17 +100,17 @@ describe('CampaignService (integration)', () => {
 
     it('should return all campaigns', async () => {
       const result = await service.findAll();
-      expect(result.length).toBeGreaterThanOrEqual(3);
+      expect(result.data.length).toBeGreaterThanOrEqual(3);
     });
 
     it('should filter by type DISCOUNT', async () => {
       const result = await service.findAll('DISCOUNT');
-      expect(result.every((c) => c.type === 'DISCOUNT')).toBe(true);
+      expect(result.data.every((c) => c.type === 'DISCOUNT')).toBe(true);
     });
 
     it('should filter by status SENT', async () => {
       const result = await service.findAll(undefined, 'SENT');
-      expect(result.every((c) => c.status === 'SENT')).toBe(true);
+      expect(result.data.every((c) => c.status === 'SENT')).toBe(true);
     });
 
     it('should search by title keyword', async () => {
@@ -120,7 +120,7 @@ describe('CampaignService (integration)', () => {
         'SearchableCampaign',
       );
       expect(
-        result.some((c) => c.title.includes('SearchableCampaign-XYZ')),
+        result.data.some((c) => c.title.includes('SearchableCampaign-XYZ')),
       ).toBe(true);
     });
   });

@@ -69,13 +69,69 @@ export class ProductService {
     throw new BadRequestException('Brand ID or brand name is required');
   }
 
+  private async resolveCategory(
+    categoryId?: string,
+    categoryName?: string,
+  ): Promise<string | null> {
+    const isOther =
+      categoryId?.trim().toLowerCase() === 'other' ||
+      categoryName?.trim().toLowerCase() === 'other';
+
+    let targetName = categoryName?.trim();
+    if (!targetName && isOther) {
+      targetName = 'Other';
+    }
+
+    if (targetName) {
+      const existing = await this.prisma.category.findFirst({
+        where: { name: { equals: targetName, mode: 'insensitive' } },
+      });
+      if (existing) {
+        return existing.id;
+      }
+      const created = await this.prisma.category.create({
+        data: { name: targetName },
+      });
+      return created.id;
+    }
+
+    if (categoryId && !isOther) {
+      const existingById = await this.prisma.category.findUnique({
+        where: { id: categoryId },
+      });
+      if (existingById) {
+        return existingById.id;
+      }
+      const existingByName = await this.prisma.category.findFirst({
+        where: { name: { equals: categoryId, mode: 'insensitive' } },
+      });
+      if (existingByName) {
+        return existingByName.id;
+      }
+    }
+
+    return categoryId || null;
+  }
+
   // ─── Product CRUD ────────────────────────────────────────────────────────────
 
   async create(dto: CreateProductDto, files?: Express.Multer.File[]) {
-    const { colors, category, brandId, brandName, ...productData } = dto;
+    const {
+      colors,
+      category,
+      categoryId,
+      categoryName,
+      brandId,
+      brandName,
+      ...productData
+    } = dto as any;
     delete (productData as any).images;
 
     const resolvedBrandId = await this.resolveBrand(brandId, brandName);
+    const resolvedCategoryId = await this.resolveCategory(
+      categoryId || category,
+      categoryName,
+    );
 
     let imagePaths: string[] = [];
     if (files && files.length > 0) {
@@ -85,12 +141,12 @@ export class ProductService {
     return this.prisma.product.create({
       data: {
         ...productData,
-        category: category || null,
+        categoryId: resolvedCategoryId,
         brandId: resolvedBrandId,
         images: imagePaths,
         colors: colors?.length ? { create: colors } : undefined,
       },
-      include: { colors: true, brand: true },
+      include: { colors: true, brand: true, category: true },
     });
   }
 
@@ -143,7 +199,7 @@ export class ProductService {
         where,
         skip,
         take: limit,
-        include: { colors: true, brand: true },
+        include: { colors: true, brand: true, category: true },
         orderBy: { createdAt: 'desc' },
       }),
       this.prisma.product.count({ where }),
@@ -250,7 +306,7 @@ export class ProductService {
   async findOne(id: string) {
     const product = await this.prisma.product.findUnique({
       where: { id },
-      include: { colors: true, brand: true },
+      include: { colors: true, brand: true, category: true },
     });
     if (!product || product.isDeleted) {
       throw new NotFoundException(`Product with ID ${id} not found`);
@@ -264,12 +320,27 @@ export class ProductService {
     files?: Express.Multer.File[],
   ) {
     const existingProduct = await this.findOne(id);
-    const { existingImages, category, brandId, brandName, ...updateData } = dto;
+    const {
+      existingImages,
+      category,
+      categoryId,
+      categoryName,
+      brandId,
+      brandName,
+      ...updateData
+    } = dto as any;
     delete (updateData as any).images;
     const updateInput: any = { ...updateData };
 
-    if (category !== undefined) {
-      updateInput.category = category;
+    if (
+      categoryId !== undefined ||
+      category !== undefined ||
+      categoryName !== undefined
+    ) {
+      updateInput.categoryId = await this.resolveCategory(
+        categoryId || category,
+        categoryName,
+      );
     }
 
     if (brandId || brandName) {
@@ -297,7 +368,7 @@ export class ProductService {
     return this.prisma.product.update({
       where: { id },
       data: updateInput,
-      include: { colors: true, brand: true },
+      include: { colors: true, brand: true, category: true },
     });
   }
 

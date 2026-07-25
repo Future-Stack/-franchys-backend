@@ -31,6 +31,14 @@ export class CreateProductDto {
   productName: string;
 
   @ApiPropertyOptional({
+    description: 'Category ID',
+    example: 'uuid-here',
+  })
+  @IsString()
+  @IsOptional()
+  categoryId?: string;
+
+  @ApiPropertyOptional({
     description: 'Category name',
     example: 'Footwear',
   })
@@ -153,6 +161,14 @@ export class UpdateProductDto {
   @IsString()
   @IsOptional()
   productName?: string;
+
+  @ApiPropertyOptional({
+    description: 'Category ID',
+    example: 'uuid-here',
+  })
+  @IsString()
+  @IsOptional()
+  categoryId?: string;
 
   @ApiPropertyOptional({
     description: 'Category name',

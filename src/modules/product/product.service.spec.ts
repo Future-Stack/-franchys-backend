@@ -86,12 +86,12 @@ describe('ProductService (unit)', () => {
           productName: 'T-Shirt',
           itemNo: 'TS-01',
           price: 19.99,
-          category: 'T-Shirts',
+          categoryId: 'T-Shirts',
           brandId: 'brand-1',
           images: ['http://cloud.com/pic.jpg'],
           colors: { create: [{ name: 'Blue', code: '#0000FF' }] },
         },
-        include: { colors: true, brand: true },
+        include: { colors: true, brand: true, category: true },
       });
       expect(result.id).toBe('prod-1');
     });
