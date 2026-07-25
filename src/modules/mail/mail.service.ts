@@ -1,6 +1,21 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { MailerService } from '@nestjs-modules/mailer';
 
+export interface QuoteEmailContext {
+  customerName: string;
+  quoteNumber: string;
+  poNumber?: string | null;
+  dueDate?: string | null;
+  deliveryMethod?: string | null;
+  subtotal: string;
+  discount?: string | null;
+  taxRate: string;
+  taxAmount: string;
+  total: string;
+  quoteLink: string;
+  year: number;
+}
+
 @Injectable()
 export class MailService {
   private readonly logger = new Logger(MailService.name);
@@ -45,5 +60,27 @@ export class MailService {
         `Failed to send password reset email (likely SMTP is not configured): ${error.message}`,
       );
     }
+  }
+
+  /**
+   * Send a quote delivery email to the customer.
+   * Uses the quote-delivery.hbs Handlebars template.
+   * Throws on failure so the caller can log the error to QuoteDeliveryLog.
+   */
+  async sendQuote(email: string, context: QuoteEmailContext): Promise<void> {
+    this.logger.log(
+      `📧 [Quote Email] Sending quote ${context.quoteNumber} to ${email}`,
+    );
+
+    await this.mailerService.sendMail({
+      to: email,
+      subject: `Your Quote ${context.quoteNumber} is Ready — T-Price`,
+      template: './quote-delivery',
+      context,
+    });
+
+    this.logger.log(
+      `✅ [Quote Email] Successfully sent ${context.quoteNumber} to ${email}`,
+    );
   }
 }

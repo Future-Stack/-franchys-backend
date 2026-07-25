@@ -129,6 +129,60 @@ export class WhatsAppHttpClient {
   }
 
   /**
+   * Send an approved Message Template with dynamic body parameters.
+   * Use this when your template contains {{1}}, {{2}} … placeholders.
+   *
+   * @param components - Array of Meta component objects, e.g.:
+   *   [{ type: 'body', parameters: [{ type: 'text', text: 'John' }, ...] }]
+   *
+   * Suggested quote_delivery template format to register in Meta Business Suite:
+   * ─────────────────────────────────────────────────────────────────────────
+   * Template name : quote_delivery
+   * Language      : English (en)
+   * Category      : UTILITY
+   *
+   * Body text:
+   *   Hello {{1}}! 👋
+   *
+   *   Your quote *{{2}}* from T-Price is ready for review.
+   *   💰 Total: {{3}}
+   *   📅 Due: {{4}}
+   *
+   *   View your quote here:
+   *   {{5}}
+   *
+   *   Reply to this message if you have any questions!
+   * ─────────────────────────────────────────────────────────────────────────
+   */
+  async sendTemplateMessageWithComponents(
+    to: string,
+    templateName: string,
+    languageCode: string,
+    components: {
+      type: string;
+      parameters: { type: string; text: string }[];
+    }[],
+  ): Promise<{ messageId: string }> {
+    const response = await this.axios.post('/messages', {
+      messaging_product: 'whatsapp',
+      to,
+      type: 'template',
+      template: {
+        name: templateName,
+        language: { code: languageCode },
+        components,
+      },
+    });
+
+    const wamid: string = response.data?.messages?.[0]?.id ?? '';
+    this.logger.log(
+      `Template message [${templateName}] with components sent to ${to}. wamid=${wamid}`,
+    );
+    return { messageId: wamid };
+  }
+
+
+  /**
    * Mark a received message as read.
    * This updates the double-tick status on the sender's phone.
    */

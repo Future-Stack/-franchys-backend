@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Your Quote is Ready — {{quoteNumber}}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
+      background-color: #f4f6f9;
+      color: #333;
+    }
+    .wrapper {
+      max-width: 600px;
+      margin: 40px auto;
+      background: #ffffff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+    .header {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      padding: 40px 32px;
+      text-align: center;
+    }
+    .header h1 {
+      color: #ffffff;
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+    .header p {
+      color: rgba(255,255,255,0.7);
+      font-size: 14px;
+      margin-top: 6px;
+    }
+    .badge {
+      display: inline-block;
+      background: rgba(255,255,255,0.15);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 4px 14px;
+      border-radius: 20px;
+      margin-top: 12px;
+      letter-spacing: 0.5px;
+    }
+    .body {
+      padding: 36px 32px;
+    }
+    .greeting {
+      font-size: 18px;
+      font-weight: 600;
+      color: #1a1a2e;
+      margin-bottom: 12px;
+    }
+    .intro {
+      font-size: 15px;
+      color: #555;
+      line-height: 1.7;
+      margin-bottom: 28px;
+    }
+    .summary-card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 24px;
+      margin-bottom: 28px;
+    }
+    .summary-card h2 {
+      font-size: 13px;
+      font-weight: 600;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 16px;
+    }
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .summary-row:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+    .summary-row:first-of-type {
+      padding-top: 0;
+    }
+    .summary-label {
+      font-size: 14px;
+      color: #64748b;
+    }
+    .summary-value {
+      font-size: 14px;
+      font-weight: 600;
+      color: #1e293b;
+    }
+    .summary-value.total {
+      font-size: 18px;
+      color: #0f3460;
+    }
+    .cta-wrapper {
+      text-align: center;
+      margin: 32px 0;
+    }
+    .cta-btn {
+      display: inline-block;
+      background: linear-gradient(135deg, #0f3460, #16213e);
+      color: #ffffff !important;
+      text-decoration: none;
+      font-size: 15px;
+      font-weight: 600;
+      padding: 14px 36px;
+      border-radius: 8px;
+      letter-spacing: 0.3px;
+    }
+    .note {
+      font-size: 13px;
+      color: #94a3b8;
+      text-align: center;
+      margin-top: 12px;
+      line-height: 1.6;
+    }
+    .divider {
+      border: none;
+      border-top: 1px solid #e2e8f0;
+      margin: 28px 0;
+    }
+    .footer {
+      text-align: center;
+      padding: 24px 32px 32px;
+      background: #f8fafc;
+    }
+    .footer p {
+      font-size: 13px;
+      color: #94a3b8;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+
+    <!-- Header -->
+    <div class="header">
+      <h1>T-Price</h1>
+      <p>Quote Management System</p>
+      <span class="badge">{{quoteNumber}}</span>
+    </div>
+
+    <!-- Body -->
+    <div class="body">
+      <p class="greeting">Hello, {{customerName}}! 👋</p>
+      <p class="intro">
+        Your quote has been prepared and is ready for your review.
+        Please find the details below, and click the button to view the full quote online.
+      </p>
+
+      <!-- Summary Card -->
+      <div class="summary-card">
+        <h2>Quote Summary</h2>
+
+        <div class="summary-row">
+          <span class="summary-label">Quote Number</span>
+          <span class="summary-value">{{quoteNumber}}</span>
+        </div>
+
+        {{#if poNumber}}
+        <div class="summary-row">
+          <span class="summary-label">PO Number</span>
+          <span class="summary-value">{{poNumber}}</span>
+        </div>
+        {{/if}}
+
+        {{#if dueDate}}
+        <div class="summary-row">
+          <span class="summary-label">Due Date</span>
+          <span class="summary-value">{{dueDate}}</span>
+        </div>
+        {{/if}}
+
+        {{#if deliveryMethod}}
+        <div class="summary-row">
+          <span class="summary-label">Delivery Method</span>
+          <span class="summary-value">{{deliveryMethod}}</span>
+        </div>
+        {{/if}}
+
+        <div class="summary-row">
+          <span class="summary-label">Subtotal</span>
+          <span class="summary-value">{{subtotal}}</span>
+        </div>
+
+        {{#if discount}}
+        <div class="summary-row">
+          <span class="summary-label">Discount</span>
+          <span class="summary-value">-{{discount}}</span>
+        </div>
+        {{/if}}
+
+        <div class="summary-row">
+          <span class="summary-label">Tax ({{taxRate}}%)</span>
+          <span class="summary-value">{{taxAmount}}</span>
+        </div>
+
+        <div class="summary-row">
+          <span class="summary-label">Total</span>
+          <span class="summary-value total">{{total}}</span>
+        </div>
+      </div>
+
+      <!-- CTA -->
+      <div class="cta-wrapper">
+        <a href="{{quoteLink}}" class="cta-btn">View Full Quote →</a>
+      </div>
+      <p class="note">
+        This link will take you to a secure page where you can review<br />
+        all items, approve, or request revisions on your quote.
+      </p>
+
+      <hr class="divider" />
+
+      <p class="intro" style="margin-bottom:0;">
+        If you have any questions, please reply to this email or contact your representative directly.
+        We look forward to working with you!
+      </p>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <p>
+        This email was sent by T-Price on behalf of your representative.<br />
+        © {{year}} T-Price. All rights reserved.
+      </p>
+    </div>
+
+  </div>
+</body>
+</html>
