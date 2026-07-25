@@ -7,7 +7,6 @@ import {
   UpdateJobStatusDto,
   JobStatus,
 } from './dto/job.dto';
-import { GetJobsDto } from './dto/get-jobs.dto';
 
 @Injectable()
 export class JobService {
@@ -131,7 +130,7 @@ export class JobService {
     const fromStatus = job.status;
     const toStatus = (
       typeof dtoOrStatus === 'object' && dtoOrStatus !== null
-        ? (dtoOrStatus as UpdateJobStatusDto).status
+        ? dtoOrStatus.status
         : dtoOrStatus
     ) as PrismaJobStatus;
     const changedBy = user?.email || user?.userId || 'System Admin';
