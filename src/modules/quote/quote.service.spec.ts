@@ -340,8 +340,9 @@ describe('QuoteService', () => {
       mockPrisma.quote.findUnique.mockResolvedValue(quote);
 
       const result = await service.findOne('quote-1');
+      const { lineItems, ...rest } = quote;
       expect(result).toEqual({
-        ...quote,
+        ...rest,
         groups: [
           {
             name: 'Group 1',

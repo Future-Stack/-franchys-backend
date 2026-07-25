@@ -253,8 +253,10 @@ export class QuoteService {
       return quote;
     }
 
+    const { lineItems, ...rest } = quote;
+
     const groupsMap = new Map<string, any[]>();
-    for (const item of quote.lineItems) {
+    for (const item of lineItems) {
       const groupName = item.groupName || 'Group 1';
       if (!groupsMap.has(groupName)) {
         groupsMap.set(groupName, []);
@@ -262,13 +264,13 @@ export class QuoteService {
       groupsMap.get(groupName)!.push(item);
     }
 
-    const groups = Array.from(groupsMap.entries()).map(([name, lineItems]) => ({
+    const groups = Array.from(groupsMap.entries()).map(([name, items]) => ({
       name,
-      lineItems,
+      lineItems: items,
     }));
 
     return {
-      ...quote,
+      ...rest,
       groups,
     };
   }
