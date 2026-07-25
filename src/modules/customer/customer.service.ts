@@ -6,12 +6,16 @@ import {
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateCustomerDto, UpdateCustomerDto } from './dto/customer.dto';
 import { GetCustomersDto } from './dto/get-customers.dto';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
 
 @Injectable()
 export class CustomerService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cloudinaryService: CloudinaryService,
+  ) {}
 
-  async create(dto: CreateCustomerDto) {
+  async create(dto: CreateCustomerDto, file?: Express.Multer.File) {
     const existing = await this.prisma.customer.findUnique({
       where: { email: dto.email },
     });
@@ -20,20 +24,32 @@ export class CustomerService {
         `Customer with email "${dto.email}" already exists`,
       );
     }
-    const { eventDate, ...rest } = dto;
+    const { eventDate, profileImage: dtoProfileImage, ...rest } = dto;
+    let finalProfileImage: string | undefined =
+      typeof dtoProfileImage === 'string' ? dtoProfileImage : undefined;
+
+    if (file) {
+      const uploadRes = await this.cloudinaryService.uploadFile(
+        file,
+        'customers',
+      );
+      finalProfileImage = uploadRes.secure_url;
+    }
+
     return this.prisma.customer.create({
       data: {
         ...rest,
+        profileImage: finalProfileImage,
         eventDate: eventDate ? new Date(eventDate) : undefined,
       },
     });
   }
 
-  async findAll(query: GetCustomersDto) {
-    const { page = 1, limit = 10, search, customerType } = query;
+  async findAll(query?: GetCustomersDto) {
+    const { page = 1, limit = 10, search, customerType } = query || {};
     const skip = (page - 1) * limit;
 
-    const where: any = {};
+    const where: any = { isDeleted: false };
 
     if (customerType) {
       where.customerType = customerType;
@@ -71,13 +87,17 @@ export class CustomerService {
 
   async findOne(id: string) {
     const customer = await this.prisma.customer.findUnique({ where: { id } });
-    if (!customer) {
+    if (!customer || customer.isDeleted) {
       throw new NotFoundException(`Customer with ID ${id} not found`);
     }
     return customer;
   }
 
-  async update(id: string, dto: UpdateCustomerDto) {
+  async update(
+    id: string,
+    dto: UpdateCustomerDto,
+    file?: Express.Multer.File,
+  ) {
     await this.findOne(id);
     if (dto.email) {
       const existing = await this.prisma.customer.findUnique({
@@ -89,19 +109,35 @@ export class CustomerService {
         );
       }
     }
-    const { eventDate, ...rest } = dto;
+    const { eventDate, profileImage: dtoProfileImage, ...rest } = dto;
+    const updateData: any = { ...rest };
+
+    if (file) {
+      const uploadRes = await this.cloudinaryService.uploadFile(
+        file,
+        'customers',
+      );
+      updateData.profileImage = uploadRes.secure_url;
+    } else if (typeof dtoProfileImage === 'string') {
+      updateData.profileImage = dtoProfileImage;
+    }
+
+    if (eventDate !== undefined) {
+      updateData.eventDate = eventDate ? new Date(eventDate) : null;
+    }
+
     return this.prisma.customer.update({
       where: { id },
-      data: {
-        ...rest,
-        eventDate: eventDate ? new Date(eventDate) : undefined,
-      },
+      data: updateData,
     });
   }
 
   async remove(id: string) {
     await this.findOne(id);
-    await this.prisma.customer.delete({ where: { id } });
+    await this.prisma.customer.update({
+      where: { id },
+      data: { isDeleted: true },
+    });
     return { message: 'Customer deleted successfully', id };
   }
 }

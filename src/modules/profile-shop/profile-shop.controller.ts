@@ -1,5 +1,19 @@
-import { Controller, Get, Patch, Body } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  Patch,
+  Body,
+  UseInterceptors,
+  UploadedFile,
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiConsumes,
+} from '@nestjs/swagger';
 import { ProfileShopService } from './profile-shop.service';
 import { UpdateShopDto } from './dto/update-shop.dto';
 
@@ -17,7 +31,16 @@ export class ProfileShopController {
 
   @Patch()
   @ApiOperation({ summary: 'Update active shop information' })
-  updateActiveShop(@Body() updateShopDto: UpdateShopDto) {
-    return this.profileShopService.updateActiveShop(updateShopDto);
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(
+    FileInterceptor('companyLogo', {
+      storage: memoryStorage(),
+    }),
+  )
+  updateActiveShop(
+    @Body() updateShopDto: UpdateShopDto,
+    @UploadedFile() file?: Express.Multer.File,
+  ) {
+    return this.profileShopService.updateActiveShop(updateShopDto, file);
   }
 }

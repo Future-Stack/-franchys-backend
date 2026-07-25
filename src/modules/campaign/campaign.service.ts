@@ -133,9 +133,20 @@ export class CampaignService {
   }
 
   async validateDiscountCode(dto: ValidateDiscountDto) {
-    const campaign = await this.prisma.campaign.findFirst({
-      where: { promoCode: { equals: dto.code, mode: 'insensitive' } },
+    let campaign = await this.prisma.campaign.findFirst({
+      where: {
+        promoCode: { equals: dto.code, mode: 'insensitive' },
+        status: PrismaCampaignStatus.SENT,
+      },
+      orderBy: { createdAt: 'desc' },
     });
+
+    if (!campaign) {
+      campaign = await this.prisma.campaign.findFirst({
+        where: { promoCode: { equals: dto.code, mode: 'insensitive' } },
+        orderBy: { createdAt: 'desc' },
+      });
+    }
 
     if (!campaign) {
       throw new NotFoundException(`Promo code "${dto.code}" is invalid`);

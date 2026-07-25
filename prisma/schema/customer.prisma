@@ -38,6 +38,8 @@ model Customer {
 
     profileImage String?
 
+    isDeleted Boolean @default(false)
+
     quotes Quote[]
 
     createdAt DateTime @default(now())

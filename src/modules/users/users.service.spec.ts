@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { PrismaService } from '../../prisma/prisma.service';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { Role, Status } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
@@ -22,6 +23,10 @@ const mockPrisma = {
   $transaction: jest.fn(),
 };
 
+const mockCloudinaryService = {
+  uploadFile: jest.fn(),
+};
+
 describe('UsersService (unit)', () => {
   let service: UsersService;
 
@@ -32,6 +37,7 @@ describe('UsersService (unit)', () => {
       providers: [
         UsersService,
         { provide: PrismaService, useValue: mockPrisma },
+        { provide: CloudinaryService, useValue: mockCloudinaryService },
       ],
     }).compile();
 
@@ -211,6 +217,64 @@ describe('UsersService (unit)', () => {
       const result = await service.banAdmin('admin-1');
 
       expect(result.status).toBe(Status.SUSPEND);
+    });
+  });
+
+  describe('unbanAdmin', () => {
+    it('should restore admin status to ACTIVE', async () => {
+      mockPrisma.user.findFirst.mockResolvedValue({
+        userId: 'admin-1',
+        role: Role.ADMIN,
+        isDeleted: false,
+      });
+      mockPrisma.user.update.mockResolvedValue({
+        userId: 'admin-1',
+        status: Status.ACTIVE,
+      });
+
+      const result = await service.unbanAdmin('admin-1');
+
+      expect(result.status).toBe(Status.ACTIVE);
+    });
+  });
+
+  describe('updateUserRole', () => {
+    it('should update user role successfully', async () => {
+      mockPrisma.user.findFirst.mockResolvedValue({
+        userId: 'u-1',
+        role: Role.USER,
+        isDeleted: false,
+      });
+      mockPrisma.user.update.mockResolvedValue({
+        userId: 'u-1',
+        name: 'User 1',
+        email: 'u1@test.com',
+        role: Role.SUPER_ADMIN,
+        updatedAt: new Date(),
+      });
+
+      const result = await service.updateUserRole('u-1', Role.SUPER_ADMIN);
+
+      expect(mockPrisma.user.update).toHaveBeenCalledWith({
+        where: { userId: 'u-1' },
+        data: { role: Role.SUPER_ADMIN },
+        select: {
+          userId: true,
+          name: true,
+          email: true,
+          role: true,
+          updatedAt: true,
+        },
+      });
+      expect(result.role).toBe(Role.SUPER_ADMIN);
+    });
+
+    it('should throw NotFoundException if user does not exist or is deleted', async () => {
+      mockPrisma.user.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.updateUserRole('bad-id', Role.SUPER_ADMIN),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 });

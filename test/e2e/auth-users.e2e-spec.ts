@@ -188,4 +188,33 @@ describe('Auth & Users (e2e)', () => {
       expect(res.body.data.status).toBe('SUSPEND');
     });
   });
+
+  // ─── PATCH /users/:id/role ────────────────────────────────────────────────
+
+  describe('PATCH /api/v1/users/:id/role', () => {
+    it('should update role of a user successfully', async () => {
+      const email = `e2e-user-role-${Date.now()}@test.com`;
+      createdEmails.push(email);
+
+      const createRes = await request(app.getHttpServer())
+        .post('/api/v1/users/admin')
+        .set('Authorization', `Bearer ${tokens.accessToken}`)
+        .send({
+          name: 'Role Test Admin',
+          email,
+          password: 'Password123!',
+        });
+
+      const userId = createRes.body.data.userId;
+      createdUserIds.push(userId);
+
+      const res = await request(app.getHttpServer())
+        .patch(`/api/v1/users/${userId}/role`)
+        .set('Authorization', `Bearer ${tokens.accessToken}`)
+        .send({ role: 'SUPER_ADMIN' })
+        .expect(200);
+
+      expect(res.body.data.role).toBe('SUPER_ADMIN');
+    });
+  });
 });

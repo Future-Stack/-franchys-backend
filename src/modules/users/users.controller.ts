@@ -8,17 +8,26 @@ import {
   Patch,
   Param,
   Delete,
+  UseInterceptors,
+  UploadedFile,
+  Req,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 import {
   ApiTags,
   ApiOperation,
   ApiBearerAuth,
   ApiQuery,
+  ApiBody,
+  ApiConsumes,
 } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { CreateAdminDto } from './dto/create-admin.dto';
 import { GetAdminsDto } from './dto/get-admins.dto';
 import { UpdateAdminDto } from './dto/update-admin.dto';
+import { UpdateRoleDto } from './dto/update-role.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -90,5 +99,55 @@ export class UsersController {
   @ApiOperation({ summary: 'Ban (suspend) an admin (Super Admin only)' })
   banAdmin(@Param('id') id: string) {
     return this.usersService.banAdmin(id);
+  }
+
+  @Post('admin/:id/unban')
+  @Roles(Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Unban (activate) an admin (Super Admin only)' })
+  unbanAdmin(@Param('id') id: string) {
+    return this.usersService.unbanAdmin(id);
+  }
+
+  @Patch('profile')
+  @ApiOperation({ summary: 'Update personal profile information & avatar' })
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(
+    FileInterceptor('profileImage', {
+      storage: memoryStorage(),
+    }),
+  )
+  updateProfile(
+    @Req() req: any,
+    @Body() updateUserDto: UpdateUserDto,
+    @UploadedFile() file?: Express.Multer.File,
+  ) {
+    return this.usersService.update(req.user.userId, updateUserDto, file);
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: 'Update user personal info by ID' })
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(
+    FileInterceptor('profileImage', {
+      storage: memoryStorage(),
+    }),
+  )
+  updateUser(
+    @Param('id') id: string,
+    @Body() updateUserDto: UpdateUserDto,
+    @UploadedFile() file?: Express.Multer.File,
+  ) {
+    return this.usersService.update(id, updateUserDto, file);
+  }
+
+  @Patch(':id/role')
+  @Roles(Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Update user role (Super Admin only) roles can be ADMIN, SUPER_ADMIN' })
+  @ApiBody({ type: UpdateRoleDto })
+  updateRole(
+    @Param('id') id: string,
+    @Body() updateRoleDto: UpdateRoleDto,
+  ) {
+    return this.usersService.updateUserRole(id, updateRoleDto.role);
   }
 }
