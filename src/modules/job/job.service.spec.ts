@@ -129,7 +129,7 @@ describe('JobService', () => {
       mockPrisma.job.findMany.mockResolvedValue([]);
       mockPrisma.job.count.mockResolvedValue(0);
 
-      await service.findAll({ status: 'PRODUCTION' as any });
+      await service.findAll({ status: JobStatus.PRODUCTION });
 
       expect(mockPrisma.job.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -210,7 +210,7 @@ describe('JobService', () => {
       mockPrisma.job.findUnique.mockResolvedValue(buildJob());
       const updatedJob = buildJob({ status: JobStatus.COMPLETED });
 
-      mockPrisma.$transaction.mockImplementation(async (cb: any) => {
+      mockPrisma.$transaction.mockImplementation((cb: any) => {
         return cb({
           jobStatusHistory: {
             create: jest.fn().mockResolvedValue({}),

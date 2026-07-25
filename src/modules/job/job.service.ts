@@ -1,7 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, JobStatus as PrismaJobStatus } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { CreateJobDto, UpdateJobDto, JobStatus } from './dto/job.dto';
+import {
+  CreateJobDto,
+  UpdateJobDto,
+  UpdateJobStatusDto,
+  JobStatus,
+} from './dto/job.dto';
 import { GetJobsDto } from './dto/get-jobs.dto';
 
 @Injectable()

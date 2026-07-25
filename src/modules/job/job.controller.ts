@@ -9,12 +9,7 @@ import {
   Query,
   Req,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiBearerAuth,
-  ApiQuery,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { JobService } from './job.service';
 import { CreateJobDto, UpdateJobDto, UpdateJobStatusDto } from './dto/job.dto';
 import { GetJobsDto } from './dto/get-jobs.dto';
