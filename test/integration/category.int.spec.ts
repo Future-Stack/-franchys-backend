@@ -83,8 +83,8 @@ describe('CategoryService (integration)', () => {
       categoryIds.push(c1.id, c2.id);
 
       const result = await service.findAll();
-      expect(result.some((c) => c.id === c1.id)).toBe(true);
-      expect(result.some((c) => c.id === c2.id)).toBe(false);
+      expect(result.data.some((c) => c.id === c1.id)).toBe(true);
+      expect(result.data.some((c) => c.id === c2.id)).toBe(false);
     });
   });
 

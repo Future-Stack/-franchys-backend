@@ -14,10 +14,15 @@ const mockPrisma = {
     findFirst: jest.fn(),
     update: jest.fn(),
     delete: jest.fn(),
+    count: jest.fn(),
+  },
+  jobStatusHistory: {
+    create: jest.fn(),
   },
   quote: {
     findUnique: jest.fn(),
   },
+  $transaction: jest.fn(),
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -114,16 +119,17 @@ describe('JobService', () => {
     it('should return all jobs', async () => {
       const jobs = [buildJob(), buildJob({ id: 'job-2' })];
       mockPrisma.job.findMany.mockResolvedValue(jobs);
+      mockPrisma.job.count.mockResolvedValue(2);
 
-      const result = await service.findAll();
-      expect(result).toHaveLength(2);
+      const result = await service.findAll({});
+      expect(result.data).toHaveLength(2);
     });
 
     it('should apply status filter', async () => {
       mockPrisma.job.findMany.mockResolvedValue([]);
+      mockPrisma.job.count.mockResolvedValue(0);
 
-      // Pass a valid status string that Prisma accepts at runtime
-      await service.findAll('PRODUCTION');
+      await service.findAll({ status: JobStatus.PRODUCTION });
 
       expect(mockPrisma.job.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -134,8 +140,9 @@ describe('JobService', () => {
 
     it('should apply search filter across jobId, clientName, and description', async () => {
       mockPrisma.job.findMany.mockResolvedValue([]);
+      mockPrisma.job.count.mockResolvedValue(0);
 
-      await service.findAll(undefined, 'Acme');
+      await service.findAll({ search: 'Acme' });
 
       expect(mockPrisma.job.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -199,16 +206,26 @@ describe('JobService', () => {
   // ─── updateStatus ─────────────────────────────────────────────────────────
 
   describe('updateStatus', () => {
-    it('should update job status', async () => {
+    it('should update job status and create status history', async () => {
       mockPrisma.job.findUnique.mockResolvedValue(buildJob());
       const updatedJob = buildJob({ status: JobStatus.COMPLETED });
-      mockPrisma.job.update.mockResolvedValue(updatedJob);
 
-      const result = await service.updateStatus('job-1', JobStatus.COMPLETED);
+      mockPrisma.$transaction.mockImplementation((cb: any) => {
+        return cb({
+          jobStatusHistory: {
+            create: jest.fn().mockResolvedValue({}),
+          },
+          job: {
+            update: jest.fn().mockResolvedValue(updatedJob),
+          },
+        });
+      });
 
-      expect(mockPrisma.job.update).toHaveBeenCalledWith(
-        expect.objectContaining({ data: { status: JobStatus.COMPLETED } }),
-      );
+      const result = await service.updateStatus('job-1', {
+        status: JobStatus.COMPLETED,
+        note: 'Completed artwork proof',
+      });
+
       expect(result.status).toBe(JobStatus.COMPLETED);
     });
 
@@ -216,7 +233,10 @@ describe('JobService', () => {
       mockPrisma.job.findUnique.mockResolvedValue(null);
 
       await expect(
-        service.updateStatus('missing', JobStatus.COMPLETED),
+        service.updateStatus('missing', {
+          status: JobStatus.COMPLETED,
+          note: 'Completed artwork proof',
+        }),
       ).rejects.toThrow(NotFoundException);
     });
   });

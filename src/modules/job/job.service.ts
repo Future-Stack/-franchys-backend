@@ -1,7 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, JobStatus as PrismaJobStatus } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { CreateJobDto, UpdateJobDto, JobStatus } from './dto/job.dto';
+import {
+  CreateJobDto,
+  UpdateJobDto,
+  UpdateJobStatusDto,
+  JobStatus,
+} from './dto/job.dto';
 import { GetJobsDto } from './dto/get-jobs.dto';
 
 @Injectable()
@@ -22,8 +27,22 @@ export class JobService {
     });
   }
 
-  async findAll(query: GetJobsDto) {
-    const { page = 1, limit = 10, search, status } = query;
+  async findAll(queryOrStatus?: any, legacySearch?: string) {
+    let page = 1;
+    let limit = 10;
+    let search: string | undefined;
+    let status: any;
+
+    if (typeof queryOrStatus === 'object' && queryOrStatus !== null) {
+      page = queryOrStatus.page || 1;
+      limit = queryOrStatus.limit || 10;
+      search = queryOrStatus.search;
+      status = queryOrStatus.status;
+    } else {
+      status = queryOrStatus;
+      search = legacySearch;
+    }
+
     const skip = (page - 1) * limit;
 
     const whereClause: Prisma.JobWhereInput = {};
@@ -69,6 +88,9 @@ export class JobService {
       where: { id },
       include: {
         quote: true,
+        history: {
+          orderBy: { createdAt: 'desc' },
+        },
       },
     });
     if (!job) {
@@ -91,14 +113,54 @@ export class JobService {
         amount: dto.amount,
         quoteId: dto.quoteId,
       },
+      include: {
+        quote: true,
+        history: {
+          orderBy: { createdAt: 'desc' },
+        },
+      },
     });
   }
 
-  async updateStatus(id: string, status: JobStatus) {
-    await this.findOne(id);
-    return await this.prisma.job.update({
-      where: { id },
-      data: { status },
+  async updateStatus(
+    id: string,
+    dtoOrStatus: UpdateJobStatusDto | JobStatus | string,
+    user?: { email?: string; userId?: string },
+  ) {
+    const job = await this.findOne(id);
+    const fromStatus = job.status;
+    const toStatus = (
+      typeof dtoOrStatus === 'object' && dtoOrStatus !== null
+        ? (dtoOrStatus as UpdateJobStatusDto).status
+        : dtoOrStatus
+    ) as PrismaJobStatus;
+    const changedBy = user?.email || user?.userId || 'System Admin';
+
+    return await this.prisma.$transaction(async (tx) => {
+      await tx.jobStatusHistory.create({
+        data: {
+          jobId: id,
+          fromStatus,
+          toStatus,
+          note:
+            (typeof dtoOrStatus === 'object' &&
+              dtoOrStatus !== null &&
+              dtoOrStatus.note) ||
+            '',
+          changedBy,
+        },
+      });
+
+      return tx.job.update({
+        where: { id },
+        data: { status: toStatus },
+        include: {
+          quote: true,
+          history: {
+            orderBy: { createdAt: 'desc' },
+          },
+        },
+      });
     });
   }
 

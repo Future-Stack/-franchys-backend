@@ -99,4 +99,12 @@ export class UpdateJobStatusDto {
   @IsEnum(JobStatus)
   @IsNotEmpty()
   status: JobStatus;
+
+  @ApiProperty({
+    example: 'Art proof sent to client for approval.',
+    description: 'Mandatory note explaining why the job status changed',
+  })
+  @IsString()
+  @IsNotEmpty()
+  note: string;
 }

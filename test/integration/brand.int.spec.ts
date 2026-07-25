@@ -83,8 +83,8 @@ describe('BrandService (integration)', () => {
       brandIds.push(b1.id, b2.id);
 
       const result = await service.findAll();
-      expect(result.some((b) => b.id === b1.id)).toBe(true);
-      expect(result.some((b) => b.id === b2.id)).toBe(false);
+      expect(result.data.some((b) => b.id === b1.id)).toBe(true);
+      expect(result.data.some((b) => b.id === b2.id)).toBe(false);
     });
   });
 

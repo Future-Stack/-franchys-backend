@@ -31,7 +31,7 @@ export class CreateProductDto {
   productName: string;
 
   @ApiPropertyOptional({
-    description: 'Category ID (UUID) or "other"',
+    description: 'Category ID',
     example: 'uuid-here',
   })
   @IsString()
@@ -39,13 +39,12 @@ export class CreateProductDto {
   categoryId?: string;
 
   @ApiPropertyOptional({
-    description:
-      'Custom category name (used when categoryId is omitted, "other", or custom)',
+    description: 'Category name',
     example: 'Footwear',
   })
   @IsString()
   @IsOptional()
-  categoryName?: string;
+  category?: string;
 
   @ApiPropertyOptional({
     description: 'Brand ID (UUID) or "other"',
@@ -164,7 +163,7 @@ export class UpdateProductDto {
   productName?: string;
 
   @ApiPropertyOptional({
-    description: 'Category ID (UUID) or "other"',
+    description: 'Category ID',
     example: 'uuid-here',
   })
   @IsString()
@@ -172,13 +171,12 @@ export class UpdateProductDto {
   categoryId?: string;
 
   @ApiPropertyOptional({
-    description:
-      'Custom category name (used when categoryId is omitted, "other", or custom)',
+    description: 'Category name',
     example: 'Footwear',
   })
   @IsString()
   @IsOptional()
-  categoryName?: string;
+  category?: string;
 
   @ApiPropertyOptional({
     description: 'Brand ID (UUID) or "other"',
@@ -303,4 +301,49 @@ export class UpdateProductColorDto {
   @IsString()
   @IsOptional()
   code?: string;
+}
+
+export class GetProductsDto {
+  @ApiPropertyOptional({ description: 'Search query string' })
+  @IsOptional()
+  @IsString()
+  search?: string;
+
+  @ApiPropertyOptional({
+    description: 'Page number (starting from 1)',
+    default: 1,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  page?: number = 1;
+
+  @ApiPropertyOptional({
+    description: 'Number of items per page (max 100)',
+    default: 10,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  limit?: number = 10;
+
+  @ApiPropertyOptional({ description: 'Filter by category ID' })
+  @IsOptional()
+  @IsString()
+  categoryId?: string;
+
+  @ApiPropertyOptional({ description: 'Filter by brand ID' })
+  @IsOptional()
+  @IsString()
+  brandId?: string;
+
+  @ApiPropertyOptional({ description: 'Filter/search by color name' })
+  @IsOptional()
+  @IsString()
+  color?: string;
+
+  @ApiPropertyOptional({
+    description: 'Filter/search by size (e.g. S, M, L, XL)',
+  })
+  @IsOptional()
+  @IsString()
+  size?: string;
 }

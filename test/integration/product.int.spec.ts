@@ -101,8 +101,8 @@ describe('ProductService (integration)', () => {
       productIds.push(p1.id, p2.id);
 
       const result = await service.findAll();
-      expect(result.some((p) => p.id === p1.id)).toBe(true);
-      expect(result.some((p) => p.id === p2.id)).toBe(false);
+      expect(result.data.some((p) => p.id === p1.id)).toBe(true);
+      expect(result.data.some((p) => p.id === p2.id)).toBe(false);
     });
   });
 

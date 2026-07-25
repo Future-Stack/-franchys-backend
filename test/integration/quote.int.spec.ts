@@ -146,17 +146,17 @@ describe('QuoteService (integration)', () => {
 
     it('should return all quotes without filter', async () => {
       const result = await service.findAll();
-      expect(result.length).toBeGreaterThanOrEqual(2);
+      expect(result.data.length).toBeGreaterThanOrEqual(2);
     });
 
     it('should filter by status APPROVED', async () => {
       const result = await service.findAll('APPROVED');
-      expect(result.every((q) => q.status === 'APPROVED')).toBe(true);
+      expect(result.data.every((q) => q.status === 'APPROVED')).toBe(true);
     });
 
     it('should filter by status DRAFT', async () => {
       const result = await service.findAll('DRAFT');
-      expect(result.every((q) => q.status === 'DRAFT')).toBe(true);
+      expect(result.data.every((q) => q.status === 'DRAFT')).toBe(true);
     });
   });
 

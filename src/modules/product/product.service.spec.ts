@@ -58,13 +58,12 @@ describe('ProductService (unit)', () => {
       productName: 'T-Shirt',
       itemNo: 'TS-01',
       price: 19.99 as any,
-      categoryId: 'cat-1',
+      category: 'T-Shirts',
       brandId: 'brand-1',
       colors: [{ name: 'Blue', code: '#0000FF' }],
     };
 
     it('should create a product with colors and images successfully', async () => {
-      mockPrisma.category.findUnique.mockResolvedValue({ id: 'cat-1' });
       mockPrisma.brand.findUnique.mockResolvedValue({ id: 'brand-1' });
 
       const mockFiles = [{ filename: 'pic.jpg' }] as any;
@@ -87,12 +86,12 @@ describe('ProductService (unit)', () => {
           productName: 'T-Shirt',
           itemNo: 'TS-01',
           price: 19.99,
-          categoryId: 'cat-1',
+          categoryId: 'T-Shirts',
           brandId: 'brand-1',
           images: ['http://cloud.com/pic.jpg'],
           colors: { create: [{ name: 'Blue', code: '#0000FF' }] },
         },
-        include: { colors: true, category: true, brand: true },
+        include: { colors: true, brand: true, category: true },
       });
       expect(result.id).toBe('prod-1');
     });
@@ -162,6 +161,66 @@ describe('ProductService (unit)', () => {
         orderBy: { createdAt: 'desc' },
       });
       expect(result.data).toEqual([{ id: '1', productName: 'Tee' }]);
+    });
+
+    it('should apply category, brand, color, and size filters', async () => {
+      mockPrisma.product.findMany.mockResolvedValue([]);
+      mockPrisma.product.count.mockResolvedValue(0);
+
+      await service.findAll({
+        categoryId: 'cat-1',
+        brandId: 'brand-1',
+        color: 'Red',
+        size: 'L',
+      });
+
+      expect(mockPrisma.product.findMany).toHaveBeenCalledWith({
+        where: {
+          isDeleted: false,
+          categoryId: 'cat-1',
+          brandId: 'brand-1',
+          colors: { some: { name: { contains: 'Red', mode: 'insensitive' } } },
+          availableSizes: { has: 'L' },
+        },
+        skip: 0,
+        take: 10,
+        include: { colors: true, category: true, brand: true },
+        orderBy: { createdAt: 'desc' },
+      });
+    });
+  });
+
+  describe('autocomplete', () => {
+    it('should return dropdown options with Title - Color format per product color', async () => {
+      mockPrisma.product.findMany.mockResolvedValue([
+        {
+          id: 'prod-1',
+          productName: 'Men Polo',
+          itemNo: '4000',
+          style: '4000P',
+          price: 25.0,
+          brand: { name: 'Paragon' },
+          category: { name: 'Polos' },
+          colors: [
+            { id: 'c-1', name: 'Black', code: '#000' },
+            { id: 'c-2', name: 'Royal', code: '#00f' },
+          ],
+          availableSizes: ['S', 'M', 'L'],
+          images: [],
+        },
+      ]);
+
+      const results = await service.autocomplete('4000');
+
+      expect(results.length).toBe(2);
+      expect(results[0].label).toBe(
+        "Men Polo - Black - Paragon - 4000P - 4000",
+      );
+      expect(results[0].color).toBe('Black');
+      expect(results[1].label).toBe(
+        "Men Polo - Royal - Paragon - 4000P - 4000",
+      );
+      expect(results[1].color).toBe('Royal');
     });
   });
 

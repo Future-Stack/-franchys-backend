@@ -7,13 +7,9 @@ import {
   Param,
   Delete,
   Query,
+  Req,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiBearerAuth,
-  ApiQuery,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { JobService } from './job.service';
 import { CreateJobDto, UpdateJobDto, UpdateJobStatusDto } from './dto/job.dto';
 import { GetJobsDto } from './dto/get-jobs.dto';
@@ -49,9 +45,15 @@ export class JobController {
   }
 
   @Patch(':id/status')
-  @ApiOperation({ summary: 'Update job card workflow status' })
-  updateStatus(@Param('id') id: string, @Body() dto: UpdateJobStatusDto) {
-    return this.jobService.updateStatus(id, dto.status);
+  @ApiOperation({
+    summary: 'Update job card workflow status (requires mandatory admin note)',
+  })
+  updateStatus(
+    @Param('id') id: string,
+    @Body() dto: UpdateJobStatusDto,
+    @Req() req: any,
+  ) {
+    return this.jobService.updateStatus(id, dto, req.user);
   }
 
   @Delete(':id')
