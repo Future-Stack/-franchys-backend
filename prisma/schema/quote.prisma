@@ -56,4 +56,5 @@ model QuoteLineItem {
   isTaxed      Boolean @default(false)
   total        Decimal @default(0.00) @db.Decimal(10, 2)
   imprintType  String?
+  mockups      String[] @default([])
 }

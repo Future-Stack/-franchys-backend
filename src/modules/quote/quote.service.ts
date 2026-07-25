@@ -34,6 +34,7 @@ interface CalcLineItemInput {
   isTaxed?: boolean;
   total?: any;
   imprintType?: string | null;
+  mockups?: string[];
 }
 
 interface CalcLineItemOutput {
@@ -58,6 +59,7 @@ interface CalcLineItemOutput {
   isTaxed: boolean;
   total: number;
   imprintType: string | null;
+  mockups: string[];
 }
 
 @Injectable()
@@ -228,6 +230,7 @@ export class QuoteService {
         isTaxed: !!item.isTaxed,
         total,
         imprintType: matrixName,
+        mockups: item.mockups || [],
       });
     }
 
@@ -385,6 +388,7 @@ export class QuoteService {
               isTaxed: item.isTaxed,
               total: item.total,
               imprintType: item.imprintType,
+              mockups: item.mockups,
             })),
           },
         },
@@ -472,6 +476,7 @@ export class QuoteService {
             isTaxed: item.isTaxed,
             total: item.total,
             imprintType: item.imprintType,
+            mockups: item.mockups,
           })),
         },
       },
@@ -722,6 +727,7 @@ export class QuoteService {
                       isTaxed: item.isTaxed,
                       total: item.total,
                       imprintType: item.imprintType,
+                      mockups: item.mockups,
                     }),
                   ),
                 }

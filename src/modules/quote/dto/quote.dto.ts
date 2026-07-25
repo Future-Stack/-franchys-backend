@@ -120,6 +120,14 @@ export class CreateQuoteLineItemDto {
   @IsString()
   @IsOptional()
   imprintType?: string;
+
+  @ApiPropertyOptional({
+    example: ['https://res.cloudinary.com/demo/image/upload/v1/mockup1.jpg'],
+  })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  mockups?: string[];
 }
 
 export class QuoteGroupDto {
