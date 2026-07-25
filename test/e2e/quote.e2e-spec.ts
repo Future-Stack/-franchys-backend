@@ -52,16 +52,20 @@ describe('Quote (e2e)', () => {
           customerId,
           repId: tokens.userId,
           taxRate: 7,
-          lineItems: [
+          groups: [
             {
-              groupName: 'Group 1',
-              description: 'T-Shirt',
-              unitPrice: 20,
-              markupPrice: 10,
-              sizeM: 10,
-              sizeL: 5,
-              isTaxed: false,
-              imprintType: 'Screen Print',
+              name: 'Group 1',
+              lineItems: [
+                {
+                  description: 'T-Shirt',
+                  unitPrice: 20,
+                  markupPrice: 10,
+                  sizeM: 10,
+                  sizeL: 5,
+                  isTaxed: false,
+                  imprintType: 'Screen Print',
+                },
+              ],
             },
           ],
         })
@@ -73,6 +77,7 @@ describe('Quote (e2e)', () => {
       expect(quote.quoteNumber).toMatch(/^Q-\d+$/);
       expect(quote.status).toBe('DRAFT');
 
+      quoteId = quote.id;
       quoteIds.push(quote.id);
     });
 
@@ -187,9 +192,16 @@ describe('Quote (e2e)', () => {
         .send({
           customerId,
           repId: tokens.userId,
-          lineItems: [{ description: 'Hat', unitPrice: 15, markupPrice: 5 }],
+          groups: [
+            {
+              name: 'Group 1',
+              lineItems: [
+                { description: 'Hat', unitPrice: 15, markupPrice: 5 },
+              ],
+            },
+          ],
         });
-      tempQuoteId = res.body.data.id;
+      tempQuoteId = res.body?.data?.id;
     });
 
     it('should delete the quote and return 200', async () => {
