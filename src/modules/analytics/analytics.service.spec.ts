@@ -19,9 +19,6 @@ const mockPrisma = {
   customer: {
     findUnique: jest.fn(),
   },
-  category: {
-    findUnique: jest.fn(),
-  },
   quoteLineItem: {
     groupBy: jest.fn(),
   },
@@ -55,7 +52,7 @@ describe('AnalyticsService', () => {
     };
     type CustomerGroup = { customerId: string; _sum: { total: number | null } };
     type CategoryGroup = {
-      categoryId: string;
+      category: string;
       _sum: { itemsCount: number | null };
     };
 
@@ -68,7 +65,6 @@ describe('AnalyticsService', () => {
         topCustomerGroups?: CustomerGroup[];
         customers?: Record<string, CustomerRecord>;
         categoryGroups?: CategoryGroup[];
-        categories?: Record<string, { name: string }>;
       } = {},
     ) => {
       const approvedQuotes = overrides.approvedQuotes ?? [];
@@ -88,12 +84,6 @@ describe('AnalyticsService', () => {
 
       const categoryGroups = overrides.categoryGroups ?? [];
       mockPrisma.quoteLineItem.groupBy.mockResolvedValue(categoryGroups);
-
-      const categories = overrides.categories ?? {};
-      mockPrisma.category.findUnique.mockImplementation(
-        ({ where }: { where: { id: string } }) =>
-          Promise.resolve(categories[where.id] ?? null),
-      );
     };
 
     it('should return correct summary shape', async () => {
@@ -240,39 +230,28 @@ describe('AnalyticsService', () => {
     it('should return categoryPerformance with category names', async () => {
       setupMocks({
         approvedQuotes: [],
-        categoryGroups: [{ categoryId: 'cat-1', _sum: { itemsCount: 150 } }],
-        categories: {
-          'cat-1': { name: 'T-Shirts' },
-        },
+        categoryGroups: [{ category: 'T-Shirts', _sum: { itemsCount: 150 } }],
       });
 
       const result = await service.getDashboardStats();
 
       expect(result.categoryPerformance).toHaveLength(1);
       expect(result.categoryPerformance[0]).toMatchObject({
-        categoryId: 'cat-1',
         categoryName: 'T-Shirts',
         volume: 150,
       });
     });
 
-    it('should skip categoryPerformance entries with null categoryId', async () => {
+    it('should handle categoryPerformance entries', async () => {
       setupMocks({
         approvedQuotes: [],
-        categoryGroups: [
-          { categoryId: null as unknown as string, _sum: { itemsCount: 50 } },
-          { categoryId: 'cat-1', _sum: { itemsCount: 100 } },
-        ],
-        categories: {
-          'cat-1': { name: 'Hats' },
-        },
+        categoryGroups: [{ category: 'Hats', _sum: { itemsCount: 100 } }],
       });
 
       const result = await service.getDashboardStats();
 
-      // Only cat-1 should be included; null categoryId is skipped
       expect(result.categoryPerformance).toHaveLength(1);
-      expect(result.categoryPerformance[0].categoryId).toBe('cat-1');
+      expect(result.categoryPerformance[0].categoryName).toBe('Hats');
     });
 
     it('should return empty topCustomers and categoryPerformance when no data', async () => {

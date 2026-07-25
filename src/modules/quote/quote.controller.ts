@@ -8,18 +8,28 @@ import {
   Delete,
   Query,
   Req,
+  UseInterceptors,
+  UploadedFiles,
+  BadRequestException,
 } from '@nestjs/common';
+import { FilesInterceptor } from '@nestjs/platform-express';
 import {
   ApiTags,
   ApiOperation,
   ApiBearerAuth,
-  ApiQuery,
+  ApiConsumes,
+  ApiBody,
 } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import { QuoteService } from './quote.service';
-import { CreateQuoteDto, UpdateQuoteDto } from './dto/quote.dto';
+import {
+  CreateQuoteDto,
+  UpdateQuoteDto,
+  CalculateQuoteDto,
+} from './dto/quote.dto';
 import { GetQuotesDto } from './dto/get-quotes.dto';
-import { Public } from '../../common/decorators/public.decorator';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
+import { Public } from 'src/common/decorators/public.decorator';
 
 @ApiTags('Quote')
 @ApiBearerAuth()
@@ -28,7 +38,60 @@ export class QuoteController {
   constructor(
     private readonly quoteService: QuoteService,
     private readonly configService: ConfigService,
+    private readonly cloudinaryService: CloudinaryService,
   ) {}
+
+  @Post('upload-mockups')
+  @UseInterceptors(FilesInterceptor('files', 10))
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({
+    summary: 'Upload up to 10 mockup/artwork files for quote line items',
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        files: {
+          type: 'array',
+          items: {
+            type: 'string',
+            format: 'binary',
+          },
+        },
+      },
+    },
+  })
+  async uploadMockups(@UploadedFiles() files: Express.Multer.File[]) {
+    if (!files || files.length === 0) {
+      throw new BadRequestException('No files provided');
+    }
+    const urls = await this.cloudinaryService.uploadMultipleFiles(
+      files,
+      'quote-mockups',
+    );
+    return { urls };
+  }
+
+  @Post('refresh-pricing/new')
+  @ApiOperation({
+    summary:
+      'Triggered by "Refresh Pricing" button for NEW unsaved quotes (preview calculation)',
+  })
+  refreshPricingNew(@Body() dto: CalculateQuoteDto) {
+    return this.quoteService.calculatePreview(dto);
+  }
+
+  @Post(':id/refresh-pricing/existing')
+  @ApiOperation({
+    summary:
+      'Triggered by "Refresh Pricing" button for EXISTING saved quotes (recalculates and updates DB)',
+  })
+  refreshPricingExisting(
+    @Param('id') id: string,
+    @Body() dto?: UpdateQuoteDto,
+  ) {
+    return this.quoteService.refreshPricingExisting(id, dto);
+  }
 
   @Post()
   @ApiOperation({ summary: 'Create a new quote' })

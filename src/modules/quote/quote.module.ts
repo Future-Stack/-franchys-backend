@@ -3,10 +3,10 @@ import { ConfigModule } from '@nestjs/config';
 import { QuoteService } from './quote.service';
 import { QuoteController } from './quote.controller';
 import { JobModule } from '../job/job.module';
-import { WhatsAppModule } from '../whatsapp/whatsapp.module';
+import { CloudinaryModule } from '../cloudinary/cloudinary.module';
 
 @Module({
-  imports: [ConfigModule, JobModule, WhatsAppModule],
+  imports: [JobModule, CloudinaryModule],
   controllers: [QuoteController],
   providers: [QuoteService],
   exports: [QuoteService],

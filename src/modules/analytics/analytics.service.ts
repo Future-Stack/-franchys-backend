@@ -145,10 +145,13 @@ export class AnalyticsService {
 
   private async getCategoryPerformance() {
     const categoryVolume = await this.prisma.quoteLineItem.groupBy({
-      by: ['categoryId'],
+      by: ['category'],
       where: {
         quote: {
           status: 'APPROVED',
+        },
+        category: {
+          not: null,
         },
       },
       _sum: {
@@ -162,28 +165,9 @@ export class AnalyticsService {
       take: 5,
     });
 
-    const categoryPerformance: {
-      categoryId: string;
-      categoryName: string;
-      volume: number;
-    }[] = [];
-    for (const item of categoryVolume) {
-      if (!item.categoryId) continue;
-
-      const category = await this.prisma.category.findUnique({
-        where: { id: item.categoryId },
-        select: { name: true },
-      });
-
-      if (category) {
-        categoryPerformance.push({
-          categoryId: item.categoryId,
-          categoryName: category.name,
-          volume: item._sum.itemsCount || 0,
-        });
-      }
-    }
-
-    return categoryPerformance;
+    return categoryVolume.map((item) => ({
+      categoryName: item.category || 'Uncategorized',
+      volume: item._sum.itemsCount || 0,
+    }));
   }
 }
