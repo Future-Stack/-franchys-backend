@@ -253,10 +253,8 @@ export class QuoteService {
       return quote;
     }
 
-    const { lineItems, ...rest } = quote;
-
     const groupsMap = new Map<string, any[]>();
-    for (const item of lineItems) {
+    for (const item of quote.lineItems) {
       const groupName = item.groupName || 'Group 1';
       if (!groupsMap.has(groupName)) {
         groupsMap.set(groupName, []);
@@ -270,7 +268,7 @@ export class QuoteService {
     }));
 
     return {
-      ...rest,
+      ...quote,
       groups,
     };
   }

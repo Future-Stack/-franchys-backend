@@ -29,6 +29,7 @@ export async function seedCustomer(
       email: `test-cust-${uid()}@example.com`,
       phone: '5550000000',
       customerType: CustomerType.PERSONAL,
+      isDeleted: false,
       ...overrides,
     },
   });

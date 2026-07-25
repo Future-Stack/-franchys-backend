@@ -34,7 +34,9 @@ describe('Quote (e2e)', () => {
     await cleanupTest(prisma, { jobIds, quoteIds });
     await prisma.$disconnect();
 
-    await cleanupCustomer();
+    if (cleanupCustomer) {
+      await cleanupCustomer();
+    }
     await cleanupUser(tokens.email);
     await app.close();
   });
@@ -126,7 +128,7 @@ describe('Quote (e2e)', () => {
         .expect(200);
 
       expect(res.body.data.id).toBe(quoteId);
-      expect(res.body.data.lineItems).toBeDefined();
+      expect(res.body.data.groups).toBeDefined();
     });
 
     it('should return 404 for unknown id', async () => {
