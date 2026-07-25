@@ -15,6 +15,7 @@ describe('Quote (e2e)', () => {
   let app: INestApplication;
   let tokens: AuthTokens;
   let customerId: string;
+  let quoteId: string;
   let cleanupCustomer: () => Promise<void>;
   const quoteIds: string[] = [];
   const jobIds: string[] = [];
