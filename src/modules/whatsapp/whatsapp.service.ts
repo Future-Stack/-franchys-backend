@@ -280,4 +280,166 @@ export class WhatsAppService {
       },
     });
   }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // QUOTE DELIVERY: Send a quote notification via WhatsApp
+  // Tries free-text first (works within 24h window), automatically falls back
+  // to the approved `quote_delivery` template if the 24h window has expired.
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Send a quote notification to a customer's WhatsApp number.
+   *
+   * Strategy:
+   *  1. Build a rich free-text message and try sendTextMessage().
+   *  2. If Meta returns error code 131047 (24h window expired), automatically
+   *     retry using the approved `quote_delivery` template with the same data.
+   *  3. Any other error is rethrown so the caller can log it.
+   *
+   * Returns: { success: boolean; method: 'text' | 'template' }
+   *
+   * Approved template format (register this in Meta Business Suite):
+   * ─────────────────────────────────────────────────────────────────────────
+   *   Template name : quote_delivery
+   *   Language      : English (en)
+   *   Category      : UTILITY
+   *
+   *   Body text:
+   *     Hello {{1}}! 👋
+   *
+   *     Your quote *{{2}}* from T-Price is ready for review.
+   *     💰 Total: {{3}}
+   *     📅 Due: {{4}}
+   *
+   *     View your quote here:
+   *     {{5}}
+   *
+   *     Reply to this message if you have any questions!
+   * ─────────────────────────────────────────────────────────────────────────
+   */
+  async sendQuoteMessage(
+    phone: string,
+    data: {
+      customerName: string;
+      quoteNumber: string;
+      total: string;
+      dueDate: string;
+      quoteLink: string;
+    },
+  ): Promise<{ success: boolean; method: 'text' | 'template' }> {
+    const myPhoneNumberId = this.configService.get<string>(
+      'whatsapp.phoneNumberId',
+    )!;
+
+    // Build the free-text message body
+    const textBody =
+      `Hello ${data.customerName}! 👋\n\n` +
+      `Your quote *${data.quoteNumber}* from T-Price is ready for review.\n` +
+      `💰 Total: ${data.total}\n` +
+      (data.dueDate ? `📅 Due: ${data.dueDate}\n` : '') +
+      `\nView your quote here:\n${data.quoteLink}\n\n` +
+      `Reply to this message if you have any questions!`;
+
+    // ── Helper: find/create contact + conversation, save a message record ──
+    const saveMessageRecord = async (
+      wamid: string,
+      body: string,
+      type: string,
+    ) => {
+      let contact = await this.prisma.whatsAppContact.findUnique({
+        where: { phone },
+      });
+      if (!contact) {
+        contact = await this.prisma.whatsAppContact.create({
+          data: { phone, name: data.customerName },
+        });
+      }
+
+      let conversation = await this.prisma.whatsAppConversation.findFirst({
+        where: { contactId: contact.id },
+        orderBy: { lastActivity: 'desc' },
+      });
+      if (!conversation) {
+        conversation = await this.prisma.whatsAppConversation.create({
+          data: { contactId: contact.id },
+        });
+      } else {
+        await this.prisma.whatsAppConversation.update({
+          where: { id: conversation.id },
+          data: { lastActivity: new Date() },
+        });
+      }
+
+      await this.prisma.whatsAppMessage.create({
+        data: {
+          conversationId: conversation.id,
+          direction: 'OUTBOUND',
+          from: myPhoneNumberId,
+          to: phone,
+          body,
+          messageId: wamid,
+          type,
+          status: 'sent',
+        },
+      });
+    };
+
+    // ── Step 1: Try free-text ──
+    try {
+      const { messageId } = await this.client.sendTextMessage(phone, textBody);
+      await saveMessageRecord(messageId, textBody, 'text');
+      this.logger.log(
+        `[Quote WA] Sent free-text quote ${data.quoteNumber} to ${phone}`,
+      );
+      return { success: true, method: 'text' };
+    } catch (err: any) {
+      const code = err?.response?.code ?? err?.code;
+
+      // 131047 = re-engagement message outside 24h window
+      // Also handle 131009 (invalid param) as a signal to use template
+      const needsTemplate = [131047, 133010].includes(Number(code));
+
+      if (!needsTemplate) {
+        this.logger.error(
+          `[Quote WA] Free-text failed for ${phone} (code ${code}): ${err.message}`,
+        );
+        throw err;
+      }
+
+      this.logger.warn(
+        `[Quote WA] 24h window expired for ${phone} (code ${code}). Falling back to template.`,
+      );
+    }
+
+    // ── Step 2: Fallback — approved template ──
+    const TEMPLATE_NAME = 'quote_delivery';
+    const TEMPLATE_LANG = 'en';
+
+    const { messageId } = await this.client.sendTemplateMessageWithComponents(
+      phone,
+      TEMPLATE_NAME,
+      TEMPLATE_LANG,
+      [
+        {
+          type: 'body',
+          parameters: [
+            { type: 'text', text: data.customerName },
+            { type: 'text', text: data.quoteNumber },
+            { type: 'text', text: data.total },
+            { type: 'text', text: data.dueDate || 'N/A' },
+            { type: 'text', text: data.quoteLink },
+          ],
+        },
+      ],
+    );
+
+    const templateBody = `[Template: ${TEMPLATE_NAME}] ${textBody}`;
+    await saveMessageRecord(messageId, templateBody, 'template');
+
+    this.logger.log(
+      `[Quote WA] Sent template quote ${data.quoteNumber} to ${phone}`,
+    );
+    return { success: true, method: 'template' };
+  }
 }
+

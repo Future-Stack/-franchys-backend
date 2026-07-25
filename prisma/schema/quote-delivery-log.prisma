@@ -1,0 +1,21 @@
+enum DeliveryChannel {
+  EMAIL
+  WHATSAPP
+}
+
+enum DeliveryStatus {
+  SENT
+  FAILED
+}
+
+model QuoteDeliveryLog {
+  id        String          @id @default(uuid())
+  quoteId   String
+  quote     Quote           @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  channel   DeliveryChannel
+  recipient String          // email address or phone number
+  status    DeliveryStatus
+  method    String?         // 'text' | 'template' (WhatsApp only)
+  error     String?         @db.Text
+  sentAt    DateTime        @default(now())
+}

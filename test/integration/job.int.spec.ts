@@ -93,17 +93,17 @@ describe('JobService (integration)', () => {
 
     it('should return jobs without filter', async () => {
       const result = await service.findAll();
-      expect(result.length).toBeGreaterThanOrEqual(3);
+      expect(result.data.length).toBeGreaterThanOrEqual(3);
     });
 
     it('should filter by status PRODUCTION', async () => {
       const result = await service.findAll('PRODUCTION');
-      expect(result.every((j) => j.status === 'PRODUCTION')).toBe(true);
+      expect(result.data.every((j) => j.status === 'PRODUCTION')).toBe(true);
     });
 
     it('should search by clientName', async () => {
       const result = await service.findAll(undefined, 'SearchTarget');
-      expect(result.some((j) => j.clientName === 'SearchTarget Corp')).toBe(
+      expect(result.data.some((j) => j.clientName === 'SearchTarget Corp')).toBe(
         true,
       );
     });

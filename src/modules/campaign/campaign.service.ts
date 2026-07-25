@@ -39,8 +39,25 @@ export class CampaignService {
     });
   }
 
-  async findAll(query: GetCampaignsDto) {
-    const { page = 1, limit = 10, search, type, status } = query;
+  async findAll(queryOrType?: any, legacyStatus?: any, legacySearch?: string) {
+    let page = 1;
+    let limit = 10;
+    let search: string | undefined;
+    let type: any;
+    let status: any;
+
+    if (typeof queryOrType === 'object' && queryOrType !== null) {
+      page = queryOrType.page || 1;
+      limit = queryOrType.limit || 10;
+      search = queryOrType.search;
+      type = queryOrType.type;
+      status = queryOrType.status;
+    } else {
+      type = queryOrType;
+      status = legacyStatus;
+      search = legacySearch;
+    }
+
     const skip = (page - 1) * limit;
 
     const whereClause: Prisma.CampaignWhereInput = {};

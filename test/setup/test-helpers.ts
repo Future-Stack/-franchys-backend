@@ -123,6 +123,20 @@ export async function seedJob(
   });
 }
 
+/** Creates a Category row. */
+export async function seedCategory(
+  prisma: PrismaClient,
+  overrides: Record<string, unknown> = {},
+) {
+  return prisma.category.create({
+    data: {
+      name: `Test Category ${uid()}`,
+      description: 'Test Category Description',
+      ...overrides,
+    },
+  });
+}
+
 /** Creates a Brand row. */
 export async function seedBrand(
   prisma: PrismaClient,

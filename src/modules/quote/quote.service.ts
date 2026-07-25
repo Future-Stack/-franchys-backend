@@ -12,6 +12,9 @@ import {
   CreateQuoteLineItemDto,
 } from './dto/quote.dto';
 import { JobService } from '../job/job.service';
+import { MailService } from '../mail/mail.service';
+import { WhatsAppService } from '../whatsapp/whatsapp.service';
+
 
 interface CalcLineItemInput {
   groupName?: string;
@@ -67,6 +70,8 @@ export class QuoteService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jobService: JobService,
+    private readonly mailService: MailService,
+    private readonly whatsAppService: WhatsAppService,
   ) {}
 
   private async generateNextQuoteNumber(): Promise<string> {
@@ -799,4 +804,179 @@ export class QuoteService {
     await this.prisma.quote.delete({ where: { id } });
     return { message: 'Quote deleted successfully', id };
   }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // PUBLIC QUOTE VIEW (no auth — customer-facing)
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Return full quote data without requiring JWT auth.
+   * The UUID quoteId is unguessable, so this is safe without a token.
+   */
+  async findOnePublic(id: string) {
+    const quote = await this.prisma.quote.findUnique({
+      where: { id },
+      include: {
+        lineItems: true,
+        customer: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            phone: true,
+            companyName: true,
+          },
+        },
+        rep: {
+          select: {
+            userId: true,
+            email: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    if (!quote) {
+      throw new NotFoundException(`Quote with ID ${id} not found`);
+    }
+
+    return quote;
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // QUOTE DELIVERY — Email
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  async sendViaEmail(
+    id: string,
+    frontendDomain: string,
+  ): Promise<{ success: boolean; recipient: string }> {
+    const quote = await this.findOne(id);
+    const customer = quote.customer;
+    const recipient = customer.email;
+
+    const quoteLink = `${frontendDomain}/quotes/view?id=${id}`;
+    const dueDate = quote.dueDate
+      ? new Date(quote.dueDate).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        })
+      : null;
+
+    const fmt = (val: any) =>
+      `$${parseFloat(String(val)).toFixed(2)}`;
+
+    const context = {
+      customerName: `${customer.firstName} ${customer.lastName}`,
+      quoteNumber: quote.quoteNumber,
+      poNumber: quote.poNumber ?? null,
+      dueDate,
+      deliveryMethod: quote.deliveryMethod ?? null,
+      subtotal: fmt(quote.subtotal),
+      discount:
+        Number(quote.discount) > 0 ? fmt(quote.discount) : null,
+      taxRate: String(Number(quote.taxRate)),
+      taxAmount: fmt(quote.taxAmount),
+      total: fmt(quote.total),
+      quoteLink,
+      year: new Date().getFullYear(),
+    };
+
+    let status: 'SENT' | 'FAILED' = 'SENT';
+    let errorMsg: string | undefined;
+
+    try {
+      await this.mailService.sendQuote(recipient, context);
+      // Update sentAt on success
+      await this.prisma.quote.update({
+        where: { id },
+        data: { sentAt: new Date() },
+      });
+    } catch (err: any) {
+      status = 'FAILED';
+      errorMsg = err?.message ?? String(err);
+      throw err; // Re-throw so controller returns 500
+    } finally {
+      // Always log the attempt
+      await this.prisma.quoteDeliveryLog.create({
+        data: {
+          quoteId: id,
+          channel: 'EMAIL',
+          recipient,
+          status,
+          error: errorMsg ?? null,
+        },
+      });
+    }
+
+    return { success: true, recipient };
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // QUOTE DELIVERY — WhatsApp
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  async sendViaWhatsApp(
+    id: string,
+    frontendDomain: string,
+  ): Promise<{ success: boolean; recipient: string; method: string }> {
+    const quote = await this.findOne(id);
+    const customer = quote.customer;
+    const phone = customer.phone;
+
+    const quoteLink = `${frontendDomain}/quotes/view?id=${id}`;
+    const dueDate = quote.dueDate
+      ? new Date(quote.dueDate).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        })
+      : '';
+
+    const fmt = (val: any) =>
+      `$${parseFloat(String(val)).toFixed(2)}`;
+
+    let status: 'SENT' | 'FAILED' = 'SENT';
+    let errorMsg: string | undefined;
+    let deliveryMethod = 'text';
+
+    try {
+      const result = await this.whatsAppService.sendQuoteMessage(phone, {
+        customerName: `${customer.firstName} ${customer.lastName}`,
+        quoteNumber: quote.quoteNumber,
+        total: fmt(quote.total),
+        dueDate,
+        quoteLink,
+      });
+      deliveryMethod = result.method;
+
+      // Update sentAt on success
+      await this.prisma.quote.update({
+        where: { id },
+        data: { sentAt: new Date() },
+      });
+    } catch (err: any) {
+      status = 'FAILED';
+      errorMsg = err?.message ?? String(err);
+      throw err; // Re-throw so controller returns 500
+    } finally {
+      // Always log the attempt
+      await this.prisma.quoteDeliveryLog.create({
+        data: {
+          quoteId: id,
+          channel: 'WHATSAPP',
+          recipient: phone,
+          status,
+          method: deliveryMethod,
+          error: errorMsg ?? null,
+        },
+      });
+    }
+
+    return { success: true, recipient: phone, method: deliveryMethod };
+  }
 }
+

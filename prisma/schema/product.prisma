@@ -13,7 +13,8 @@ model Product {
 
     isDeleted Boolean @default(false)
 
-    category String?
+    categoryId String?
+    category   Category? @relation(fields: [categoryId], references: [id])
 
     brandId String
     brand   Brand @relation(fields: [brandId], references: [id])

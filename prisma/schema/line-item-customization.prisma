@@ -1,0 +1,48 @@
+model LineItemCustomization {
+  id String @id @default(uuid())
+
+  // Default Line Item Columns (Boolean)
+  showQuantity    Boolean @default(true)
+  showItemNumber  Boolean @default(false)
+  showCategory    Boolean @default(false)
+  showDescription Boolean @default(true)
+  showColor       Boolean @default(false)
+  showMarkup      Boolean @default(false)
+  showPrice       Boolean @default(true)
+
+  // Sizing Options - Adult Sizes (Boolean)
+  sizeAdultXS  Boolean @default(false)
+  sizeAdultS   Boolean @default(true)
+  sizeAdultM   Boolean @default(true)
+  sizeAdultL   Boolean @default(true)
+  sizeAdultXL  Boolean @default(true)
+  sizeAdult2XL Boolean @default(false)
+  sizeAdult3XL Boolean @default(false)
+  sizeAdult4XL Boolean @default(false)
+
+  // Sizing Options - Youth Sizes (Boolean)
+  sizeYouthXS Boolean @default(false)
+  sizeYouthS  Boolean @default(false)
+  sizeYouthM  Boolean @default(false)
+  sizeYouthL  Boolean @default(false)
+  sizeYouthXL Boolean @default(false)
+
+  // Sizing Options - Toddler Sizes (Boolean)
+  sizeToddler2T Boolean @default(false)
+  sizeToddler3T Boolean @default(false)
+  sizeToddler4T Boolean @default(false)
+  sizeToddler5T Boolean @default(false)
+  sizeToddler6T Boolean @default(false)
+
+  // Sizing Options - Baby / Infant Sizes (Boolean)
+  sizeBabyNewborn  Boolean @default(false)
+  sizeBaby3Months  Boolean @default(false)
+  sizeBaby6Months  Boolean @default(false)
+  sizeBaby9Months  Boolean @default(false)
+  sizeBaby12Months Boolean @default(false)
+  sizeBaby18Months Boolean @default(false)
+  sizeBaby24Months Boolean @default(false)
+
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+}

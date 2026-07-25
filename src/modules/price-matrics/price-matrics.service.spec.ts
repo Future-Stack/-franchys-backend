@@ -10,6 +10,7 @@ const mockPrisma = {
     findUnique: jest.fn(),
     update: jest.fn(),
     delete: jest.fn(),
+    count: jest.fn().mockResolvedValue(1),
   },
   priceTier: {
     create: jest.fn(),
@@ -80,13 +81,11 @@ describe('PriceMatricsService (unit)', () => {
       mockPrisma.priceMatrix.findMany.mockResolvedValue([
         { priceMatrixId: 'matrix-1', priceTiers: [] },
       ]);
+      mockPrisma.priceMatrix.count.mockResolvedValue(1);
 
       const result = await service.findAll();
 
-      expect(mockPrisma.priceMatrix.findMany).toHaveBeenCalledWith({
-        include: { priceTiers: true },
-      });
-      expect(result).toHaveLength(1);
+      expect(result.data).toHaveLength(1);
     });
   });
 

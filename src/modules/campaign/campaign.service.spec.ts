@@ -14,6 +14,7 @@ const mockPrisma = {
     findFirst: jest.fn(),
     update: jest.fn(),
     delete: jest.fn(),
+    count: jest.fn().mockResolvedValue(1),
   },
 };
 
@@ -118,7 +119,7 @@ describe('CampaignService', () => {
       mockPrisma.campaign.findMany.mockResolvedValue([buildCampaign()]);
 
       const result = await service.findAll();
-      expect(result).toHaveLength(1);
+      expect(result.data).toHaveLength(1);
     });
 
     it('should apply type and status filters', async () => {
