@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   Query,
+  Req,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -49,9 +50,15 @@ export class JobController {
   }
 
   @Patch(':id/status')
-  @ApiOperation({ summary: 'Update job card workflow status' })
-  updateStatus(@Param('id') id: string, @Body() dto: UpdateJobStatusDto) {
-    return this.jobService.updateStatus(id, dto.status);
+  @ApiOperation({
+    summary: 'Update job card workflow status (requires mandatory admin note)',
+  })
+  updateStatus(
+    @Param('id') id: string,
+    @Body() dto: UpdateJobStatusDto,
+    @Req() req: any,
+  ) {
+    return this.jobService.updateStatus(id, dto, req.user);
   }
 
   @Delete(':id')

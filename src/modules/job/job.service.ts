@@ -69,6 +69,9 @@ export class JobService {
       where: { id },
       include: {
         quote: true,
+        history: {
+          orderBy: { createdAt: 'desc' },
+        },
       },
     });
     if (!job) {
@@ -91,14 +94,46 @@ export class JobService {
         amount: dto.amount,
         quoteId: dto.quoteId,
       },
+      include: {
+        quote: true,
+        history: {
+          orderBy: { createdAt: 'desc' },
+        },
+      },
     });
   }
 
-  async updateStatus(id: string, status: JobStatus) {
-    await this.findOne(id);
-    return await this.prisma.job.update({
-      where: { id },
-      data: { status },
+  async updateStatus(
+    id: string,
+    dto: UpdateJobStatusDto,
+    user?: { email?: string; userId?: string },
+  ) {
+    const job = await this.findOne(id);
+    const fromStatus = job.status;
+    const toStatus = dto.status as PrismaJobStatus;
+    const changedBy = user?.email || user?.userId || 'System Admin';
+
+    return await this.prisma.$transaction(async (tx) => {
+      await tx.jobStatusHistory.create({
+        data: {
+          jobId: id,
+          fromStatus,
+          toStatus,
+          note: dto.note,
+          changedBy,
+        },
+      });
+
+      return tx.job.update({
+        where: { id },
+        data: { status: toStatus },
+        include: {
+          quote: true,
+          history: {
+            orderBy: { createdAt: 'desc' },
+          },
+        },
+      });
     });
   }
 
