@@ -15,7 +15,6 @@ describe('Quote (e2e)', () => {
   let app: INestApplication;
   let tokens: AuthTokens;
   let customerId: string;
-  let quoteId: string;
   let cleanupCustomer: () => Promise<void>;
   const quoteIds: string[] = [];
   const jobIds: string[] = [];
@@ -78,7 +77,6 @@ describe('Quote (e2e)', () => {
       expect(quote.quoteNumber).toMatch(/^Q-\d+$/);
       expect(quote.status).toBe('DRAFT');
 
-      quoteId = quote.id;
       quoteIds.push(quote.id);
     });
 
