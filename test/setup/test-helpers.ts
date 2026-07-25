@@ -137,34 +137,11 @@ export async function seedBrand(
   });
 }
 
-/** Creates a Category row (fallback stub for tests). */
-export async function seedCategory(
-  prisma: PrismaClient,
-  overrides: Record<string, unknown> = {},
-) {
-  if ((prisma as any).category) {
-    return (prisma as any).category.create({
-      data: {
-        name: `Test Category ${uid()}`,
-        description: 'Test Category Description',
-        ...overrides,
-      },
-    });
-  }
-  return { id: `cat-${uid()}`, name: 'Test Category', ...overrides };
-}
-
-/** Creates a Product row with nested Category and Brand if none provided. */
+/** Creates a Product row with nested Brand if none provided. */
 export async function seedProduct(
   prisma: PrismaClient,
   overrides: Record<string, unknown> = {},
 ) {
-  let categoryId = overrides.categoryId as string | undefined;
-  if (!categoryId) {
-    const cat = await seedCategory(prisma);
-    categoryId = cat.id;
-  }
-
   let brandId = overrides.brandId as string | undefined;
   if (!brandId) {
     const brand = await seedBrand(prisma);
@@ -176,7 +153,6 @@ export async function seedProduct(
       productName: `Test Product ${uid()}`,
       itemNo: `ITEM-${uid()}`,
       price: 29.99,
-      categoryId,
       brandId,
       ...overrides,
     } as any, // Cast to any to make overrides simple
