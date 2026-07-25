@@ -58,13 +58,12 @@ describe('ProductService (unit)', () => {
       productName: 'T-Shirt',
       itemNo: 'TS-01',
       price: 19.99 as any,
-      categoryId: 'cat-1',
+      category: 'T-Shirts',
       brandId: 'brand-1',
       colors: [{ name: 'Blue', code: '#0000FF' }],
     };
 
     it('should create a product with colors and images successfully', async () => {
-      mockPrisma.category.findUnique.mockResolvedValue({ id: 'cat-1' });
       mockPrisma.brand.findUnique.mockResolvedValue({ id: 'brand-1' });
 
       const mockFiles = [{ filename: 'pic.jpg' }] as any;
@@ -87,12 +86,12 @@ describe('ProductService (unit)', () => {
           productName: 'T-Shirt',
           itemNo: 'TS-01',
           price: 19.99,
-          categoryId: 'cat-1',
+          category: 'T-Shirts',
           brandId: 'brand-1',
           images: ['http://cloud.com/pic.jpg'],
           colors: { create: [{ name: 'Blue', code: '#0000FF' }] },
         },
-        include: { colors: true, category: true, brand: true },
+        include: { colors: true, brand: true },
       });
       expect(result.id).toBe('prod-1');
     });

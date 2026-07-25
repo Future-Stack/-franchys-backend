@@ -2,9 +2,10 @@ import { Module } from '@nestjs/common';
 import { QuoteService } from './quote.service';
 import { QuoteController } from './quote.controller';
 import { JobModule } from '../job/job.module';
+import { CloudinaryModule } from '../cloudinary/cloudinary.module';
 
 @Module({
-  imports: [JobModule],
+  imports: [JobModule, CloudinaryModule],
   controllers: [QuoteController],
   providers: [QuoteService],
   exports: [QuoteService],

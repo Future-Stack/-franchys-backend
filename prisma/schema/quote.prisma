@@ -32,22 +32,29 @@ model Quote {
 }
 
 model QuoteLineItem {
-  id          String    @id @default(uuid())
-  quoteId     String
-  quote       Quote     @relation(fields: [quoteId], references: [id], onDelete: Cascade)
-  groupName   String    @default("Group 1")
-  categoryId  String?
-  category    Category? @relation(fields: [categoryId], references: [id])
-  itemNumber  String?
-  color       String?
-  description String?   @db.Text
-  sizeM       Int       @default(0)
-  sizeL       Int       @default(0)
-  sizeXL      Int       @default(0)
-  itemsCount  Int       @default(0)
-  markupPrice Decimal   @default(0.00) @db.Decimal(5, 2)
-  unitPrice   Decimal   @default(0.00) @db.Decimal(10, 2)
-  isTaxed     Boolean   @default(false)
-  total       Decimal   @default(0.00) @db.Decimal(10, 2)
-  imprintType String?
+  id           String  @id @default(uuid())
+  quoteId      String
+  quote        Quote   @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  groupName    String  @default("Group 1")
+  category     String?
+  itemNumber   String?
+  color        String?
+  description  String? @db.Text
+  baseCost     Decimal @default(0.00) @db.Decimal(10, 2)
+  sizeS        Int     @default(0)
+  sizeM        Int     @default(0)
+  sizeL        Int     @default(0)
+  sizeXL       Int     @default(0)
+  size2XL      Int     @default(0)
+  size3XL      Int     @default(0)
+  itemsCount   Int     @default(0)
+  markupPrice  Decimal @default(0.00) @db.Decimal(5, 2)
+  matrixName   String?
+  matrixColumn String?
+  printCost    Decimal @default(0.00) @db.Decimal(10, 2)
+  unitPrice    Decimal @default(0.00) @db.Decimal(10, 2)
+  isTaxed      Boolean @default(false)
+  total        Decimal @default(0.00) @db.Decimal(10, 2)
+  imprintType  String?
+  mockups      String[] @default([])
 }
