@@ -27,10 +27,11 @@ import {
   UpdateProductDto,
   CreateProductColorDto,
   UpdateProductColorDto,
+  GetProductsDto,
 } from './dto/product.dto';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
-import { PaginationQueryDto } from '../../common/dto/pagination.dto';
+import { ApiQuery } from '@nestjs/swagger';
 
 @ApiTags('Product')
 @ApiBearerAuth()
@@ -60,9 +61,26 @@ export class ProductController {
     };
   }
 
+  @Get('autocomplete')
+  @ApiOperation({
+    summary:
+      'Autocomplete dropdown list for line items search (returns product-color variants formatted as "Title - Color - Brand - Style# - Item#")',
+  })
+  @ApiQuery({ name: 'search', required: false })
+  async autocomplete(@Query('search') search?: string) {
+    const data = await this.productService.autocomplete(search);
+    return {
+      message: 'Product autocomplete options fetched successfully',
+      data,
+    };
+  }
+
   @Get()
-  @ApiOperation({ summary: 'Get all products (with brand, category, colors)' })
-  async findAll(@Query() query: PaginationQueryDto) {
+  @ApiOperation({
+    summary:
+      'Get all products with pagination, search, and filters (category, brand, color, size)',
+  })
+  async findAll(@Query() query: GetProductsDto) {
     const data = await this.productService.findAll(query);
     return {
       message: 'Products fetched successfully',

@@ -31,6 +31,7 @@ import { QuoteModule } from './modules/quote/quote.module';
 import { JobModule } from './modules/job/job.module';
 import { CampaignModule } from './modules/campaign/campaign.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { LineItemCustomizationModule } from './modules/line-item-customization/line-item-customization.module';
 
 @Module({
   imports: [
@@ -62,6 +63,7 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
     JobModule,
     CampaignModule,
     AnalyticsModule,
+    LineItemCustomizationModule,
   ],
   controllers: [AppController],
   providers: [

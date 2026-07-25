@@ -10,6 +10,7 @@ import {
   UpdateProductDto,
   CreateProductColorDto,
   UpdateProductColorDto,
+  GetProductsDto,
 } from './dto/product.dto';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { PaginationQueryDto } from '../../common/dto/pagination.dto';
@@ -155,11 +156,37 @@ export class ProductService {
     });
   }
 
-  async findAll(query?: PaginationQueryDto) {
-    const { page = 1, limit = 10, search } = query || {};
+  async findAll(query?: GetProductsDto) {
+    const {
+      page = 1,
+      limit = 10,
+      search,
+      categoryId,
+      brandId,
+      color,
+      size,
+    } = query || {};
     const skip = (page - 1) * limit;
 
     const where: any = { isDeleted: false };
+
+    if (categoryId) {
+      where.categoryId = categoryId;
+    }
+
+    if (brandId) {
+      where.brandId = brandId;
+    }
+
+    if (color) {
+      where.colors = {
+        some: { name: { contains: color, mode: 'insensitive' } },
+      };
+    }
+
+    if (size) {
+      where.availableSizes = { has: size };
+    }
 
     if (search) {
       where.OR = [
@@ -167,6 +194,9 @@ export class ProductService {
         { itemNo: { contains: search, mode: 'insensitive' } },
         { material: { contains: search, mode: 'insensitive' } },
         { style: { contains: search, mode: 'insensitive' } },
+        { category: { name: { contains: search, mode: 'insensitive' } } },
+        { brand: { name: { contains: search, mode: 'insensitive' } } },
+        { colors: { some: { name: { contains: search, mode: 'insensitive' } } } },
       ];
     }
 
@@ -190,6 +220,93 @@ export class ProductService {
         totalPages: Math.ceil(total / limit),
       },
     };
+  }
+
+  async autocomplete(search?: string) {
+    const where: any = { isDeleted: false };
+
+    if (search && search.trim() !== '') {
+      const term = search.trim();
+      where.OR = [
+        { productName: { contains: term, mode: 'insensitive' } },
+        { itemNo: { contains: term, mode: 'insensitive' } },
+        { style: { contains: term, mode: 'insensitive' } },
+        { material: { contains: term, mode: 'insensitive' } },
+        { category: { name: { contains: term, mode: 'insensitive' } } },
+        { brand: { name: { contains: term, mode: 'insensitive' } } },
+        { colors: { some: { name: { contains: term, mode: 'insensitive' } } } },
+      ];
+    }
+
+    const products = await this.prisma.product.findMany({
+      where,
+      take: 50,
+      include: { colors: true, category: true, brand: true },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const results: any[] = [];
+
+    for (const prod of products) {
+      if (prod.colors && prod.colors.length > 0) {
+        for (const colorObj of prod.colors) {
+          const labelParts = [
+            prod.productName,
+            colorObj.name,
+            prod.brand?.name,
+            prod.style,
+            prod.itemNo,
+          ].filter((p): p is string => Boolean(p && String(p).trim() !== ''));
+
+          results.push({
+            label: labelParts.join(' - '),
+            productId: prod.id,
+            productName: prod.productName,
+            itemNo: prod.itemNo,
+            style: prod.style,
+            price: prod.price,
+            unitPrice: prod.price,
+            brandId: prod.brandId,
+            brandName: prod.brand?.name || null,
+            categoryId: prod.categoryId,
+            categoryName: prod.category?.name || null,
+            colorId: colorObj.id,
+            color: colorObj.name,
+            colorCode: colorObj.code,
+            availableSizes: prod.availableSizes,
+            images: prod.images,
+          });
+        }
+      } else {
+        const labelParts = [
+          prod.productName,
+          prod.brand?.name,
+          prod.style,
+          prod.itemNo,
+        ].filter((p): p is string => Boolean(p && String(p).trim() !== ''));
+
+        results.push({
+          label: labelParts.join(' - '),
+          productId: prod.id,
+          productName: prod.productName,
+          itemNo: prod.itemNo,
+          style: prod.style,
+          price: prod.price,
+          unitPrice: prod.price,
+          brandId: prod.brandId,
+          brandName: prod.brand?.name || null,
+          categoryId: prod.categoryId,
+          categoryName: prod.category?.name || null,
+          colorId: null,
+          color: null,
+          colorCode: null,
+          availableSizes: prod.availableSizes,
+          images: prod.images,
+        });
+      }
+    }
+
+    return results;
   }
 
   async findOne(id: string) {
