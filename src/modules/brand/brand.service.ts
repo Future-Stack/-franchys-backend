@@ -23,8 +23,8 @@ export class BrandService {
     return this.prisma.brand.create({ data: dto });
   }
 
-  async findAll(query: PaginationQueryDto) {
-    const { page = 1, limit = 10, search } = query;
+  async findAll(query?: PaginationQueryDto) {
+    const { page = 1, limit = 10, search } = query || {};
     const skip = (page - 1) * limit;
 
     const where: any = { isDeleted: false };

@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { ProfileShopService } from './profile-shop.service';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
 
 const mockPrisma = {
   shopInformation: {
@@ -9,6 +10,10 @@ const mockPrisma = {
     create: jest.fn(),
     update: jest.fn(),
   },
+};
+
+const mockCloudinaryService = {
+  uploadFile: jest.fn(),
 };
 
 describe('ProfileShopService (unit)', () => {
@@ -25,6 +30,10 @@ describe('ProfileShopService (unit)', () => {
         {
           provide: PrismaService,
           useValue: mockPrisma,
+        },
+        {
+          provide: CloudinaryService,
+          useValue: mockCloudinaryService,
         },
       ],
     }).compile();
@@ -115,6 +124,33 @@ describe('ProfileShopService (unit)', () => {
         data: { companyName: 'Francys Updated' },
       });
       expect(result.companyName).toBe('Francys Updated');
+    });
+
+    it('should upload companyLogo to Cloudinary if file is provided', async () => {
+      process.env.SHOP_NAME = 'Francys';
+      mockPrisma.shopInformation.findUnique.mockResolvedValue({
+        shopId: 'shop-1',
+        shopIdentifier: 'Francys',
+      });
+      mockCloudinaryService.uploadFile.mockResolvedValue({
+        secure_url: 'https://cloudinary.com/logo.png',
+      });
+      mockPrisma.shopInformation.update.mockResolvedValue({
+        shopId: 'shop-1',
+        companyLogo: 'https://cloudinary.com/logo.png',
+      });
+
+      const fakeFile = { buffer: Buffer.from('test') } as Express.Multer.File;
+      const result = await service.updateActiveShop(
+        { companyName: 'Francys' },
+        fakeFile,
+      );
+
+      expect(mockCloudinaryService.uploadFile).toHaveBeenCalledWith(
+        fakeFile,
+        'shops',
+      );
+      expect(result.companyLogo).toBe('https://cloudinary.com/logo.png');
     });
   });
 });

@@ -8,6 +8,7 @@ import {
   IsDateString,
   IsArray,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export enum CustomerType {
   BUSINESS = 'BUSINESS',
@@ -96,6 +97,19 @@ export class CreateCustomerDto {
   country?: string;
 
   @ApiPropertyOptional({ example: ['vip', 'wholesale'], type: [String] })
+  @Transform(({ value }) => {
+    if (!value) return undefined;
+    if (Array.isArray(value)) return value;
+    if (typeof value === 'string') {
+      try {
+        const parsed = JSON.parse(value);
+        if (Array.isArray(parsed)) return parsed;
+      } catch {
+        return value.split(',').map((s) => s.trim()).filter(Boolean);
+      }
+    }
+    return value;
+  })
   @IsArray()
   @IsString({ each: true })
   @IsOptional()
@@ -122,10 +136,13 @@ export class CreateCustomerDto {
   @IsOptional()
   eventDate?: string;
 
-  @ApiPropertyOptional({ example: 'https://cdn.example.com/photo.jpg' })
-  @IsString()
+  @ApiPropertyOptional({
+    type: 'string',
+    format: 'binary',
+    description: 'Profile image file to upload to Cloudinary',
+  })
   @IsOptional()
-  profileImage?: string;
+  profileImage?: any;
 }
 
 export class UpdateCustomerDto {
@@ -210,6 +227,19 @@ export class UpdateCustomerDto {
   country?: string;
 
   @ApiPropertyOptional({ example: ['retail'], type: [String] })
+  @Transform(({ value }) => {
+    if (!value) return undefined;
+    if (Array.isArray(value)) return value;
+    if (typeof value === 'string') {
+      try {
+        const parsed = JSON.parse(value);
+        if (Array.isArray(parsed)) return parsed;
+      } catch {
+        return value.split(',').map((s) => s.trim()).filter(Boolean);
+      }
+    }
+    return value;
+  })
   @IsArray()
   @IsString({ each: true })
   @IsOptional()
@@ -235,8 +265,26 @@ export class UpdateCustomerDto {
   @IsOptional()
   eventDate?: string;
 
-  @ApiPropertyOptional({ example: 'https://cdn.example.com/new-photo.jpg' })
-  @IsString()
+  @ApiPropertyOptional({
+    type: 'string',
+    format: 'binary',
+    description: 'Profile image file to upload to Cloudinary',
+  })
   @IsOptional()
-  profileImage?: string;
+  profileImage?: any;
+
+  @ApiPropertyOptional({
+    description: 'Soft delete flag. Send "true" or "false"',
+    example: false,
+    type: 'boolean',
+  })
+  @Transform(({ value }) => {
+    if (value === 'true' || value === true || value === 1 || value === '1')
+      return true;
+    if (value === 'false' || value === false || value === 0 || value === '0')
+      return false;
+    return undefined;
+  })
+  @IsOptional()
+  isDeleted?: boolean;
 }

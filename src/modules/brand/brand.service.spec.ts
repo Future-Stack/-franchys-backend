@@ -7,6 +7,7 @@ const mockPrisma = {
   brand: {
     findUnique: jest.fn(),
     findMany: jest.fn(),
+    count: jest.fn().mockResolvedValue(2),
     create: jest.fn(),
     update: jest.fn(),
   },
@@ -69,14 +70,17 @@ describe('BrandService (unit)', () => {
         { id: '2', name: 'Adidas', isDeleted: false },
       ];
       mockPrisma.brand.findMany.mockResolvedValue(mockBrands);
+      mockPrisma.brand.count.mockResolvedValue(2);
 
       const result = await service.findAll();
 
       expect(mockPrisma.brand.findMany).toHaveBeenCalledWith({
         where: { isDeleted: false },
+        skip: 0,
+        take: 10,
         orderBy: { createdAt: 'desc' },
       });
-      expect(result).toEqual(mockBrands);
+      expect(result.data).toEqual(mockBrands);
     });
   });
 

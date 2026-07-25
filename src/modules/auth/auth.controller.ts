@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Request } from '@nestjs/common';
+import { Controller, Post, Get, Body, Request } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import {
@@ -67,6 +67,13 @@ export class AuthController {
   @ApiOperation({ summary: 'Reset password with temporary token' })
   resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
     return this.authService.resetPassword(resetPasswordDto);
+  }
+
+  @ApiBearerAuth()
+  @Get('me')
+  @ApiOperation({ summary: 'Get current logged in user profile & permissions' })
+  getMe(@Request() req: any) {
+    return this.authService.getMe(req.user.userId);
   }
 
   @ApiBearerAuth()

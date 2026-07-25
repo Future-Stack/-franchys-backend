@@ -10,10 +10,11 @@ import * as streamifier from 'streamifier';
 export class CloudinaryService {
   uploadFile(
     file: Express.Multer.File,
+    folder: string = 'products',
   ): Promise<UploadApiResponse | UploadApiErrorResponse> {
     return new Promise((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
-        { folder: 'products' },
+        { folder },
         (error, result) => {
           if (error) {
             return reject(new Error(error.message || JSON.stringify(error)));
@@ -27,9 +28,12 @@ export class CloudinaryService {
     });
   }
 
-  async uploadMultipleFiles(files: Express.Multer.File[]): Promise<string[]> {
+  async uploadMultipleFiles(
+    files: Express.Multer.File[],
+    folder: string = 'products',
+  ): Promise<string[]> {
     if (!files || files.length === 0) return [];
-    const uploadPromises = files.map((file) => this.uploadFile(file));
+    const uploadPromises = files.map((file) => this.uploadFile(file, folder));
     const results = await Promise.all(uploadPromises);
     return results.map((result) => result.secure_url);
   }

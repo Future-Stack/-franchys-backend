@@ -3,15 +3,21 @@ import { NotFoundException, ConflictException } from '@nestjs/common';
 import { CustomerService } from './customer.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CustomerType } from './dto/customer.dto';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
 
 const mockPrisma = {
   customer: {
     findUnique: jest.fn(),
     findMany: jest.fn(),
+    count: jest.fn().mockResolvedValue(0),
     create: jest.fn(),
     update: jest.fn(),
     delete: jest.fn(),
   },
+};
+
+const mockCloudinaryService = {
+  uploadFile: jest.fn(),
 };
 
 describe('CustomerService (unit)', () => {
@@ -26,6 +32,10 @@ describe('CustomerService (unit)', () => {
         {
           provide: PrismaService,
           useValue: mockPrisma,
+        },
+        {
+          provide: CloudinaryService,
+          useValue: mockCloudinaryService,
         },
       ],
     }).compile();
@@ -63,10 +73,32 @@ describe('CustomerService (unit)', () => {
           email: 'jane@example.com',
           phone: '1234567890',
           customerType: CustomerType.PERSONAL,
+          profileImage: undefined,
           eventDate: new Date(dto.eventDate),
         },
       });
       expect(result.id).toBe('cust-1');
+    });
+
+    it('should upload profileImage to Cloudinary if file is provided', async () => {
+      mockPrisma.customer.findUnique.mockResolvedValue(null);
+      mockCloudinaryService.uploadFile.mockResolvedValue({
+        secure_url: 'https://cloudinary.com/avatar.jpg',
+      });
+      mockPrisma.customer.create.mockResolvedValue({
+        id: 'cust-1',
+        ...dto,
+        profileImage: 'https://cloudinary.com/avatar.jpg',
+      });
+
+      const mockFile = { filename: 'avatar.jpg' } as any;
+      const result = await service.create(dto, mockFile);
+
+      expect(mockCloudinaryService.uploadFile).toHaveBeenCalledWith(
+        mockFile,
+        'customers',
+      );
+      expect(result.profileImage).toBe('https://cloudinary.com/avatar.jpg');
     });
 
     it('should throw ConflictException if customer email already exists', async () => {
@@ -87,13 +119,17 @@ describe('CustomerService (unit)', () => {
         { id: '2', firstName: 'B' },
       ];
       mockPrisma.customer.findMany.mockResolvedValue(mockCustomers);
+      mockPrisma.customer.count.mockResolvedValue(2);
 
       const result = await service.findAll();
 
       expect(mockPrisma.customer.findMany).toHaveBeenCalledWith({
+        where: { isDeleted: false },
+        skip: 0,
+        take: 10,
         orderBy: { createdAt: 'desc' },
       });
-      expect(result).toEqual(mockCustomers);
+      expect(result.data).toEqual(mockCustomers);
     });
   });
 
@@ -117,6 +153,18 @@ describe('CustomerService (unit)', () => {
         NotFoundException,
       );
     });
+
+    it('should throw NotFoundException when customer is soft-deleted', async () => {
+      mockPrisma.customer.findUnique.mockResolvedValue({
+        id: 'cust-1',
+        firstName: 'Jane',
+        isDeleted: true,
+      });
+
+      await expect(service.findOne('cust-1')).rejects.toThrow(
+        NotFoundException,
+      );
+    });
   });
 
   describe('update', () => {
@@ -131,6 +179,7 @@ describe('CustomerService (unit)', () => {
           id: 'cust-1',
           firstName: 'Jane',
           email: 'jane@example.com',
+          isDeleted: false,
         }) // findOne check
         .mockResolvedValueOnce(null); // email conflict check (does not exist elsewhere)
       mockPrisma.customer.update.mockResolvedValue({ id: 'cust-1', ...dto });
@@ -142,7 +191,6 @@ describe('CustomerService (unit)', () => {
         data: {
           firstName: 'Jane Updated',
           email: 'jane.new@example.com',
-          eventDate: undefined,
         },
       });
       expect(result.firstName).toBe('Jane Updated');
@@ -154,6 +202,7 @@ describe('CustomerService (unit)', () => {
           id: 'cust-1',
           firstName: 'Jane',
           email: 'jane@example.com',
+          isDeleted: false,
         }) // findOne check
         .mockResolvedValueOnce({
           id: 'other-cust',
@@ -172,6 +221,7 @@ describe('CustomerService (unit)', () => {
           id: 'cust-1',
           firstName: 'Jane',
           email: 'jane@example.com',
+          isDeleted: false,
         }) // findOne check
         .mockResolvedValueOnce({ id: 'cust-1', email: 'jane@example.com' }); // email conflict check (owned by self)
       mockPrisma.customer.update.mockResolvedValue({
@@ -189,17 +239,22 @@ describe('CustomerService (unit)', () => {
   });
 
   describe('remove', () => {
-    it('should delete a customer when found', async () => {
+    it('should soft-delete a customer when found', async () => {
       mockPrisma.customer.findUnique.mockResolvedValue({
         id: 'cust-1',
         firstName: 'Jane',
+        isDeleted: false,
       });
-      mockPrisma.customer.delete.mockResolvedValue({ id: 'cust-1' });
+      mockPrisma.customer.update.mockResolvedValue({
+        id: 'cust-1',
+        isDeleted: true,
+      });
 
       const result = await service.remove('cust-1');
 
-      expect(mockPrisma.customer.delete).toHaveBeenCalledWith({
+      expect(mockPrisma.customer.update).toHaveBeenCalledWith({
         where: { id: 'cust-1' },
+        data: { isDeleted: true },
       });
       expect(result).toEqual({
         message: 'Customer deleted successfully',
