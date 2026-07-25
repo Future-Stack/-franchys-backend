@@ -340,13 +340,21 @@ describe('QuoteService', () => {
       mockPrisma.quote.findUnique.mockResolvedValue(quote);
 
       const result = await service.findOne('quote-1');
-      expect(result).toEqual(quote);
+      expect(result).toEqual({
+        ...quote,
+        groups: [
+          {
+            name: 'Group 1',
+            lineItems: quote.lineItems,
+          },
+        ],
+      });
     });
 
     it('should throw NotFoundException when quote not found', async () => {
       mockPrisma.quote.findUnique.mockResolvedValue(null);
 
-      await expect(service.findOne('missing-id')).rejects.toThrow(
+      await expect(service.findOne('bad-id')).rejects.toThrow(
         NotFoundException,
       );
     });
@@ -361,9 +369,10 @@ describe('QuoteService', () => {
         buildQuote({ id: 'quote-2', quoteNumber: 'Q-1002' }),
       ];
       mockPrisma.quote.findMany.mockResolvedValue(quotes);
+      mockPrisma.quote.count.mockResolvedValue(2);
 
       const result = await service.findAll();
-      expect(result).toHaveLength(2);
+      expect(result.data).toHaveLength(2);
     });
 
     it('should filter by status when provided', async () => {

@@ -9,14 +9,13 @@ import {
   Query,
   Req,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiBearerAuth,
-  ApiQuery,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { QuoteService } from './quote.service';
-import { CreateQuoteDto, UpdateQuoteDto } from './dto/quote.dto';
+import {
+  CreateQuoteDto,
+  UpdateQuoteDto,
+  CalculateQuoteDto,
+} from './dto/quote.dto';
 import { GetQuotesDto } from './dto/get-quotes.dto';
 
 @ApiTags('Quote')
@@ -24,6 +23,27 @@ import { GetQuotesDto } from './dto/get-quotes.dto';
 @Controller('quote')
 export class QuoteController {
   constructor(private readonly quoteService: QuoteService) {}
+
+  @Post('refresh-pricing/new')
+  @ApiOperation({
+    summary:
+      'Triggered by "Refresh Pricing" button for NEW unsaved quotes (preview calculation)',
+  })
+  refreshPricingNew(@Body() dto: CalculateQuoteDto) {
+    return this.quoteService.calculatePreview(dto);
+  }
+
+  @Post(':id/refresh-pricing/existing')
+  @ApiOperation({
+    summary:
+      'Triggered by "Refresh Pricing" button for EXISTING saved quotes (recalculates and updates DB)',
+  })
+  refreshPricingExisting(
+    @Param('id') id: string,
+    @Body() dto?: UpdateQuoteDto,
+  ) {
+    return this.quoteService.refreshPricingExisting(id, dto);
+  }
 
   @Post()
   @ApiOperation({ summary: 'Create a new quote' })

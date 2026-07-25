@@ -46,6 +46,16 @@ export class CreateQuoteLineItemDto {
   @IsOptional()
   description?: string;
 
+  @ApiPropertyOptional({ example: 5.62 })
+  @IsNumber()
+  @IsOptional()
+  baseCost?: number;
+
+  @ApiPropertyOptional({ example: 0 })
+  @IsNumber()
+  @IsOptional()
+  sizeS?: number;
+
   @ApiPropertyOptional({ example: 10 })
   @IsNumber()
   @IsOptional()
@@ -61,10 +71,35 @@ export class CreateQuoteLineItemDto {
   @IsOptional()
   sizeXL?: number;
 
+  @ApiPropertyOptional({ example: 0 })
+  @IsNumber()
+  @IsOptional()
+  size2XL?: number;
+
+  @ApiPropertyOptional({ example: 0 })
+  @IsNumber()
+  @IsOptional()
+  size3XL?: number;
+
   @ApiPropertyOptional({ example: 15 })
   @IsNumber()
   @IsOptional()
   markupPrice?: number;
+
+  @ApiPropertyOptional({ example: 'Digital Printing' })
+  @IsString()
+  @IsOptional()
+  matrixName?: string;
+
+  @ApiPropertyOptional({ example: 'Banner' })
+  @IsString()
+  @IsOptional()
+  matrixColumn?: string;
+
+  @ApiPropertyOptional({ example: 8.0 })
+  @IsNumber()
+  @IsOptional()
+  printCost?: number;
 
   @ApiPropertyOptional({ example: 25 })
   @IsNumber()
@@ -76,10 +111,28 @@ export class CreateQuoteLineItemDto {
   @IsOptional()
   isTaxed?: boolean;
 
+  @ApiPropertyOptional({ example: 328.6 })
+  @IsNumber()
+  @IsOptional()
+  total?: number;
+
   @ApiPropertyOptional({ example: 'Screen Print' })
   @IsString()
   @IsOptional()
   imprintType?: string;
+}
+
+export class QuoteGroupDto {
+  @ApiProperty({ example: 'Group 1 - Staff Apparel' })
+  @IsString()
+  @IsNotEmpty()
+  name: string;
+
+  @ApiProperty({ type: [CreateQuoteLineItemDto] })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateQuoteLineItemDto)
+  lineItems: CreateQuoteLineItemDto[];
 }
 
 export class CreateQuoteDto {
@@ -123,16 +176,29 @@ export class CreateQuoteDto {
   @IsOptional()
   taxRate?: number;
 
+  @ApiPropertyOptional({ example: 950.0 })
+  @IsNumber()
+  @IsOptional()
+  total?: number;
+
   @ApiPropertyOptional({ example: 'Please review and approve.' })
   @IsString()
   @IsOptional()
   notes?: string;
 
-  @ApiProperty({ type: [CreateQuoteLineItemDto] })
+  @ApiPropertyOptional({ type: [QuoteGroupDto] })
   @IsArray()
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => QuoteGroupDto)
+  groups?: QuoteGroupDto[];
+
+  @ApiPropertyOptional({ type: [CreateQuoteLineItemDto] })
+  @IsArray()
+  @IsOptional()
   @ValidateNested({ each: true })
   @Type(() => CreateQuoteLineItemDto)
-  lineItems: CreateQuoteLineItemDto[];
+  lineItems?: CreateQuoteLineItemDto[];
 }
 
 export class UpdateQuoteDto {
@@ -176,10 +242,53 @@ export class UpdateQuoteDto {
   @IsOptional()
   taxRate?: number;
 
+  @ApiPropertyOptional({ example: 950.0 })
+  @IsNumber()
+  @IsOptional()
+  total?: number;
+
   @ApiPropertyOptional({ example: 'Updated terms.' })
   @IsString()
   @IsOptional()
   notes?: string;
+
+  @ApiPropertyOptional({ type: [QuoteGroupDto] })
+  @IsArray()
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => QuoteGroupDto)
+  groups?: QuoteGroupDto[];
+
+  @ApiPropertyOptional({ type: [CreateQuoteLineItemDto] })
+  @IsArray()
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => CreateQuoteLineItemDto)
+  lineItems?: CreateQuoteLineItemDto[];
+}
+
+export class CalculateQuoteDto {
+  @ApiPropertyOptional({ example: 5 })
+  @IsNumber()
+  @IsOptional()
+  discount?: number;
+
+  @ApiPropertyOptional({ example: 7 })
+  @IsNumber()
+  @IsOptional()
+  taxRate?: number;
+
+  @ApiPropertyOptional({ example: 950.0 })
+  @IsNumber()
+  @IsOptional()
+  total?: number;
+
+  @ApiPropertyOptional({ type: [QuoteGroupDto] })
+  @IsArray()
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => QuoteGroupDto)
+  groups?: QuoteGroupDto[];
 
   @ApiPropertyOptional({ type: [CreateQuoteLineItemDto] })
   @IsArray()
