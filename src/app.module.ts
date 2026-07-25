@@ -19,7 +19,6 @@ import { ProfileShopModule } from './modules/profile-shop/profile-shop.module';
 import { InvoiceModule } from './modules/invoice/invoice.module';
 import { PriceMatricsModule } from './modules/price-matrics/price-matrics.module';
 import { BrandModule } from './modules/brand/brand.module';
-import { CategoryModule } from './modules/category/category.module';
 import { CustomerModule } from './modules/customer/customer.module';
 import { ProductModule } from './modules/product/product.module';
 import { VendorsModule } from './modules/vendors/vendors.module';
@@ -50,7 +49,6 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
     InvoiceModule,
     PriceMatricsModule,
     BrandModule,
-    CategoryModule,
     CustomerModule,
     ProductModule,
     VendorsModule,

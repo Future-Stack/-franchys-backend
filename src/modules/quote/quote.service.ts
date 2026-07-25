@@ -11,7 +11,7 @@ import { JobService } from '../job/job.service';
 
 interface CalcLineItemInput {
   groupName?: string;
-  categoryId?: string | null;
+  category?: string | null;
   itemNumber?: string | null;
   color?: string | null;
   description?: string | null;
@@ -26,7 +26,7 @@ interface CalcLineItemInput {
 
 interface CalcLineItemOutput {
   groupName: string;
-  categoryId: string | null;
+  category: string | null;
   itemNumber: string | null;
   color: string | null;
   description: string | null;
@@ -95,7 +95,7 @@ export class QuoteService {
 
       return {
         groupName: item.groupName || 'Group 1',
-        categoryId: item.categoryId || null,
+        category: item.category || null,
         itemNumber: item.itemNumber || null,
         color: item.color || null,
         description: item.description || null,
@@ -168,7 +168,7 @@ export class QuoteService {
         lineItems: {
           create: processedItems.map((item) => ({
             groupName: item.groupName,
-            categoryId: item.categoryId,
+            category: item.category,
             itemNumber: item.itemNumber,
             color: item.color,
             description: item.description,
@@ -363,7 +363,7 @@ export class QuoteService {
                   create: updatedTotals.processedItems.map(
                     (item: CalcLineItemOutput) => ({
                       groupName: item.groupName,
-                      categoryId: item.categoryId,
+                      category: item.category,
                       itemNumber: item.itemNumber,
                       color: item.color,
                       description: item.description,

@@ -26,10 +26,10 @@ export class CreateQuoteLineItemDto {
   @IsOptional()
   groupName?: string;
 
-  @ApiPropertyOptional({ example: 'cat-uuid' })
+  @ApiPropertyOptional({ example: 'T-Shirts' })
   @IsString()
   @IsOptional()
-  categoryId?: string;
+  category?: string;
 
   @ApiPropertyOptional({ example: 'IT-1002' })
   @IsString()
