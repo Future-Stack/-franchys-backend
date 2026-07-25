@@ -192,6 +192,12 @@ export class CreateQuoteDto {
   @ValidateNested({ each: true })
   @Type(() => QuoteGroupDto)
   groups?: QuoteGroupDto[];
+
+  @IsArray()
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => CreateQuoteLineItemDto)
+  lineItems?: CreateQuoteLineItemDto[];
 }
 
 export class UpdateQuoteDto {
@@ -251,6 +257,12 @@ export class UpdateQuoteDto {
   @ValidateNested({ each: true })
   @Type(() => QuoteGroupDto)
   groups?: QuoteGroupDto[];
+
+  @IsArray()
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => CreateQuoteLineItemDto)
+  lineItems?: CreateQuoteLineItemDto[];
 }
 
 export class CalculateQuoteDto {
@@ -276,7 +288,6 @@ export class CalculateQuoteDto {
   @Type(() => QuoteGroupDto)
   groups?: QuoteGroupDto[];
 
-  @ApiPropertyOptional({ type: [CreateQuoteLineItemDto] })
   @IsArray()
   @IsOptional()
   @ValidateNested({ each: true })
