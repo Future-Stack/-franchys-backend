@@ -346,7 +346,7 @@ describe('QuoteService', () => {
         groups: [
           {
             name: 'Group 1',
-            lineItems: quote.lineItems,
+            lineItems,
           },
         ],
       });
