@@ -46,7 +46,7 @@ export class RegisterDto {
 export class LoginDto {
   @ApiProperty({
     description: 'The email address of the user',
-    example: 'john.doe@example.com',
+    example: 'superadmin@example.com',
   })
   @IsEmail()
   @IsNotEmpty()
@@ -54,7 +54,7 @@ export class LoginDto {
 
   @ApiProperty({
     description: 'The password of the user',
-    example: 'Password123!',
+    example: 'password123',
   })
   @IsString()
   @IsNotEmpty()

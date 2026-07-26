@@ -44,13 +44,8 @@ model QuoteLineItem {
   color        String?
   description  String? @db.Text
   baseCost     Decimal @default(0.00) @db.Decimal(10, 2)
-  sizeS        Int     @default(0)
-  sizeM        Int     @default(0)
-  sizeL        Int     @default(0)
-  sizeXL       Int     @default(0)
-  size2XL      Int     @default(0)
-  size3XL      Int     @default(0)
-  itemsCount   Int     @default(0)
+  sizeBreakdown Json?   @db.JsonB
+  itemsCount    Int     @default(0)
   markupPrice  Decimal @default(0.00) @db.Decimal(5, 2)
   matrixName   String?
   matrixColumn String?
