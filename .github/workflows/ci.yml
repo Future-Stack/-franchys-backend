@@ -123,27 +123,6 @@ jobs:
           password: ${{ secrets.SERVER_SSH_PASSWORD }}
           script: |
             cd ${{ secrets.SERVER_PATH }}
-            
-            # Login to Docker Hub
-            echo "${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin
-            
-            # Pull latest image
-            docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/francys-backend:latest
-            
-            # Stop and remove any existing old containers
-            docker stop francys-backend francys_api || true
-            docker rm francys-backend francys_api || true
-            
-            # Start new container mapping to port 3000
-            docker run -d \
-              --name francys-backend \
-              -p 3000:3000 \
-              --restart unless-stopped \
-              --env-file .env \
-              ${{ secrets.DOCKER_HUB_USERNAME }}/francys-backend:latest
-            
-            # Sync Prisma database schema inside the active container
-            docker exec francys-backend npx prisma db push
-            
-            # Clean up dangling images
-            docker image prune -f
+            git pull origin main
+            docker compose down
+            docker compose up -d --build
