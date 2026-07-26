@@ -123,6 +123,24 @@ jobs:
           password: ${{ secrets.SERVER_SSH_PASSWORD }}
           script: |
             cd ${{ secrets.SERVER_PATH }}
-            git pull origin main
-            docker compose down
-            docker compose up -d --build
+            
+            # Login to Docker Hub
+            echo "${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin
+            
+            # Pull latest image
+            docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/francys-backend:latest
+            
+            # Stop and remove existing container
+            docker stop francys-backend || true
+            docker rm francys-backend || true
+            
+            # Run updated image on port 3001
+            docker run -d \
+              --name francys-backend \
+              -p 3001:3000 \
+              --restart unless-stopped \
+              --env-file .env \
+              ${{ secrets.DOCKER_HUB_USERNAME }}/francys-backend:latest
+            
+            # Clean up old images
+            docker image prune -f
