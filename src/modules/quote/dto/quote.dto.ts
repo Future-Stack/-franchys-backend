@@ -71,11 +71,6 @@ export class CreateQuoteLineItemDto {
   @IsOptional()
   matrixId?: string;
 
-  @ApiPropertyOptional({ example: 'Banner' })
-  @IsString()
-  @IsOptional()
-  matrixColumn?: string;
-
   @ApiPropertyOptional({ example: 8.0 })
   @IsNumber()
   @IsOptional()

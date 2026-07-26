@@ -48,7 +48,6 @@ model QuoteLineItem {
   itemsCount    Int      @default(0)
   markupPrice   Decimal  @default(0.00) @db.Decimal(5, 2)
   matrixId      String?
-  matrixColumn  String?
   printCost     Decimal  @default(0.00) @db.Decimal(10, 2)
   unitPrice     Decimal  @default(0.00) @db.Decimal(10, 2)
   isTaxed       Boolean  @default(false)

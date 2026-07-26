@@ -25,7 +25,6 @@ interface CalcLineItemInput {
   sizeBreakdown?: Record<string, number> | null;
   markupPrice?: any;
   matrixId?: string | null;
-  matrixColumn?: string | null;
   printCost?: any;
   unitPrice?: any;
   isTaxed?: boolean;
@@ -45,7 +44,6 @@ interface CalcLineItemOutput {
   itemsCount: number;
   markupPrice: number;
   matrixId: string | null;
-  matrixColumn: string | null;
   printCost: number;
   unitPrice: number;
   isTaxed: boolean;
@@ -150,7 +148,6 @@ export class QuoteService {
 
       const baseCost = Number(item.baseCost) || 0;
       const matrixId = item.matrixId || null;
-      const matrixColumn = item.matrixColumn || null;
 
       let printCost = Number(item.printCost) || 0;
       let markupPrice = Number(item.markupPrice) || 0;
@@ -227,7 +224,6 @@ export class QuoteService {
         itemsCount,
         markupPrice,
         matrixId,
-        matrixColumn,
         printCost,
         unitPrice: finalUnitPrice,
         isTaxed: !!item.isTaxed,
@@ -328,7 +324,6 @@ export class QuoteService {
         sizeBreakdown: item.sizeBreakdown || null,
         markupPrice: Number(item.markupPrice),
         matrixId: item.matrixId,
-        matrixColumn: item.matrixColumn,
         printCost: Number(item.printCost),
         unitPrice: Number(item.unitPrice),
         isTaxed: item.isTaxed,
@@ -375,7 +370,6 @@ export class QuoteService {
               itemsCount: item.itemsCount,
               markupPrice: item.markupPrice,
               matrixId: item.matrixId,
-              matrixColumn: item.matrixColumn,
               printCost: item.printCost,
               unitPrice: item.unitPrice,
               isTaxed: item.isTaxed,
@@ -458,7 +452,6 @@ export class QuoteService {
             itemsCount: item.itemsCount,
             markupPrice: item.markupPrice,
             matrixId: item.matrixId,
-            matrixColumn: item.matrixColumn,
             printCost: item.printCost,
             unitPrice: item.unitPrice,
             isTaxed: item.isTaxed,
@@ -638,7 +631,6 @@ export class QuoteService {
           sizeBreakdown: item.sizeBreakdown || null,
           markupPrice: Number(item.markupPrice),
           matrixId: item.matrixId,
-          matrixColumn: item.matrixColumn,
           printCost: Number(item.printCost),
           unitPrice: Number(item.unitPrice),
           isTaxed: item.isTaxed,
@@ -699,7 +691,6 @@ export class QuoteService {
                       itemsCount: item.itemsCount,
                       markupPrice: item.markupPrice,
                       matrixId: item.matrixId,
-                      matrixColumn: item.matrixColumn,
                       printCost: item.printCost,
                       unitPrice: item.unitPrice,
                       isTaxed: item.isTaxed,
