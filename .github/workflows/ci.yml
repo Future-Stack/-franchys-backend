@@ -105,8 +105,7 @@ jobs:
           tags: |
             ${{ secrets.DOCKER_HUB_USERNAME }}/francys-backend:latest
             ${{ secrets.DOCKER_HUB_USERNAME }}/francys-backend:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          no-cache: true
 
   # ─── DEPLOY JOB ─────────────────────────────────────────────────────────────
   deploy:
