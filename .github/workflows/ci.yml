@@ -133,5 +133,8 @@ jobs:
             # Restart containers with the updated image
             docker compose up -d
             
+            # Seed database automatically with relational test data
+            docker compose exec -T app npx prisma db seed
+            
             # Clean up dangling images
             docker image prune -f
