@@ -105,8 +105,7 @@ jobs:
           tags: |
             ${{ secrets.DOCKER_HUB_USERNAME }}/francys-backend:latest
             ${{ secrets.DOCKER_HUB_USERNAME }}/francys-backend:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          no-cache: true
 
   # ─── DEPLOY JOB ─────────────────────────────────────────────────────────────
   deploy:
@@ -131,17 +130,20 @@ jobs:
             # Pull latest image
             docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/francys-backend:latest
             
-            # Stop and remove existing container if running
-            docker stop francys-backend || true
-            docker rm francys-backend || true
+            # Stop and remove any existing old containers
+            docker stop francys-backend francys_api || true
+            docker rm francys-backend francys_api || true
             
-            # Start new container
+            # Start new container mapping to port 3000
             docker run -d \
               --name francys-backend \
               -p 3000:3000 \
               --restart unless-stopped \
               --env-file .env \
               ${{ secrets.DOCKER_HUB_USERNAME }}/francys-backend:latest
+            
+            # Sync Prisma database schema inside the active container
+            docker exec francys-backend npx prisma db push
             
             # Clean up dangling images
             docker image prune -f
