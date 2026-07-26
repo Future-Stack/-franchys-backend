@@ -22,15 +22,9 @@ interface CalcLineItemInput {
   color?: string | null;
   description?: string | null;
   baseCost?: any;
-  sizeS?: number;
-  sizeM?: number;
-  sizeL?: number;
-  sizeXL?: number;
-  size2XL?: number;
-  size3XL?: number;
+  sizeBreakdown?: Record<string, number> | null;
   markupPrice?: any;
-  matrixName?: string | null;
-  matrixColumn?: string | null;
+  matrixId?: string | null;
   printCost?: any;
   unitPrice?: any;
   isTaxed?: boolean;
@@ -46,16 +40,10 @@ interface CalcLineItemOutput {
   color: string | null;
   description: string | null;
   baseCost: number;
-  sizeS: number;
-  sizeM: number;
-  sizeL: number;
-  sizeXL: number;
-  size2XL: number;
-  size3XL: number;
+  sizeBreakdown: Record<string, number> | null;
   itemsCount: number;
   markupPrice: number;
-  matrixName: string | null;
-  matrixColumn: string | null;
+  matrixId: string | null;
   printCost: number;
   unitPrice: number;
   isTaxed: boolean;
@@ -136,25 +124,38 @@ export class QuoteService {
     const processedItems: CalcLineItemOutput[] = [];
 
     for (const item of lineItems) {
-      const sizeS = item.sizeS || 0;
-      const sizeM = item.sizeM || 0;
-      const sizeL = item.sizeL || 0;
-      const sizeXL = item.sizeXL || 0;
-      const size2XL = item.size2XL || 0;
-      const size3XL = item.size3XL || 0;
-      const itemsCount = sizeS + sizeM + sizeL + sizeXL + size2XL + size3XL;
+      const breakdown = item.sizeBreakdown || null;
+      let itemsCount = 0;
+      if (breakdown && typeof breakdown === 'object') {
+        for (const qty of Object.values(breakdown)) {
+          const num = Number(qty);
+          if (!isNaN(num) && num > 0) itemsCount += num;
+        }
+      } else {
+        // Fallback for legacy size properties if passed
+        const raw = item as any;
+        const legacyCount =
+          (Number(raw.sizeS) || 0) +
+          (Number(raw.sizeM) || 0) +
+          (Number(raw.sizeL) || 0) +
+          (Number(raw.sizeXL) || 0) +
+          (Number(raw.size2XL) || 0) +
+          (Number(raw.size3XL) || 0);
+        if (legacyCount > 0) {
+          itemsCount = legacyCount;
+        }
+      }
 
       const baseCost = Number(item.baseCost) || 0;
-      const matrixName = item.matrixName || item.imprintType || null;
-      const matrixColumn = item.matrixColumn || null;
+      const matrixId = item.matrixId || null;
 
       let printCost = Number(item.printCost) || 0;
       let markupPrice = Number(item.markupPrice) || 0;
 
-      // Price Matrix Lookup if matrixName is provided and printCost/markupPrice aren't explicitly provided
-      if (matrixName && itemsCount > 0) {
-        const matrix = await this.prisma.priceMatrix.findFirst({
-          where: { name: { equals: matrixName, mode: 'insensitive' } },
+      // Price Matrix Lookup if matrixId is provided and printCost/markupPrice aren't explicitly provided
+      if (matrixId && itemsCount > 0) {
+        const matrix = await this.prisma.priceMatrix.findUnique({
+          where: { priceMatrixId: matrixId },
           include: { priceTiers: { orderBy: { quantity: 'asc' } } },
         });
 
@@ -219,21 +220,15 @@ export class QuoteService {
         color: item.color || null,
         description: item.description || null,
         baseCost,
-        sizeS,
-        sizeM,
-        sizeL,
-        sizeXL,
-        size2XL,
-        size3XL,
+        sizeBreakdown: breakdown,
         itemsCount,
         markupPrice,
-        matrixName,
-        matrixColumn,
+        matrixId,
         printCost,
         unitPrice: finalUnitPrice,
         isTaxed: !!item.isTaxed,
         total,
-        imprintType: matrixName,
+        imprintType: item.imprintType || null,
         mockups: item.mockups || [],
       });
     }
@@ -326,15 +321,9 @@ export class QuoteService {
         color: item.color,
         description: item.description,
         baseCost: Number(item.baseCost),
-        sizeS: item.sizeS,
-        sizeM: item.sizeM,
-        sizeL: item.sizeL,
-        sizeXL: item.sizeXL,
-        size2XL: item.size2XL,
-        size3XL: item.size3XL,
+        sizeBreakdown: item.sizeBreakdown || null,
         markupPrice: Number(item.markupPrice),
-        matrixName: item.matrixName,
-        matrixColumn: item.matrixColumn,
+        matrixId: item.matrixId,
         printCost: Number(item.printCost),
         unitPrice: Number(item.unitPrice),
         isTaxed: item.isTaxed,
@@ -377,16 +366,10 @@ export class QuoteService {
               color: item.color,
               description: item.description,
               baseCost: item.baseCost,
-              sizeS: item.sizeS,
-              sizeM: item.sizeM,
-              sizeL: item.sizeL,
-              sizeXL: item.sizeXL,
-              size2XL: item.size2XL,
-              size3XL: item.size3XL,
+              sizeBreakdown: item.sizeBreakdown || undefined,
               itemsCount: item.itemsCount,
               markupPrice: item.markupPrice,
-              matrixName: item.matrixName,
-              matrixColumn: item.matrixColumn,
+              matrixId: item.matrixId,
               printCost: item.printCost,
               unitPrice: item.unitPrice,
               isTaxed: item.isTaxed,
@@ -465,16 +448,10 @@ export class QuoteService {
             color: item.color,
             description: item.description,
             baseCost: item.baseCost,
-            sizeS: item.sizeS,
-            sizeM: item.sizeM,
-            sizeL: item.sizeL,
-            sizeXL: item.sizeXL,
-            size2XL: item.size2XL,
-            size3XL: item.size3XL,
+            sizeBreakdown: item.sizeBreakdown || undefined,
             itemsCount: item.itemsCount,
             markupPrice: item.markupPrice,
-            matrixName: item.matrixName,
-            matrixColumn: item.matrixColumn,
+            matrixId: item.matrixId,
             printCost: item.printCost,
             unitPrice: item.unitPrice,
             isTaxed: item.isTaxed,
@@ -651,15 +628,9 @@ export class QuoteService {
           color: item.color,
           description: item.description,
           baseCost: Number(item.baseCost),
-          sizeS: item.sizeS,
-          sizeM: item.sizeM,
-          sizeL: item.sizeL,
-          sizeXL: item.sizeXL,
-          size2XL: item.size2XL,
-          size3XL: item.size3XL,
+          sizeBreakdown: item.sizeBreakdown || null,
           markupPrice: Number(item.markupPrice),
-          matrixName: item.matrixName,
-          matrixColumn: item.matrixColumn,
+          matrixId: item.matrixId,
           printCost: Number(item.printCost),
           unitPrice: Number(item.unitPrice),
           isTaxed: item.isTaxed,
@@ -716,16 +687,10 @@ export class QuoteService {
                       color: item.color,
                       description: item.description,
                       baseCost: item.baseCost,
-                      sizeS: item.sizeS,
-                      sizeM: item.sizeM,
-                      sizeL: item.sizeL,
-                      sizeXL: item.sizeXL,
-                      size2XL: item.size2XL,
-                      size3XL: item.size3XL,
+                      sizeBreakdown: item.sizeBreakdown || undefined,
                       itemsCount: item.itemsCount,
                       markupPrice: item.markupPrice,
-                      matrixName: item.matrixName,
-                      matrixColumn: item.matrixColumn,
+                      matrixId: item.matrixId,
                       printCost: item.printCost,
                       unitPrice: item.unitPrice,
                       isTaxed: item.isTaxed,

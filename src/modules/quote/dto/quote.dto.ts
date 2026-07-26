@@ -8,6 +8,7 @@ import {
   IsArray,
   IsNumber,
   IsBoolean,
+  IsObject,
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
@@ -51,50 +52,24 @@ export class CreateQuoteLineItemDto {
   @IsOptional()
   baseCost?: number;
 
-  @ApiPropertyOptional({ example: 0 })
-  @IsNumber()
+  @ApiPropertyOptional({
+    description:
+      'Dynamic dictionary/map of quantities for any size key selected by admin (e.g. { "sizeAdultS": 5, "sizeAdultM": 10, "sizeYouthL": 2, "sizeToddler2T": 1 })',
+    example: { sizeAdultS: 5, sizeAdultM: 10, sizeYouthL: 2, sizeToddler2T: 1 },
+  })
+  @IsObject()
   @IsOptional()
-  sizeS?: number;
-
-  @ApiPropertyOptional({ example: 10 })
-  @IsNumber()
-  @IsOptional()
-  sizeM?: number;
-
-  @ApiPropertyOptional({ example: 15 })
-  @IsNumber()
-  @IsOptional()
-  sizeL?: number;
-
-  @ApiPropertyOptional({ example: 5 })
-  @IsNumber()
-  @IsOptional()
-  sizeXL?: number;
-
-  @ApiPropertyOptional({ example: 0 })
-  @IsNumber()
-  @IsOptional()
-  size2XL?: number;
-
-  @ApiPropertyOptional({ example: 0 })
-  @IsNumber()
-  @IsOptional()
-  size3XL?: number;
+  sizeBreakdown?: Record<string, number>;
 
   @ApiPropertyOptional({ example: 15 })
   @IsNumber()
   @IsOptional()
   markupPrice?: number;
 
-  @ApiPropertyOptional({ example: 'Digital Printing' })
+  @ApiPropertyOptional({ example: 'matrix-uuid-123' })
   @IsString()
   @IsOptional()
-  matrixName?: string;
-
-  @ApiPropertyOptional({ example: 'Banner' })
-  @IsString()
-  @IsOptional()
-  matrixColumn?: string;
+  matrixId?: string;
 
   @ApiPropertyOptional({ example: 8.0 })
   @IsNumber()
