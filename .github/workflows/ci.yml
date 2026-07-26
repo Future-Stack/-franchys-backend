@@ -130,11 +130,11 @@ jobs:
             # Pull latest image
             docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/francys-backend:latest
             
-            # Stop and remove existing container if running
-            docker stop francys-backend || true
-            docker rm francys-backend || true
+            # Stop and remove any existing old containers
+            docker stop francys-backend francys_api || true
+            docker rm francys-backend francys_api || true
             
-            # Start new container
+            # Start new container mapping to port 3000
             docker run -d \
               --name francys-backend \
               -p 3000:3000 \
@@ -142,7 +142,7 @@ jobs:
               --env-file .env \
               ${{ secrets.DOCKER_HUB_USERNAME }}/francys-backend:latest
             
-            # Sync Prisma database schema
+            # Sync Prisma database schema inside the active container
             docker exec francys-backend npx prisma db push
             
             # Clean up dangling images
