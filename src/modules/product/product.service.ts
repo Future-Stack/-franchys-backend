@@ -190,7 +190,9 @@ export class ProductService {
         { style: { contains: search, mode: 'insensitive' } },
         { category: { name: { contains: search, mode: 'insensitive' } } },
         { brand: { name: { contains: search, mode: 'insensitive' } } },
-        { colors: { some: { name: { contains: search, mode: 'insensitive' } } } },
+        {
+          colors: { some: { name: { contains: search, mode: 'insensitive' } } },
+        },
       ];
     }
 

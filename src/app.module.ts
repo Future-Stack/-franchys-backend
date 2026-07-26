@@ -31,6 +31,7 @@ import { JobModule } from './modules/job/job.module';
 import { CampaignModule } from './modules/campaign/campaign.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { LineItemCustomizationModule } from './modules/line-item-customization/line-item-customization.module';
+import { CategoryModule } from './modules/category/category.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { LineItemCustomizationModule } from './modules/line-item-customization/l
     InvoiceModule,
     PriceMatricsModule,
     BrandModule,
+    CategoryModule,
     CustomerModule,
     ProductModule,
     VendorsModule,

@@ -105,7 +105,10 @@ export class CreateCustomerDto {
         const parsed = JSON.parse(value);
         if (Array.isArray(parsed)) return parsed;
       } catch {
-        return value.split(',').map((s) => s.trim()).filter(Boolean);
+        return value
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean);
       }
     }
     return value;
@@ -235,7 +238,10 @@ export class UpdateCustomerDto {
         const parsed = JSON.parse(value);
         if (Array.isArray(parsed)) return parsed;
       } catch {
-        return value.split(',').map((s) => s.trim()).filter(Boolean);
+        return value
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean);
       }
     }
     return value;

@@ -181,7 +181,6 @@ export class WhatsAppHttpClient {
     return { messageId: wamid };
   }
 
-
   /**
    * Mark a received message as read.
    * This updates the double-tick status on the sender's phone.

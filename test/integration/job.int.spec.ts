@@ -103,9 +103,9 @@ describe('JobService (integration)', () => {
 
     it('should search by clientName', async () => {
       const result = await service.findAll(undefined, 'SearchTarget');
-      expect(result.data.some((j) => j.clientName === 'SearchTarget Corp')).toBe(
-        true,
-      );
+      expect(
+        result.data.some((j) => j.clientName === 'SearchTarget Corp'),
+      ).toBe(true);
     });
   });
 
