@@ -143,5 +143,8 @@ jobs:
               --env-file .env \
               ${{ secrets.DOCKER_HUB_USERNAME }}/francys-backend:latest
             
+            # Sync Prisma database schema
+            docker exec francys-backend npx prisma db push
+            
             # Clean up dangling images
             docker image prune -f
