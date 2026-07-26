@@ -24,35 +24,35 @@ model Quote {
   total          Decimal     @default(0.00) @db.Decimal(10, 2)
   notes          String?     @db.Text
 
-  sentAt    DateTime? // Timestamp of last successful delivery (any channel)
+  sentAt DateTime? // Timestamp of last successful delivery (any channel)
 
   // Relations
   lineItems    QuoteLineItem[]
   jobs         Job[]
   deliveryLogs QuoteDeliveryLog[]
-  createdAt    DateTime          @default(now())
-  updatedAt    DateTime          @updatedAt
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
 }
 
 model QuoteLineItem {
-  id           String  @id @default(uuid())
-  quoteId      String
-  quote        Quote   @relation(fields: [quoteId], references: [id], onDelete: Cascade)
-  groupName    String  @default("Group 1")
-  category     String?
-  itemNumber   String?
-  color        String?
-  description  String? @db.Text
-  baseCost     Decimal @default(0.00) @db.Decimal(10, 2)
-  sizeBreakdown Json?   @db.JsonB
-  itemsCount    Int     @default(0)
-  markupPrice  Decimal @default(0.00) @db.Decimal(5, 2)
-  matrixName   String?
-  matrixColumn String?
-  printCost    Decimal @default(0.00) @db.Decimal(10, 2)
-  unitPrice    Decimal @default(0.00) @db.Decimal(10, 2)
-  isTaxed      Boolean @default(false)
-  total        Decimal @default(0.00) @db.Decimal(10, 2)
-  imprintType  String?
-  mockups      String[] @default([])
+  id            String   @id @default(uuid())
+  quoteId       String
+  quote         Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  groupName     String   @default("Group 1")
+  category      String?
+  itemNumber    String?
+  color         String?
+  description   String?  @db.Text
+  baseCost      Decimal  @default(0.00) @db.Decimal(10, 2)
+  sizeBreakdown Json?    @db.JsonB
+  itemsCount    Int      @default(0)
+  markupPrice   Decimal  @default(0.00) @db.Decimal(5, 2)
+  matrixId      String?
+  matrixColumn  String?
+  printCost     Decimal  @default(0.00) @db.Decimal(10, 2)
+  unitPrice     Decimal  @default(0.00) @db.Decimal(10, 2)
+  isTaxed       Boolean  @default(false)
+  total         Decimal  @default(0.00) @db.Decimal(10, 2)
+  imprintType   String?
+  mockups       String[] @default([])
 }

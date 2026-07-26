@@ -66,10 +66,10 @@ export class CreateQuoteLineItemDto {
   @IsOptional()
   markupPrice?: number;
 
-  @ApiPropertyOptional({ example: 'Digital Printing' })
+  @ApiPropertyOptional({ example: 'matrix-uuid-123' })
   @IsString()
   @IsOptional()
-  matrixName?: string;
+  matrixId?: string;
 
   @ApiPropertyOptional({ example: 'Banner' })
   @IsString()

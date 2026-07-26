@@ -24,7 +24,7 @@ interface CalcLineItemInput {
   baseCost?: any;
   sizeBreakdown?: Record<string, number> | null;
   markupPrice?: any;
-  matrixName?: string | null;
+  matrixId?: string | null;
   matrixColumn?: string | null;
   printCost?: any;
   unitPrice?: any;
@@ -44,7 +44,7 @@ interface CalcLineItemOutput {
   sizeBreakdown: Record<string, number> | null;
   itemsCount: number;
   markupPrice: number;
-  matrixName: string | null;
+  matrixId: string | null;
   matrixColumn: string | null;
   printCost: number;
   unitPrice: number;
@@ -149,16 +149,16 @@ export class QuoteService {
       }
 
       const baseCost = Number(item.baseCost) || 0;
-      const matrixName = item.matrixName || item.imprintType || null;
+      const matrixId = item.matrixId || null;
       const matrixColumn = item.matrixColumn || null;
 
       let printCost = Number(item.printCost) || 0;
       let markupPrice = Number(item.markupPrice) || 0;
 
-      // Price Matrix Lookup if matrixName is provided and printCost/markupPrice aren't explicitly provided
-      if (matrixName && itemsCount > 0) {
-        const matrix = await this.prisma.priceMatrix.findFirst({
-          where: { name: { equals: matrixName, mode: 'insensitive' } },
+      // Price Matrix Lookup if matrixId is provided and printCost/markupPrice aren't explicitly provided
+      if (matrixId && itemsCount > 0) {
+        const matrix = await this.prisma.priceMatrix.findUnique({
+          where: { priceMatrixId: matrixId },
           include: { priceTiers: { orderBy: { quantity: 'asc' } } },
         });
 
@@ -226,13 +226,13 @@ export class QuoteService {
         sizeBreakdown: breakdown,
         itemsCount,
         markupPrice,
-        matrixName,
+        matrixId,
         matrixColumn,
         printCost,
         unitPrice: finalUnitPrice,
         isTaxed: !!item.isTaxed,
         total,
-        imprintType: matrixName,
+        imprintType: item.imprintType || null,
         mockups: item.mockups || [],
       });
     }
@@ -327,7 +327,7 @@ export class QuoteService {
         baseCost: Number(item.baseCost),
         sizeBreakdown: item.sizeBreakdown || null,
         markupPrice: Number(item.markupPrice),
-        matrixName: item.matrixName,
+        matrixId: item.matrixId,
         matrixColumn: item.matrixColumn,
         printCost: Number(item.printCost),
         unitPrice: Number(item.unitPrice),
@@ -374,7 +374,7 @@ export class QuoteService {
               sizeBreakdown: item.sizeBreakdown || undefined,
               itemsCount: item.itemsCount,
               markupPrice: item.markupPrice,
-              matrixName: item.matrixName,
+              matrixId: item.matrixId,
               matrixColumn: item.matrixColumn,
               printCost: item.printCost,
               unitPrice: item.unitPrice,
@@ -457,7 +457,7 @@ export class QuoteService {
             sizeBreakdown: item.sizeBreakdown || undefined,
             itemsCount: item.itemsCount,
             markupPrice: item.markupPrice,
-            matrixName: item.matrixName,
+            matrixId: item.matrixId,
             matrixColumn: item.matrixColumn,
             printCost: item.printCost,
             unitPrice: item.unitPrice,
@@ -637,7 +637,7 @@ export class QuoteService {
           baseCost: Number(item.baseCost),
           sizeBreakdown: item.sizeBreakdown || null,
           markupPrice: Number(item.markupPrice),
-          matrixName: item.matrixName,
+          matrixId: item.matrixId,
           matrixColumn: item.matrixColumn,
           printCost: Number(item.printCost),
           unitPrice: Number(item.unitPrice),
@@ -698,7 +698,7 @@ export class QuoteService {
                       sizeBreakdown: item.sizeBreakdown || undefined,
                       itemsCount: item.itemsCount,
                       markupPrice: item.markupPrice,
-                      matrixName: item.matrixName,
+                      matrixId: item.matrixId,
                       matrixColumn: item.matrixColumn,
                       printCost: item.printCost,
                       unitPrice: item.unitPrice,

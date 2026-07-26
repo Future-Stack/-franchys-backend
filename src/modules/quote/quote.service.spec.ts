@@ -203,7 +203,7 @@ describe('QuoteService', () => {
         customerId: 'cust-1',
         repId: 'rep-1',
         lineItems: [
-          { sizeM: 10, sizeL: 5, sizeXL: 5, unitPrice: 20, markupPrice: 10 },
+          { sizeBreakdown: { sizeAdultM: 10, sizeAdultL: 5, sizeAdultXL: 5 }, unitPrice: 20, markupPrice: 10 },
         ],
         discount: 0,
         taxRate: 7,
@@ -229,7 +229,7 @@ describe('QuoteService', () => {
         customerId: 'cust-1',
         repId: 'rep-1',
         lineItems: [
-          { sizeM: 10, sizeL: 5, sizeXL: 5, unitPrice: 20, markupPrice: 10 },
+          { sizeBreakdown: { sizeAdultM: 10, sizeAdultL: 5, sizeAdultXL: 5 }, unitPrice: 20, markupPrice: 10 },
         ],
         discount: 40,
         taxRate: 7,
