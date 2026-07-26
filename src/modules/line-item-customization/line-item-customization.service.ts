@@ -162,13 +162,41 @@ export class LineItemCustomizationService implements OnModuleInit {
           { key: 'sizeToddler6T', size: '6T', selected: c.sizeToddler6T },
         ],
         babyInfantSizes: [
-          { key: 'sizeBabyNewborn', size: 'Newborn', selected: c.sizeBabyNewborn },
-          { key: 'sizeBaby3Months', size: '3 Months', selected: c.sizeBaby3Months },
-          { key: 'sizeBaby6Months', size: '6 Months', selected: c.sizeBaby6Months },
-          { key: 'sizeBaby9Months', size: '9 Months', selected: c.sizeBaby9Months },
-          { key: 'sizeBaby12Months', size: '12 Months', selected: c.sizeBaby12Months },
-          { key: 'sizeBaby18Months', size: '18 Months', selected: c.sizeBaby18Months },
-          { key: 'sizeBaby24Months', size: '24 Months', selected: c.sizeBaby24Months },
+          {
+            key: 'sizeBabyNewborn',
+            size: 'Newborn',
+            selected: c.sizeBabyNewborn,
+          },
+          {
+            key: 'sizeBaby3Months',
+            size: '3 Months',
+            selected: c.sizeBaby3Months,
+          },
+          {
+            key: 'sizeBaby6Months',
+            size: '6 Months',
+            selected: c.sizeBaby6Months,
+          },
+          {
+            key: 'sizeBaby9Months',
+            size: '9 Months',
+            selected: c.sizeBaby9Months,
+          },
+          {
+            key: 'sizeBaby12Months',
+            size: '12 Months',
+            selected: c.sizeBaby12Months,
+          },
+          {
+            key: 'sizeBaby18Months',
+            size: '18 Months',
+            selected: c.sizeBaby18Months,
+          },
+          {
+            key: 'sizeBaby24Months',
+            size: '24 Months',
+            selected: c.sizeBaby24Months,
+          },
         ],
       },
     };

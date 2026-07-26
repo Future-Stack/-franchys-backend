@@ -93,11 +93,7 @@ export class CustomerService {
     return customer;
   }
 
-  async update(
-    id: string,
-    dto: UpdateCustomerDto,
-    file?: Express.Multer.File,
-  ) {
+  async update(id: string, dto: UpdateCustomerDto, file?: Express.Multer.File) {
     await this.findOne(id);
     if (dto.email) {
       const existing = await this.prisma.customer.findUnique({

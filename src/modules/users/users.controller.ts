@@ -142,12 +142,12 @@ export class UsersController {
 
   @Patch(':id/role')
   @Roles(Role.SUPER_ADMIN)
-  @ApiOperation({ summary: 'Update user role (Super Admin only) roles can be ADMIN, SUPER_ADMIN' })
+  @ApiOperation({
+    summary:
+      'Update user role (Super Admin only) roles can be ADMIN, SUPER_ADMIN',
+  })
   @ApiBody({ type: UpdateRoleDto })
-  updateRole(
-    @Param('id') id: string,
-    @Body() updateRoleDto: UpdateRoleDto,
-  ) {
+  updateRole(@Param('id') id: string, @Body() updateRoleDto: UpdateRoleDto) {
     return this.usersService.updateUserRole(id, updateRoleDto.role);
   }
 }

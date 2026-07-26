@@ -208,7 +208,7 @@ export class QuoteController {
   @ApiOperation({
     summary: 'Send quote to customer via WhatsApp',
     description:
-      'Sends a WhatsApp message to the customer\'s phone number with quote info and a link. ' +
+      "Sends a WhatsApp message to the customer's phone number with quote info and a link. " +
       'Tries free-text first (works within 24h window); automatically falls back to the ' +
       'approved `quote_delivery` template if the 24h window has expired. ' +
       'Logs the delivery attempt and method used to QuoteDeliveryLog.',

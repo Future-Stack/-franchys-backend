@@ -442,4 +442,3 @@ export class WhatsAppService {
     return { success: true, method: 'template' };
   }
 }
-

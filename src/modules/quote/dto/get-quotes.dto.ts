@@ -4,7 +4,10 @@ import { QuoteStatus } from '@prisma/client';
 import { PaginationQueryDto } from '../../../common/dto/pagination.dto';
 
 export class GetQuotesDto extends PaginationQueryDto {
-  @ApiPropertyOptional({ enum: QuoteStatus, description: 'Filter by quote status' })
+  @ApiPropertyOptional({
+    enum: QuoteStatus,
+    description: 'Filter by quote status',
+  })
   @IsOptional()
   @IsEnum(QuoteStatus)
   status?: QuoteStatus;

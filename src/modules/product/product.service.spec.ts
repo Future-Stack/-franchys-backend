@@ -214,11 +214,11 @@ describe('ProductService (unit)', () => {
 
       expect(results.length).toBe(2);
       expect(results[0].label).toBe(
-        "Men Polo - Black - Paragon - 4000P - 4000",
+        'Men Polo - Black - Paragon - 4000P - 4000',
       );
       expect(results[0].color).toBe('Black');
       expect(results[1].label).toBe(
-        "Men Polo - Royal - Paragon - 4000P - 4000",
+        'Men Polo - Royal - Paragon - 4000P - 4000',
       );
       expect(results[1].color).toBe('Royal');
     });
