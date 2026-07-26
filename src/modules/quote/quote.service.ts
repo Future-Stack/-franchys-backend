@@ -15,7 +15,6 @@ import { JobService } from '../job/job.service';
 import { MailService } from '../mail/mail.service';
 import { WhatsAppService } from '../whatsapp/whatsapp.service';
 
-
 interface CalcLineItemInput {
   groupName?: string;
   category?: string | null;
@@ -866,8 +865,7 @@ export class QuoteService {
         })
       : null;
 
-    const fmt = (val: any) =>
-      `$${parseFloat(String(val)).toFixed(2)}`;
+    const fmt = (val: any) => `$${parseFloat(String(val)).toFixed(2)}`;
 
     const context = {
       customerName: `${customer.firstName} ${customer.lastName}`,
@@ -876,8 +874,7 @@ export class QuoteService {
       dueDate,
       deliveryMethod: quote.deliveryMethod ?? null,
       subtotal: fmt(quote.subtotal),
-      discount:
-        Number(quote.discount) > 0 ? fmt(quote.discount) : null,
+      discount: Number(quote.discount) > 0 ? fmt(quote.discount) : null,
       taxRate: String(Number(quote.taxRate)),
       taxAmount: fmt(quote.taxAmount),
       total: fmt(quote.total),
@@ -936,8 +933,7 @@ export class QuoteService {
         })
       : '';
 
-    const fmt = (val: any) =>
-      `$${parseFloat(String(val)).toFixed(2)}`;
+    const fmt = (val: any) => `$${parseFloat(String(val)).toFixed(2)}`;
 
     let status: 'SENT' | 'FAILED' = 'SENT';
     let errorMsg: string | undefined;
@@ -979,4 +975,3 @@ export class QuoteService {
     return { success: true, recipient: phone, method: deliveryMethod };
   }
 }
-

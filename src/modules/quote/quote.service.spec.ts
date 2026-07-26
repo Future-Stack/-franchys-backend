@@ -98,7 +98,10 @@ describe('QuoteService', () => {
         { provide: PrismaService, useValue: mockPrisma },
         { provide: JobService, useValue: mockJobService },
         { provide: MailService, useValue: { sendQuoteEmail: jest.fn() } },
-        { provide: WhatsAppService, useValue: { sendQuoteWhatsApp: jest.fn() } },
+        {
+          provide: WhatsAppService,
+          useValue: { sendQuoteWhatsApp: jest.fn() },
+        },
       ],
     }).compile();
 
