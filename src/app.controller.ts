@@ -9,6 +9,13 @@ export class AppController {
   constructor(private readonly appService: AppService) {}
 
   @Public()
+  @Get()
+  @ApiOperation({ summary: 'Base server status check' })
+  getHello(): string {
+    return 'Server is running';
+  }
+
+  @Public()
   @Get('health')
   @ApiOperation({ summary: 'Health check' })
   getHealth(): { status: string; timestamp: string } {
