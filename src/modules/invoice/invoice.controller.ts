@@ -7,19 +7,24 @@ import {
   Param,
   Delete,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { InvoiceService } from './invoice.service';
 import {
   CreateInvoiceFeeDto,
   UpdateInvoiceFeeDto,
 } from './dto/invoice-fees.dto';
 import { UpdateInvoiceInformationDto } from './dto/invoice-information.dto';
+import { PaymentTermService } from './payment-term.service';
+import { CreatePaymentTermDto, UpdatePaymentTermDto } from './dto/payment-term.dto';
 
 @ApiTags('Invoice')
 @ApiBearerAuth()
 @Controller('invoice')
 export class InvoiceController {
-  constructor(private readonly invoiceService: InvoiceService) {}
+  constructor(
+    private readonly invoiceService: InvoiceService,
+    private readonly paymentTermService: PaymentTermService,
+  ) {}
 
   // --- Invoice Fees CRUD Endpoints ---
 
@@ -70,5 +75,40 @@ export class InvoiceController {
     @Body() updateInvoiceInformationDto: UpdateInvoiceInformationDto,
   ) {
     return this.invoiceService.updateInformation(updateInvoiceInformationDto);
+  }
+
+  // --- Payment Terms Endpoints ---
+
+  @Post('payment-terms')
+  @ApiOperation({ summary: 'Create a new payment term (e.g. Net 30, 50% Deposit)' })
+  createPaymentTerm(@Body() dto: CreatePaymentTermDto) {
+    return this.paymentTermService.create(dto);
+  }
+
+  @Get('payment-terms')
+  @ApiOperation({ summary: 'Get all active payment terms' })
+  findAllPaymentTerms() {
+    return this.paymentTermService.findAll();
+  }
+
+  @Get('payment-terms/:id')
+  @ApiOperation({ summary: 'Get a specific payment term' })
+  @ApiParam({ name: 'id', description: 'Payment term UUID' })
+  findOnePaymentTerm(@Param('id') id: string) {
+    return this.paymentTermService.findOne(id);
+  }
+
+  @Patch('payment-terms/:id')
+  @ApiOperation({ summary: 'Update a payment term' })
+  @ApiParam({ name: 'id', description: 'Payment term UUID' })
+  updatePaymentTerm(@Param('id') id: string, @Body() dto: UpdatePaymentTermDto) {
+    return this.paymentTermService.update(id, dto);
+  }
+
+  @Delete('payment-terms/:id')
+  @ApiOperation({ summary: 'Archive (soft-delete) a payment term' })
+  @ApiParam({ name: 'id', description: 'Payment term UUID' })
+  archivePaymentTerm(@Param('id') id: string) {
+    return this.paymentTermService.archive(id);
   }
 }

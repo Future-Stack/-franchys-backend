@@ -7,7 +7,7 @@ import { GlobalExceptionFilter } from './common/filters/global-exception.filter'
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { rawBody: true });
   const configService = app.get(ConfigService);
   const logger = new Logger('Bootstrap');
 
@@ -16,7 +16,9 @@ async function bootstrap() {
   const apiPrefix = configService.get<string>('app.apiPrefix') || 'api/v1';
 
   // Global settings
-  app.setGlobalPrefix(apiPrefix);
+  app.setGlobalPrefix(apiPrefix, {
+    exclude: ['/', 'health'],
+  });
   app.enableCors();
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
   app.useGlobalFilters(new GlobalExceptionFilter());
