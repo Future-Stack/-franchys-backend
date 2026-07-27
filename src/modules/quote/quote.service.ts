@@ -827,7 +827,7 @@ export class QuoteService {
     const customer = quote.customer;
     const recipient = customer.email;
 
-    const quoteLink = `${frontendDomain}/quotes/view?id=${id}`;
+    const quoteLink = `${frontendDomain}/quotes/public?id=${id}`;
     const dueDate = quote.dueDate
       ? new Date(quote.dueDate).toLocaleDateString('en-US', {
           year: 'numeric',
@@ -899,7 +899,7 @@ export class QuoteService {
     const customer = quote.customer;
     const phone = customer.phone;
 
-    const quoteLink = `${frontendDomain}/quotes/view?id=${id}`;
+    const quoteLink = `${frontendDomain}/quotes/public?id=${id}`;
     const dueDate = quote.dueDate
       ? new Date(quote.dueDate).toLocaleDateString('en-US', {
           year: 'numeric',
