@@ -9,6 +9,7 @@ import appConfig from './config/app.config';
 import databaseConfig from './config/database.config';
 import jwtConfig from './config/jwt.config';
 import whatsappConfig from './config/whatsapp.config';
+import stripeConfig from './config/stripe.config';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { PrismaModule } from './prisma/prisma.module';
@@ -17,6 +18,7 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 import { ProfileShopModule } from './modules/profile-shop/profile-shop.module';
 import { InvoiceModule } from './modules/invoice/invoice.module';
+import { StripeModule } from './modules/stripe/stripe.module';
 import { PriceMatricsModule } from './modules/price-matrics/price-matrics.module';
 import { BrandModule } from './modules/brand/brand.module';
 import { CustomerModule } from './modules/customer/customer.module';
@@ -37,7 +39,7 @@ import { CategoryModule } from './modules/category/category.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [appConfig, databaseConfig, jwtConfig, whatsappConfig],
+      load: [appConfig, databaseConfig, jwtConfig, whatsappConfig, stripeConfig],
       envFilePath: ['.env.local', '.env'],
     }),
     ServeStaticModule.forRoot({
@@ -49,6 +51,7 @@ import { CategoryModule } from './modules/category/category.module';
     PrismaModule,
     ProfileShopModule,
     InvoiceModule,
+    StripeModule,
     PriceMatricsModule,
     BrandModule,
     CategoryModule,

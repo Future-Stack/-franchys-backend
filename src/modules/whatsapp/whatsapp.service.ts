@@ -441,4 +441,80 @@ export class WhatsAppService {
     );
     return { success: true, method: 'template' };
   }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // SEND: Invoice payment link via WhatsApp
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  async sendInvoiceMessage(
+    phone: string,
+    data: {
+      customerName: string;
+      invoiceNumber: string;
+      total: string;
+      amountDue: string;
+      dueDate?: string | null;
+      hostedInvoiceUrl: string;
+      installmentLabel?: string | null;
+      isInstallment?: boolean;
+    },
+  ): Promise<{ success: boolean }> {
+    const label = data.isInstallment && data.installmentLabel
+      ? `Amount Due (${data.installmentLabel})`
+      : 'Amount Due';
+
+    const text =
+      `Hi ${data.customerName},\n\n` +
+      `Your invoice *${data.invoiceNumber}* is ready.\n` +
+      `${label}: *${data.amountDue}*\n` +
+      `Total Invoice Amount: *${data.total}*` +
+      (data.dueDate ? ` (Due: ${data.dueDate})` : '') +
+      `\n\nPay securely here:\n${data.hostedInvoiceUrl}\n\n` +
+      `This link never expires. Contact us with any questions.`;
+
+    // Find or create contact + conversation for tracking
+    let contact = await this.prisma.whatsAppContact.findUnique({
+      where: { phone },
+    });
+    if (!contact) {
+      contact = await this.prisma.whatsAppContact.create({
+        data: { phone },
+      });
+    }
+
+    let conversation = await this.prisma.whatsAppConversation.findFirst({
+      where: { contactId: contact.id },
+      orderBy: { lastActivity: 'desc' },
+    });
+    if (!conversation) {
+      conversation = await this.prisma.whatsAppConversation.create({
+        data: { contactId: contact.id },
+      });
+    }
+
+    const myPhoneNumberId = this.configService.get<string>('whatsapp.phoneNumberId')!;
+    const { messageId } = await this.client.sendTextMessage(phone, text);
+
+    await this.prisma.whatsAppMessage.create({
+      data: {
+        conversationId: conversation.id,
+        direction: 'OUTBOUND',
+        from: myPhoneNumberId,
+        to: phone,
+        body: text,
+        messageId,
+        type: 'text',
+        status: 'sent',
+      },
+    });
+
+    await this.prisma.whatsAppConversation.update({
+      where: { id: conversation.id },
+      data: { lastActivity: new Date() },
+    });
+
+    this.logger.log(`[Invoice WA] Sent invoice ${data.invoiceNumber} payment link to ${phone}`);
+    return { success: true };
+  }
 }
+

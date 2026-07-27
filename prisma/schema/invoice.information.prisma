@@ -1,12 +1,27 @@
 model InvoiceInformation {
     iniId String @id @default(uuid())
 
-    currency                 String @default("USD")
-    language                 String @default("English")
-    termsAndCondition        String
-    paymentTramsAndCondition String
-    invoiceTaxRate           Int    @default(0)
-    invoiceSeed              Int    @default(1)
+    // Basic settings
+    currency       String  @default("USD")
+    language       String  @default("English")
+    invoiceTaxRate Decimal @default(7.00) @db.Decimal(5, 2)
+    invoiceSeed    Int     @default(1)
+
+    // Text content shown on invoices & public pages
+    invoiceCommentary        String? @db.Text // e.g. "Thank you for your business!"
+    termsAndCondition        String  @db.Text // shown at bottom of public invoice page
+    refundPolicy             String? @db.Text // shown at bottom of public invoice page
+    deliveryPolicy           String? @db.Text // shown at bottom of public invoice page
+    paymentTramsAndCondition String? @db.Text // legacy — keep for compatibility
+
+    // Display toggles (control what shows on invoice PDF / public page)
+    showTotalQuantity   Boolean @default(true)
+    makeImprintsVisible Boolean @default(true)
+    showPoNumber        Boolean @default(true)
+
+    // Layout & access
+    printingLayout  String @default("PORTRAIT")          // "PORTRAIT" | "LANDSCAPE"
+    invoicePrivacy  String @default("ANYONE_WITH_LINK")  // "ANYONE_WITH_LINK" | "EMAIL_REQUIRED"
 
     updatedAt DateTime @updatedAt
     createAt  DateTime @default(now())

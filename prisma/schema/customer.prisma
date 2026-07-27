@@ -40,7 +40,12 @@ model Customer {
 
     isDeleted Boolean @default(false)
 
-    quotes Quote[]
+    // Stripe customer ID — populated on first Stripe invoice send
+    stripeCustomerId String?
+
+    quotes    Quote[]
+    invoices  CustomerInvoice[]
+    payments  Payment[]
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt

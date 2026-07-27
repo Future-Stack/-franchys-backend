@@ -1,0 +1,28 @@
+// Payment Terms — reusable templates the admin creates
+// Admin selects one when creating/editing an invoice
+// Examples: "Net 30", "50% Deposit", "50% now + 50% net 30", "Due on Receipt"
+
+model PaymentTerm {
+    id   String @id @default(uuid())
+    name String // "Net 30", "50% Deposit / Down Payment", etc.
+
+    // How many days until final balance is due (from invoice send date)
+    paymentDaysAllowed Int @default(1)
+
+    // If set: customer pays this % upfront immediately,
+    // remainder is sent automatically after deposit is paid
+    depositPercent Decimal? @db.Decimal(5, 2) // e.g. 50.00 for 50% deposit
+
+    // Due date strategy for the second installment:
+    // "FROM_INVOICE_DATE"   — always X days from when invoice was sent
+    // "FROM_PREVIOUS_PAID"  — X days from when previous installment was paid
+    dueDateStrategy String @default("FROM_INVOICE_DATE")
+
+    isArchived Boolean @default(false)
+
+    // Back-relation
+    invoices CustomerInvoice[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
