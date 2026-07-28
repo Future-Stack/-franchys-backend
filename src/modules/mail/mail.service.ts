@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { MailerService } from '@nestjs-modules/mailer';
+import { ConfigService } from '@nestjs/config';
 
 export interface QuoteEmailContext {
   customerName: string;
@@ -30,16 +31,21 @@ export interface InvoiceEmailContext {
 export class MailService {
   private readonly logger = new Logger(MailService.name);
 
-  constructor(private mailerService: MailerService) {}
+  constructor(
+    private mailerService: MailerService,
+    private configService: ConfigService,
+  ) {}
 
   async sendVerificationCode(email: string, code: string) {
     // Log code to terminal for easy local testing
     this.logger.log(`🔑 [Verification Code] Email: ${email} | Code: ${code}`);
 
     try {
+      const mailUser = this.configService.get('MAIL_USER');
       await this.mailerService.sendMail({
         to: email,
-        subject: 'Welcome to T-price - Verify Your Email',
+        from: `"No Reply" <${mailUser}>`,
+        subject: 'Welcome to MAK SERVI - Verify Your Email',
         template: './verification', // path to template file
         context: {
           code,
@@ -57,9 +63,11 @@ export class MailService {
     this.logger.log(`🔑 [Password Reset Code] Email: ${email} | Code: ${code}`);
 
     try {
+      const mailUser = this.configService.get('MAIL_USER');
       await this.mailerService.sendMail({
         to: email,
-        subject: 'T-price - Password Reset Request',
+        from: `"No Reply" <${mailUser}>`,
+        subject: 'MAK SERVI - Password Reset Request',
         template: './password-reset',
         context: {
           code,
@@ -84,7 +92,7 @@ export class MailService {
 
     await this.mailerService.sendMail({
       to: email,
-      subject: `Your Quote ${context.quoteNumber} is Ready — T-Price`,
+      subject: `Your Quote ${context.quoteNumber} is Ready — MAK SERVI`,
       template: './quote-delivery',
       context,
     });
