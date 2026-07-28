@@ -10,9 +10,18 @@ export class AnalyticsController {
 
   @Get('dashboard')
   @ApiOperation({
-    summary: 'Get summary metrics and trend data for the admin dashboard',
+    summary: 'Get summary metrics and trend data for the main Dashboard page',
   })
   getDashboardStats() {
     return this.analyticsService.getDashboardStats();
+  }
+
+  @Get('reports')
+  @ApiOperation({
+    summary:
+      'Get comprehensive performance metrics, quote status breakdown, and product performance for the Reports & Analytics page',
+  })
+  getReportsAnalytics() {
+    return this.analyticsService.getReportsAnalytics();
   }
 }
