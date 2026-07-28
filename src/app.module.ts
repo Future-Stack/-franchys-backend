@@ -39,7 +39,13 @@ import { CategoryModule } from './modules/category/category.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [appConfig, databaseConfig, jwtConfig, whatsappConfig, stripeConfig],
+      load: [
+        appConfig,
+        databaseConfig,
+        jwtConfig,
+        whatsappConfig,
+        stripeConfig,
+      ],
       envFilePath: ['.env.local', '.env'],
     }),
     ServeStaticModule.forRoot({

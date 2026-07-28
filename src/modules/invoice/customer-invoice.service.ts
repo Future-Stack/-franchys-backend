@@ -5,7 +5,6 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
-import { InvoiceStatus, InstallmentStatus } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { StripeService } from '../stripe/stripe.service';
 import { MailService } from '../mail/mail.service';
@@ -98,7 +97,9 @@ export class CustomerInvoiceService {
     const lineItemsData = quote.lineItems.map((item) => ({
       description:
         item.description ||
-        [item.category, item.color, item.itemNumber].filter(Boolean).join(' — ') ||
+        [item.category, item.color, item.itemNumber]
+          .filter(Boolean)
+          .join(' — ') ||
         'Item',
       quantity: item.itemsCount || 1,
       unitPrice: Number(item.unitPrice),
@@ -420,7 +421,12 @@ export class CustomerInvoiceService {
     }
 
     // Send notifications to customer
-    await this.sendPaymentNotifications(invoice, hostedInvoiceUrl, sendEmail, sendWhatsApp);
+    await this.sendPaymentNotifications(
+      invoice,
+      hostedInvoiceUrl,
+      sendEmail,
+      sendWhatsApp,
+    );
 
     return this.findOne(id);
   }
@@ -440,7 +446,9 @@ export class CustomerInvoiceService {
     const depositPercent = Number(paymentTerm.depositPercent);
     const balancePercent = 100 - depositPercent;
 
-    const depositAmount = parseFloat(((total * depositPercent) / 100).toFixed(2));
+    const depositAmount = parseFloat(
+      ((total * depositPercent) / 100).toFixed(2),
+    );
     const balanceAmount = parseFloat((total - depositAmount).toFixed(2));
 
     const now = new Date();
@@ -490,7 +498,12 @@ export class CustomerInvoiceService {
     });
 
     // Create & send Stripe invoice for installment #1 only
-    return this.createAndSendInstallment(invoice.id, 1, stripeCustomerId, currency);
+    return this.createAndSendInstallment(
+      invoice.id,
+      1,
+      stripeCustomerId,
+      currency,
+    );
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -691,13 +704,16 @@ export class CustomerInvoiceService {
         const hostedUrl = await this.createAndSendInstallment(
           invoice.id,
           nextInstallment.installmentNumber,
-          invoice.stripeCustomerId!,
+          invoice.stripeCustomerId,
           'usd',
         );
 
         // Notify customer about next payment
         await this.sendPaymentNotifications(
-          { ...invoice, invoiceNumber: `${invoice.invoiceNumber} (Installment ${nextInstallment.installmentNumber})` },
+          {
+            ...invoice,
+            invoiceNumber: `${invoice.invoiceNumber} (Installment ${nextInstallment.installmentNumber})`,
+          },
           hostedUrl,
           true,
           true,
@@ -777,7 +793,8 @@ export class CustomerInvoiceService {
       ['SENT', 'OVERDUE'].includes(i.status),
     );
 
-    const hostedUrl = activeInstallment?.hostedInvoiceUrl ?? invoice.hostedInvoiceUrl;
+    const hostedUrl =
+      activeInstallment?.hostedInvoiceUrl ?? invoice.hostedInvoiceUrl;
 
     if (!hostedUrl) {
       throw new BadRequestException(
@@ -786,7 +803,11 @@ export class CustomerInvoiceService {
     }
 
     await this.sendPaymentNotifications(invoice, hostedUrl, true, true);
-    return { success: true, message: 'Reminder sent', hostedInvoiceUrl: hostedUrl };
+    return {
+      success: true,
+      message: 'Reminder sent',
+      hostedInvoiceUrl: hostedUrl,
+    };
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -806,7 +827,9 @@ export class CustomerInvoiceService {
     });
 
     if (!freshInvoice) {
-      this.logger.warn(`Invoice ${invoice.id} not found when trying to send notifications`);
+      this.logger.warn(
+        `Invoice ${invoice.id} not found when trying to send notifications`,
+      );
       return;
     }
 
@@ -826,12 +849,11 @@ export class CustomerInvoiceService {
       ? activeInstallment.dueDate
       : freshInvoice.dueDate;
 
-    const installmentLabel = activeInstallment
-      ? activeInstallment.label
-      : null;
+    const installmentLabel = activeInstallment ? activeInstallment.label : null;
 
     const context = {
-      customerName: customer.companyName ?? `${customer.firstName} ${customer.lastName}`,
+      customerName:
+        customer.companyName ?? `${customer.firstName} ${customer.lastName}`,
       invoiceNumber: freshInvoice.invoiceNumber,
       total: fmt(Number(freshInvoice.total)),
       amountDue: fmt(amountDueVal),

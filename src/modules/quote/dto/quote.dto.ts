@@ -277,3 +277,12 @@ export class CalculateQuoteDto {
   @Type(() => CreateQuoteLineItemDto)
   lineItems?: CreateQuoteLineItemDto[];
 }
+
+export class PublicQuoteRevisionDto {
+  @ApiPropertyOptional({
+    example: 'Please change the T-Shirt color from Red to Blue.',
+  })
+  @IsString()
+  @IsOptional()
+  notes?: string;
+}

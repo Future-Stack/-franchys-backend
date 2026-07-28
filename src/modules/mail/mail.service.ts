@@ -99,7 +99,10 @@ export class MailService {
    * Uses the invoice-delivery.hbs Handlebars template.
    * Contains the hosted_invoice_url (Stripe link, never expires).
    */
-  async sendInvoice(email: string, context: InvoiceEmailContext): Promise<void> {
+  async sendInvoice(
+    email: string,
+    context: InvoiceEmailContext,
+  ): Promise<void> {
     this.logger.log(
       `📧 [Invoice Email] Sending invoice ${context.invoiceNumber} to ${email}`,
     );

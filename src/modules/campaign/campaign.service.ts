@@ -11,7 +11,6 @@ import {
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateCampaignDto, UpdateCampaignDto } from './dto/campaign.dto';
 import { ValidateDiscountDto } from './dto/validate-discount.dto';
-import { GetCampaignsDto } from './dto/get-campaigns.dto';
 
 @Injectable()
 export class CampaignService {

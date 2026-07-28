@@ -1,17 +1,20 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { CreatePaymentTermDto, UpdatePaymentTermDto } from './dto/payment-term.dto';
+import {
+  CreatePaymentTermDto,
+  UpdatePaymentTermDto,
+} from './dto/payment-term.dto';
 
 @Injectable()
 export class PaymentTermService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(dto: CreatePaymentTermDto) {
-    return this.prisma.paymentTerm.create({ data: dto });
+    return await this.prisma.paymentTerm.create({ data: dto });
   }
 
   async findAll() {
-    return this.prisma.paymentTerm.findMany({
+    return await this.prisma.paymentTerm.findMany({
       where: { isArchived: false },
       orderBy: { createdAt: 'asc' },
     });

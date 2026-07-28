@@ -1,5 +1,11 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsInt, IsOptional, IsBoolean, IsNumber } from 'class-validator';
+import {
+  IsString,
+  IsInt,
+  IsOptional,
+  IsBoolean,
+  IsNumber,
+} from 'class-validator';
 
 export class UpdateInvoiceInformationDto {
   @ApiPropertyOptional({ description: 'Currency code', example: 'USD' })
@@ -30,17 +36,28 @@ export class UpdateInvoiceInformationDto {
   @IsOptional()
   invoiceCommentary?: string;
 
+  @ApiPropertyOptional({
+    description: 'Terms & Conditions text (shown on public invoice page)',
+  })
+  @IsString()
+  @IsOptional()
+  invoiceCommentary?: string;
+
   @ApiPropertyOptional({ description: 'Terms & Conditions text (shown on public invoice page)' })
   @IsString()
   @IsOptional()
   termsAndCondition?: string;
 
-  @ApiPropertyOptional({ description: 'Refund policy text (shown on public invoice page)' })
+  @ApiPropertyOptional({
+    description: 'Refund policy text (shown on public invoice page)',
+  })
   @IsString()
   @IsOptional()
   refundPolicy?: string;
 
-  @ApiPropertyOptional({ description: 'Delivery policy text (shown on public invoice page)' })
+  @ApiPropertyOptional({
+    description: 'Delivery policy text (shown on public invoice page)',
+  })
   @IsString()
   @IsOptional()
   deliveryPolicy?: string;
@@ -61,6 +78,30 @@ export class UpdateInvoiceInformationDto {
   makeImprintsVisible?: boolean;
 
   @ApiPropertyOptional({ description: 'Show PO Number field on invoices', example: true })
+  @IsBoolean()
+  @IsOptional()
+  showPoNumber?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Show total quantity field on invoice',
+    example: true,
+  })
+  @IsBoolean()
+  @IsOptional()
+  showTotalQuantity?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Make imprint details visible to customers',
+    example: true,
+  })
+  @IsBoolean()
+  @IsOptional()
+  makeImprintsVisible?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Show PO Number field on invoices',
+    example: true,
+  })
   @IsBoolean()
   @IsOptional()
   showPoNumber?: boolean;
