@@ -128,8 +128,21 @@ describe('CustomerService (unit)', () => {
         skip: 0,
         take: 10,
         orderBy: { createdAt: 'desc' },
+        include: {
+          quotes: {
+            where: { status: { in: ['APPROVED', 'SENT'] } },
+            select: { total: true },
+          },
+          payments: {
+            where: { status: 'succeeded' },
+            select: { amount: true },
+          },
+        },
       });
-      expect(result.data).toEqual(mockCustomers);
+      expect(result.data).toEqual([
+        { id: '1', firstName: 'A', orders: 0, totalSpent: 0 },
+        { id: '2', firstName: 'B', orders: 0, totalSpent: 0 },
+      ]);
     });
   });
 
@@ -142,8 +155,18 @@ describe('CustomerService (unit)', () => {
 
       expect(mockPrisma.customer.findUnique).toHaveBeenCalledWith({
         where: { id: 'cust-1' },
+        include: {
+          quotes: {
+            where: { status: { in: ['APPROVED', 'SENT'] } },
+            select: { total: true },
+          },
+          payments: {
+            where: { status: 'succeeded' },
+            select: { amount: true },
+          },
+        },
       });
-      expect(result).toEqual(mockCustomer);
+      expect(result).toEqual({ id: 'cust-1', firstName: 'Jane', orders: 0, totalSpent: 0 });
     });
 
     it('should throw NotFoundException when customer not found', async () => {

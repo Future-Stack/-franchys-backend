@@ -42,7 +42,7 @@ function parseStructuredEmail(subject: string, htmlBody: string): { isStructured
   try {
     // 1. QUOTE DELIVERY EMAIL
     if (subjectLower.includes('your quote') && subjectLower.includes('ready')) {
-      const quoteNumberMatch = subject.match(/(Q-\d+)/i);
+      const quoteNumberMatch = subject.match(/(Q-\d+)/i) || subject.match(/Quote\s+(\S+)/i);
       const quoteNumber = quoteNumberMatch ? quoteNumberMatch[1] : 'Unknown';
 
       const linkMatch = htmlBody.match(/class="cta-btn"\s+href="([^"]+)"/i) || htmlBody.match(/href="([^"]+)"/i);
@@ -66,6 +66,8 @@ function parseStructuredEmail(subject: string, htmlBody: string): { isStructured
           total,
           dueDate,
           quoteLink,
+          message: `Quote ${quoteNumber} was sent to customer.`,
+          link: quoteLink,
         }),
       };
     }
@@ -104,6 +106,8 @@ function parseStructuredEmail(subject: string, htmlBody: string): { isStructured
           amountDue,
           dueDate,
           hostedInvoiceUrl,
+          message: `Invoice ${invoiceNumber} payment link was sent to customer.`,
+          link: hostedInvoiceUrl,
         }),
       };
     }
@@ -329,6 +333,50 @@ export class EmailTrackerService {
           contactName = rawName.replace(/^["']|["']$/g, '').trim() || null;
         }
 
+        let contact = await this.prisma.contact.findUnique({
+          where: { email: contactEmail },
+        });
+
+        if (!contact) {
+          // Check if contact exists in the CRM Customer directory
+          const customerExists = await this.prisma.customer.findUnique({
+            where: { email: contactEmail },
+          });
+
+          if (customerExists) {
+            contact = await this.prisma.contact.create({
+              data: {
+                email: contactEmail,
+                name: customerExists.firstName && customerExists.lastName
+                  ? `${customerExists.firstName} ${customerExists.lastName}`
+                  : customerExists.firstName || null,
+              },
+            });
+            this.logger.log(`Auto-created tracking contact from Customer CRM: ${contactEmail}`);
+          } else if (structured.isStructured) {
+            // Since it is a system quote/invoice email, we must track it! Create a generic contact.
+            contact = await this.prisma.contact.create({
+              data: {
+                email: contactEmail,
+                name: contactName,
+              },
+            });
+            this.logger.log(`Created tracking contact for system-sent quote/invoice: ${contactEmail}`);
+          }
+        } else if (contactName && !contact.name) {
+          contact = await this.prisma.contact.update({
+            where: { id: contact.id },
+            data: { name: contactName },
+          });
+          this.logger.log(`Updated contact name for ${contactEmail} to: ${contactName}`);
+        }
+
+        // If contact still does not exist, skip syncing this message (irrelevant sender/recipient)
+        if (!contact) {
+          this.logger.log(`Skipping untracked email from/to: ${contactEmail}`);
+          continue;
+        }
+
         let threadId;
         if (inReplyTo) {
           const existingMsg = await this.prisma.message.findUnique({
@@ -338,22 +386,6 @@ export class EmailTrackerService {
         }
 
         if (!threadId) {
-          let contact = await this.prisma.contact.findUnique({
-            where: { email: contactEmail },
-          });
-          if (!contact) {
-            contact = await this.prisma.contact.create({
-              data: { email: contactEmail, name: contactName },
-            });
-            this.logger.log(`Created new contact: ${contactEmail} (${contactName})`);
-          } else if (contactName && !contact.name) {
-            contact = await this.prisma.contact.update({
-              where: { id: contact.id },
-              data: { name: contactName },
-            });
-            this.logger.log(`Updated contact name for ${contactEmail} to: ${contactName}`);
-          }
-
           // Check if contact already has a thread
           const existingThread = await this.prisma.thread.findFirst({
             where: { contactId: contact.id },
