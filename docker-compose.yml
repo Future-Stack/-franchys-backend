@@ -9,9 +9,13 @@ services:
     ports:
       - "3000:3000"
     environment:
+      # - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public
       - DATABASE_URL=${DATABASE_URL:-postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public}
     env_file:
       - .env
+    #  depends_on:
+    #   postgres:
+    #     condition: service_healthy
     networks:
       - francys_network
     logging:
