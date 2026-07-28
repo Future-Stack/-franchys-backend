@@ -264,6 +264,147 @@ export class CustomerInvoiceService {
     return invoice;
   }
 
+  async getInvoiceSummary() {
+    const invoices = await this.prisma.customerInvoice.findMany({
+      where: {
+        status: {
+          notIn: ['VOID', 'UNCOLLECTIBLE'],
+        },
+      },
+      include: {
+        installments: true,
+      },
+    });
+
+    let outstanding = 0;
+    let overdue = 0;
+    let collected = 0;
+
+    invoices.forEach((inv) => {
+      const amountDue = Number(inv.amountDue) || 0;
+      const amountPaid = Number(inv.amountPaid) || 0;
+
+      collected += amountPaid;
+      outstanding += amountDue;
+
+      if (inv.installments && inv.installments.length > 0) {
+        inv.installments.forEach((inst) => {
+          if (inst.status === 'OVERDUE') {
+            overdue += Number(inst.amount) || 0;
+          }
+        });
+      } else {
+        if (inv.status === 'OVERDUE') {
+          overdue += amountDue;
+        }
+      }
+    });
+
+    return {
+      outstanding: parseFloat(outstanding.toFixed(2)),
+      overdue: parseFloat(overdue.toFixed(2)),
+      collected: parseFloat(collected.toFixed(2)),
+    };
+  }
+
+  async getPaymentSummary() {
+    const [succeededAgg, completedCount, pendingCount, failedCount] = await Promise.all([
+      this.prisma.payment.aggregate({
+        where: { status: 'succeeded' },
+        _sum: { amount: true },
+      }),
+      this.prisma.payment.count({
+        where: { status: 'succeeded' },
+      }),
+      this.prisma.payment.count({
+        where: { status: 'pending' },
+      }),
+      this.prisma.payment.count({
+        where: { status: 'failed' },
+      }),
+    ]);
+
+    const totalRevenue = Number(succeededAgg._sum.amount) || 0;
+
+    return {
+      totalRevenue: parseFloat(totalRevenue.toFixed(2)),
+      completedPayments: completedCount,
+      pendingPayments: pendingCount,
+      failedPayments: failedCount,
+    };
+  }
+
+  async getPaymentsList(query: { page?: number; limit?: number; status?: string }) {
+    const page = Number(query.page) || 1;
+    const limit = Number(query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+    if (query.status) {
+      const statusLower = query.status.toLowerCase();
+      if (statusLower === 'completed') {
+        where.status = 'succeeded';
+      } else if (statusLower === 'pending') {
+        where.status = 'pending';
+      } else if (statusLower === 'failed') {
+        where.status = 'failed';
+      } else {
+        where.status = query.status;
+      }
+    }
+
+    const [payments, total] = await Promise.all([
+      this.prisma.payment.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          invoice: { select: { invoiceNumber: true } },
+          customer: {
+            select: {
+              firstName: true,
+              lastName: true,
+              companyName: true,
+            },
+          },
+        },
+      }),
+      this.prisma.payment.count({ where }),
+    ]);
+
+    const formattedPayments = payments.map((p) => {
+      let displayStatus = 'Pending';
+      if (p.status === 'succeeded') displayStatus = 'Completed';
+      else if (p.status === 'failed') displayStatus = 'Failed';
+      else if (p.status === 'refunded') displayStatus = 'Refunded';
+
+      return {
+        id: p.id,
+        paymentId: `PAY-${p.id.substring(0, 6).toUpperCase()}`,
+        invoiceId: p.invoiceId,
+        invoiceNumber: p.invoice?.invoiceNumber || '',
+        customerName: p.customer
+          ? p.customer.companyName || `${p.customer.firstName} ${p.customer.lastName}`
+          : '',
+        amount: Number(p.amount),
+        date: p.paidAt || p.createdAt,
+        method: p.paymentMethod,
+        status: displayStatus,
+      };
+    });
+
+    return {
+      data: formattedPayments,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
   // ─────────────────────────────────────────────────────────────────────────
   // UPDATE — admin edits DRAFT invoice before sending
   // ─────────────────────────────────────────────────────────────────────────
@@ -851,6 +992,27 @@ export class CustomerInvoiceService {
 
     const installmentLabel = activeInstallment ? activeInstallment.label : null;
 
+    const installmentsList = freshInvoice.installments.map((i: any) => {
+      let displayStatus = 'Unpaid';
+      if (i.status === 'PAID') displayStatus = 'Paid';
+      else if (i.status === 'OVERDUE') displayStatus = 'Overdue';
+
+      return {
+        label: i.label,
+        amount: fmt(Number(i.amount)),
+        status: displayStatus,
+        isPaid: i.status === 'PAID',
+        isOverdue: i.status === 'OVERDUE',
+        dueDate: i.dueDate
+          ? new Date(i.dueDate).toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric',
+            })
+          : null,
+      };
+    });
+
     const context = {
       customerName:
         customer.companyName ?? `${customer.firstName} ${customer.lastName}`,
@@ -866,6 +1028,11 @@ export class CustomerInvoiceService {
         : null,
       installmentLabel,
       isInstallment: !!activeInstallment,
+      installmentNumber: activeInstallment ? activeInstallment.installmentNumber : null,
+      totalInstallmentsCount: freshInvoice.installments.length,
+      amountPaidTotal: fmt(Number(freshInvoice.amountPaid)),
+      amountRemaining: fmt(Number(freshInvoice.amountDue)),
+      installmentsList,
       hostedInvoiceUrl,
       year: new Date().getFullYear(),
     };

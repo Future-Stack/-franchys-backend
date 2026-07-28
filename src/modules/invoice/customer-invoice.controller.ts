@@ -42,6 +42,32 @@ export class CustomerInvoiceController {
     return this.invoiceService.findAll(query);
   }
 
+  @Get('summary')
+  @ApiOperation({
+    summary: 'Get invoice financial summary (Outstanding, Overdue, Collected totals)',
+  })
+  getSummary() {
+    return this.invoiceService.getInvoiceSummary();
+  }
+
+  @Get('payments/summary')
+  @ApiOperation({
+    summary: 'Get summary stats for Payment Center (Total Revenue, Completed, Pending, Failed counts)',
+  })
+  getPaymentSummary() {
+    return this.invoiceService.getPaymentSummary();
+  }
+
+  @Get('payments')
+  @ApiOperation({
+    summary: 'List all payment transactions with pagination and optional status filter',
+  })
+  getPayments(
+    @Query() query: { page?: number; limit?: number; status?: string },
+  ) {
+    return this.invoiceService.getPaymentsList(query);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get full invoice details by ID' })
   @ApiParam({ name: 'id', description: 'Invoice UUID' })

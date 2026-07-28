@@ -25,6 +25,20 @@ export interface InvoiceEmailContext {
   dueDate?: string | null;
   hostedInvoiceUrl: string;
   year: number;
+  isInstallment?: boolean;
+  installmentLabel?: string | null;
+  installmentNumber?: number | null;
+  totalInstallmentsCount?: number | null;
+  amountPaidTotal?: string;
+  amountRemaining?: string;
+  installmentsList?: Array<{
+    label: string;
+    amount: string;
+    status: string;
+    isPaid: boolean;
+    isOverdue: boolean;
+    dueDate: string | null;
+  }>;
 }
 
 @Injectable()

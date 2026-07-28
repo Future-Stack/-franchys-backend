@@ -62,6 +62,46 @@
         <span class="meta-value">{{total}}</span>
       </div>
 
+      {{#if isInstallment}}
+      <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 16px 20px; margin: 24px 0 12px 0;">
+        <h3 style="margin-top: 0; margin-bottom: 12px; font-size: 14px; text-transform: uppercase; color: #4f46e5; letter-spacing: 0.5px; font-weight: 700;">Installment Information</h3>
+        <div class="meta-row">
+          <span class="meta-label">Payment Milestone</span>
+          <span class="meta-value" style="color: #4f46e5; font-weight: 600;">{{installmentLabel}} (Installment {{installmentNumber}} of {{totalInstallmentsCount}})</span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-label">Total Paid So Far</span>
+          <span class="meta-value">{{amountPaidTotal}}</span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-label">Remaining Balance</span>
+          <span class="meta-value">{{amountRemaining}}</span>
+        </div>
+      </div>
+
+      <div style="background: #ffffff; border: 1px solid #e5e7eb; border-radius: 6px; padding: 16px 20px; margin: 12px 0 24px 0;">
+        <h3 style="margin-top: 0; margin-bottom: 12px; font-size: 14px; text-transform: uppercase; color: #374151; letter-spacing: 0.5px; font-weight: 700;">Payment Schedule</h3>
+        {{#each installmentsList}}
+        <div class="meta-row" style="padding: 8px 0; border-bottom: 1px solid #f3f4f6; font-size: 13px;">
+          <span class="meta-label" style="font-weight: 500;">{{label}}</span>
+          <span class="meta-value">
+            {{amount}} &mdash; 
+            {{#if isPaid}}
+              <strong style="color: #10b981;">Paid</strong>
+            {{else}}
+              {{#if isOverdue}}
+                <strong style="color: #ef4444;">Overdue</strong>
+              {{else}}
+                <strong style="color: #f59e0b;">Unpaid</strong>
+              {{/if}}
+              {{#if dueDate}} <span style="color: #6b7280; font-size: 12px;">(Due {{dueDate}})</span>{{/if}}
+            {{/if}}
+          </span>
+        </div>
+        {{/each}}
+      </div>
+      {{/if}}
+
       <hr class="divider" />
 
       <a href="{{hostedInvoiceUrl}}" class="pay-btn">Pay Now →</a>

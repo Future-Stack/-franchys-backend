@@ -45,6 +45,8 @@ async function main() {
         total: '$1,250.00',
         dueDate: '15 Aug, 2026',
         quoteLink: 'https://coefficiently-vermiform-tatiana.ngrok-free.dev/quotes/Q-1006',
+        message: 'Quote Q-1006 was sent to customer.',
+        link: 'https://coefficiently-vermiform-tatiana.ngrok-free.dev/quotes/Q-1006',
       }),
       messageId: '<quote-msg-id-1006@tprice.com>',
       createdAt: new Date(Date.now() - 3600000 * 24), // 24 hours ago
@@ -70,6 +72,8 @@ async function main() {
         amountDue: '$625.00',
         dueDate: '10 Aug, 2026',
         hostedInvoiceUrl: 'https://checkout.stripe.com/c/pay/cs_test_mock_link_123',
+        message: 'Invoice INV-2026-009 payment link was sent to customer.',
+        link: 'https://checkout.stripe.com/c/pay/cs_test_mock_link_123',
       }),
       messageId: '<invoice-msg-id-2026-009@tprice.com>',
       inReplyTo: '<reply-msg-id-1006@gmail.com>',
