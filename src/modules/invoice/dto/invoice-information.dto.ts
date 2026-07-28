@@ -41,6 +41,11 @@ export class UpdateInvoiceInformationDto {
   })
   @IsString()
   @IsOptional()
+  invoiceCommentary?: string;
+
+  @ApiPropertyOptional({ description: 'Terms & Conditions text (shown on public invoice page)' })
+  @IsString()
+  @IsOptional()
   termsAndCondition?: string;
 
   @ApiPropertyOptional({
@@ -61,6 +66,21 @@ export class UpdateInvoiceInformationDto {
   @IsString()
   @IsOptional()
   paymentTramsAndCondition?: string;
+
+  @ApiPropertyOptional({ description: 'Show total quantity field on invoice', example: true })
+  @IsBoolean()
+  @IsOptional()
+  showTotalQuantity?: boolean;
+
+  @ApiPropertyOptional({ description: 'Make imprint details visible to customers', example: true })
+  @IsBoolean()
+  @IsOptional()
+  makeImprintsVisible?: boolean;
+
+  @ApiPropertyOptional({ description: 'Show PO Number field on invoices', example: true })
+  @IsBoolean()
+  @IsOptional()
+  showPoNumber?: boolean;
 
   @ApiPropertyOptional({
     description: 'Show total quantity field on invoice',
