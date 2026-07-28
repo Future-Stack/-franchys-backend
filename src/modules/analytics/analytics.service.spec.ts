@@ -13,14 +13,19 @@ const mockPrisma = {
   job: {
     count: jest.fn(),
   },
+  invoice: {
+    count: jest.fn(),
+  },
   campaign: {
     count: jest.fn(),
   },
   customer: {
     findUnique: jest.fn(),
+    count: jest.fn(),
   },
   quoteLineItem: {
     groupBy: jest.fn(),
+    aggregate: jest.fn(),
   },
 };
 
@@ -261,6 +266,39 @@ describe('AnalyticsService', () => {
 
       expect(result.topCustomers).toHaveLength(0);
       expect(result.categoryPerformance).toHaveLength(0);
+    });
+  });
+
+  // ─── getReportsAnalytics ──────────────────────────────────────────────────
+
+  describe('getReportsAnalytics', () => {
+    it('should return correct reports analytics structure', async () => {
+      mockPrisma.quote.findMany.mockResolvedValue([]);
+      mockPrisma.customer.count.mockResolvedValue(127);
+      mockPrisma.quote.count.mockResolvedValue(89);
+      mockPrisma.quoteLineItem.aggregate.mockResolvedValue({
+        _sum: { itemsCount: 2847 },
+      });
+      mockPrisma.quote.groupBy.mockResolvedValue([]);
+      mockPrisma.quoteLineItem.groupBy.mockResolvedValue([]);
+
+      const result = await service.getReportsAnalytics();
+
+      expect(result).toHaveProperty('summary');
+      expect(result.summary).toMatchObject({
+        totalRevenue: 0,
+        revenueGrowthPercent: 18.2,
+        activeCustomers: 127,
+        activeCustomersGrowthPercent: 12.5,
+        quotesSent: 89,
+        quotesSentGrowthPercent: 8.1,
+        productsSold: 2847,
+        productsSoldGrowthPercent: 24.3,
+      });
+      expect(result).toHaveProperty('revenueTrends');
+      expect(result).toHaveProperty('topCustomers');
+      expect(result).toHaveProperty('quoteStatusBreakdown');
+      expect(result).toHaveProperty('productPerformance');
     });
   });
 });
