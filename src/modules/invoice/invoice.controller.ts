@@ -7,7 +7,12 @@ import {
   Param,
   Delete,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiParam,
+} from '@nestjs/swagger';
 import { InvoiceService } from './invoice.service';
 import {
   CreateInvoiceFeeDto,
@@ -15,7 +20,10 @@ import {
 } from './dto/invoice-fees.dto';
 import { UpdateInvoiceInformationDto } from './dto/invoice-information.dto';
 import { PaymentTermService } from './payment-term.service';
-import { CreatePaymentTermDto, UpdatePaymentTermDto } from './dto/payment-term.dto';
+import {
+  CreatePaymentTermDto,
+  UpdatePaymentTermDto,
+} from './dto/payment-term.dto';
 
 @ApiTags('Invoice')
 @ApiBearerAuth()
@@ -80,7 +88,9 @@ export class InvoiceController {
   // --- Payment Terms Endpoints ---
 
   @Post('payment-terms')
-  @ApiOperation({ summary: 'Create a new payment term (e.g. Net 30, 50% Deposit)' })
+  @ApiOperation({
+    summary: 'Create a new payment term (e.g. Net 30, 50% Deposit)',
+  })
   createPaymentTerm(@Body() dto: CreatePaymentTermDto) {
     return this.paymentTermService.create(dto);
   }
@@ -101,7 +111,10 @@ export class InvoiceController {
   @Patch('payment-terms/:id')
   @ApiOperation({ summary: 'Update a payment term' })
   @ApiParam({ name: 'id', description: 'Payment term UUID' })
-  updatePaymentTerm(@Param('id') id: string, @Body() dto: UpdatePaymentTermDto) {
+  updatePaymentTerm(
+    @Param('id') id: string,
+    @Body() dto: UpdatePaymentTermDto,
+  ) {
     return this.paymentTermService.update(id, dto);
   }
 

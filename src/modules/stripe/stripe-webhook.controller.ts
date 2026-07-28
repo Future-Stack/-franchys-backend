@@ -35,7 +35,8 @@ export class StripeWebhookController {
   @Post('webhook')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Stripe webhook — receives payment events (invoice.payment_succeeded, etc.)',
+    summary:
+      'Stripe webhook — receives payment events (invoice.payment_succeeded, etc.)',
     description:
       'Public endpoint called by Stripe. Signature is verified using STRIPE_WEBHOOK_SECRET. ' +
       'Processes invoice.payment_succeeded, invoice.payment_failed, invoice.marked_uncollectible.',
@@ -61,8 +62,12 @@ export class StripeWebhookController {
     try {
       event = this.stripeService.constructWebhookEvent(rawBody, signature);
     } catch (err: any) {
-      this.logger.error(`Stripe webhook signature verification failed: ${err.message}`);
-      throw new BadRequestException(`Webhook signature verification failed: ${err.message}`);
+      this.logger.error(
+        `Stripe webhook signature verification failed: ${err.message}`,
+      );
+      throw new BadRequestException(
+        `Webhook signature verification failed: ${err.message}`,
+      );
     }
 
     this.logger.log(`📨 Stripe event received: ${event.type} (${event.id})`);
@@ -70,20 +75,21 @@ export class StripeWebhookController {
     try {
       switch (event.type) {
         case 'invoice.payment_succeeded': {
-          const stripeInvoice = event.data.object as Stripe.Invoice;
+          const stripeInvoice = event.data.object;
           await this.customerInvoiceService.handlePaymentSuccess(
             stripeInvoice.id,
-            event.id,                                           // stripeEventId (idempotency key)
-            stripeInvoice.amount_paid,                          // in cents
+            event.id, // stripeEventId (idempotency key)
+            stripeInvoice.amount_paid, // in cents
             (stripeInvoice as any).payment_intent ?? undefined, // pi_xxxx
-            undefined,                                          // charge ID (from charge object)
-            (stripeInvoice as any).payment_settings?.payment_method_types?.[0] ?? undefined,
+            undefined, // charge ID (from charge object)
+            (stripeInvoice as any).payment_settings
+              ?.payment_method_types?.[0] ?? undefined,
           );
           break;
         }
 
         case 'invoice.payment_failed': {
-          const stripeInvoice = event.data.object as Stripe.Invoice;
+          const stripeInvoice = event.data.object;
           this.logger.warn(
             `⚠️  Payment failed for Stripe invoice ${stripeInvoice.id}. Customer: ${stripeInvoice.customer}`,
           );
@@ -92,7 +98,7 @@ export class StripeWebhookController {
         }
 
         case 'invoice.marked_uncollectible': {
-          const stripeInvoice = event.data.object as Stripe.Invoice;
+          const stripeInvoice = event.data.object;
           this.logger.warn(
             `Invoice ${stripeInvoice.id} marked as uncollectible by Stripe.`,
           );
@@ -104,7 +110,10 @@ export class StripeWebhookController {
           this.logger.log(`Unhandled Stripe event type: ${event.type}`);
       }
     } catch (err: any) {
-      this.logger.error(`Error processing Stripe event ${event.id}: ${err.message}`, err.stack);
+      this.logger.error(
+        `Error processing Stripe event ${event.id}: ${err.message}`,
+        err.stack,
+      );
       // Still return 200 to Stripe — if we return 4xx/5xx, Stripe will retry infinitely
     }
 

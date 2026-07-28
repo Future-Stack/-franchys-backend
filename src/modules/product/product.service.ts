@@ -13,7 +13,6 @@ import {
   GetProductsDto,
 } from './dto/product.dto';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
-import { PaginationQueryDto } from '../../common/dto/pagination.dto';
 
 @Injectable()
 export class ProductService {
@@ -125,7 +124,7 @@ export class ProductService {
       brandName,
       ...productData
     } = dto as any;
-    delete (productData as any).images;
+    delete productData.images;
 
     const resolvedBrandId = await this.resolveBrand(brandId, brandName);
     const resolvedCategoryId = await this.resolveCategory(
@@ -331,7 +330,7 @@ export class ProductService {
       brandName,
       ...updateData
     } = dto as any;
-    delete (updateData as any).images;
+    delete updateData.images;
     const updateInput: any = { ...updateData };
 
     if (

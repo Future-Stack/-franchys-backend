@@ -72,7 +72,9 @@ export class UpdatePaymentTermDto {
   @IsOptional()
   dueDateStrategy?: string;
 
-  @ApiPropertyOptional({ description: 'Archive this payment term (hide from list)' })
+  @ApiPropertyOptional({
+    description: 'Archive this payment term (hide from list)',
+  })
   @IsBoolean()
   @IsOptional()
   isArchived?: boolean;

@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
 import { QuoteService } from './quote.service';
 import { QuoteController } from './quote.controller';
 import { JobModule } from '../job/job.module';
@@ -9,7 +8,13 @@ import { WhatsAppModule } from '../whatsapp/whatsapp.module';
 import { InvoiceModule } from '../invoice/invoice.module';
 
 @Module({
-  imports: [JobModule, CloudinaryModule, MailModule, WhatsAppModule, InvoiceModule],
+  imports: [
+    JobModule,
+    CloudinaryModule,
+    MailModule,
+    WhatsAppModule,
+    InvoiceModule,
+  ],
   controllers: [QuoteController],
   providers: [QuoteService],
   exports: [QuoteService],

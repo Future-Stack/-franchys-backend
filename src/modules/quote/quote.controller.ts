@@ -26,6 +26,8 @@ import {
   CreateQuoteDto,
   UpdateQuoteDto,
   CalculateQuoteDto,
+  QuoteStatus,
+  PublicQuoteRevisionDto,
 } from './dto/quote.dto';
 import { GetQuotesDto } from './dto/get-quotes.dto';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
@@ -181,6 +183,45 @@ export class QuoteController {
   })
   findOnePublic(@Param('id') id: string) {
     return this.quoteService.findOnePublic(id);
+  }
+
+  @Public()
+  @Post(':id/public/approve')
+  @ApiOperation({
+    summary: 'Approve a quote (public, customer action)',
+    description:
+      'Customer-facing approval endpoint. Sets status to APPROVED, creates active job and draft invoice.',
+  })
+  approvePublic(@Param('id') id: string) {
+    return this.quoteService.updateStatusPublic(id, QuoteStatus.APPROVED);
+  }
+
+  @Public()
+  @Post(':id/public/request-revision')
+  @ApiOperation({
+    summary: 'Request revision on a quote (public, customer action)',
+    description:
+      'Customer-facing request revision endpoint. Sets status to REVISION_REQUESTED and attaches customer notes.',
+  })
+  requestRevisionPublic(
+    @Param('id') id: string,
+    @Body() dto?: PublicQuoteRevisionDto,
+  ) {
+    return this.quoteService.updateStatusPublic(
+      id,
+      QuoteStatus.REVISION_REQUESTED,
+      dto?.notes,
+    );
+  }
+
+  @Public()
+  @Post(':id/public/decline')
+  @ApiOperation({
+    summary: 'Decline a quote (public, customer action)',
+    description: 'Customer-facing decline endpoint. Sets status to DECLINED.',
+  })
+  declinePublic(@Param('id') id: string) {
+    return this.quoteService.updateStatusPublic(id, QuoteStatus.DECLINED);
   }
 
   // ─────────────────────────────────────────────────────────────────────────
