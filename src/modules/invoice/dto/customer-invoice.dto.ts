@@ -41,7 +41,9 @@ export class CreateCustomerInvoiceDto {
   @IsOptional()
   quoteId?: string;
 
-  @ApiPropertyOptional({ description: 'Payment term ID (e.g. Net 30, 50% Deposit)' })
+  @ApiPropertyOptional({
+    description: 'Payment term ID (e.g. Net 30, 50% Deposit)',
+  })
   @IsString()
   @IsOptional()
   paymentTermId?: string;

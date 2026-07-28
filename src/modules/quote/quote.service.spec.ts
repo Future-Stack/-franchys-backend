@@ -5,6 +5,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { JobService } from '../job/job.service';
 import { MailService } from '../mail/mail.service';
 import { WhatsAppService } from '../whatsapp/whatsapp.service';
+import { CustomerInvoiceService } from '../invoice/customer-invoice.service';
 import { QuoteStatus } from './dto/quote.dto';
 
 // ─── Prisma Mock ─────────────────────────────────────────────────────────────
@@ -101,6 +102,10 @@ describe('QuoteService', () => {
         {
           provide: WhatsAppService,
           useValue: { sendQuoteWhatsApp: jest.fn() },
+        },
+        {
+          provide: CustomerInvoiceService,
+          useValue: { createFromQuote: jest.fn() },
         },
       ],
     }).compile();

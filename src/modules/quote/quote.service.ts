@@ -806,6 +806,51 @@ export class QuoteService {
     return this.formatGroupedResponse(quote);
   }
 
+  /**
+   * Public quote status update (customer action: Approve, Request Revision, Decline)
+   * Does not require JWT auth.
+   */
+  async updateStatusPublic(
+    id: string,
+    status: QuoteStatus,
+    revisionNotes?: string,
+  ) {
+    const existing = await this.prisma.quote.findUnique({ where: { id } });
+    if (!existing) {
+      throw new NotFoundException(`Quote with ID ${id} not found`);
+    }
+
+    const updateData: any = { status };
+    if (revisionNotes && revisionNotes.trim() !== '') {
+      updateData.notes = existing.notes
+        ? `${existing.notes}\n\n[Customer Revision Request]: ${revisionNotes}`
+        : `[Customer Revision Request]: ${revisionNotes}`;
+    }
+
+    const quote = await this.prisma.quote.update({
+      where: { id },
+      data: updateData,
+      include: {
+        lineItems: true,
+        customer: true,
+        rep: {
+          select: {
+            userId: true,
+            email: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    if (quote.status === QuoteStatus.APPROVED) {
+      await this.jobService.createOrUpdateJobFromQuote(quote.id);
+      await this.customerInvoiceService.createFromQuote(quote.id);
+    }
+
+    return this.formatGroupedResponse(quote);
+  }
+
   // ─────────────────────────────────────────────────────────────────────────────
   // QUOTE DELIVERY — Email
   // ─────────────────────────────────────────────────────────────────────────────
@@ -851,7 +896,10 @@ export class QuoteService {
       await this.mailService.sendQuote(recipient, context);
       // Update sentAt on success
       const updateData: any = { sentAt: new Date() };
-      if (quote.status !== QuoteStatus.APPROVED && quote.status !== QuoteStatus.DECLINED) {
+      if (
+        quote.status !== QuoteStatus.APPROVED &&
+        quote.status !== QuoteStatus.DECLINED
+      ) {
         updateData.status = QuoteStatus.SENT;
       }
       await this.prisma.quote.update({
@@ -917,7 +965,10 @@ export class QuoteService {
 
       // Update sentAt on success
       const updateData: any = { sentAt: new Date() };
-      if (quote.status !== QuoteStatus.APPROVED && quote.status !== QuoteStatus.DECLINED) {
+      if (
+        quote.status !== QuoteStatus.APPROVED &&
+        quote.status !== QuoteStatus.DECLINED
+      ) {
         updateData.status = QuoteStatus.SENT;
       }
       await this.prisma.quote.update({

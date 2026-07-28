@@ -459,9 +459,10 @@ export class WhatsAppService {
       isInstallment?: boolean;
     },
   ): Promise<{ success: boolean }> {
-    const label = data.isInstallment && data.installmentLabel
-      ? `Amount Due (${data.installmentLabel})`
-      : 'Amount Due';
+    const label =
+      data.isInstallment && data.installmentLabel
+        ? `Amount Due (${data.installmentLabel})`
+        : 'Amount Due';
 
     const text =
       `Hi ${data.customerName},\n\n` +
@@ -492,7 +493,9 @@ export class WhatsAppService {
       });
     }
 
-    const myPhoneNumberId = this.configService.get<string>('whatsapp.phoneNumberId')!;
+    const myPhoneNumberId = this.configService.get<string>(
+      'whatsapp.phoneNumberId',
+    )!;
     const { messageId } = await this.client.sendTextMessage(phone, text);
 
     await this.prisma.whatsAppMessage.create({
@@ -513,8 +516,9 @@ export class WhatsAppService {
       data: { lastActivity: new Date() },
     });
 
-    this.logger.log(`[Invoice WA] Sent invoice ${data.invoiceNumber} payment link to ${phone}`);
+    this.logger.log(
+      `[Invoice WA] Sent invoice ${data.invoiceNumber} payment link to ${phone}`,
+    );
     return { success: true };
   }
 }
-

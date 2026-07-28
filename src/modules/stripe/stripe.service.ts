@@ -84,31 +84,41 @@ export class StripeService {
 
   async createAndFinalizeInvoice(params: {
     stripeCustomerId: string;
-    invoiceNumber: string;       // e.g. "INV-1001" or "INV-1001-A"
-    description: string;         // e.g. "Deposit (50%) — Custom Print Order"
+    invoiceNumber: string; // e.g. "INV-1001" or "INV-1001-A"
+    description: string; // e.g. "Deposit (50%) — Custom Print Order"
     lineItems: { description: string; amount: number; quantity: number }[];
-    totalAmount: number;          // total for this specific invoice/installment (in dollars)
+    totalAmount: number; // total for this specific invoice/installment (in dollars)
     dueDate: Date | null;
     currency: string;
-    orderTotal: number;           // FULL order total — shown in footer for context
-    alreadyPaid: number;          // amount already paid — shown in footer
-    remainingAfter: number;       // how much remains after this payment
+    orderTotal: number; // FULL order total — shown in footer for context
+    alreadyPaid: number; // amount already paid — shown in footer
+    remainingAfter: number; // how much remains after this payment
     footer?: string;
   }): Promise<StripeInvoiceResult> {
-    const { stripeCustomerId, invoiceNumber, description, lineItems, dueDate, currency } = params;
+    const {
+      stripeCustomerId,
+      invoiceNumber,
+      description,
+      lineItems,
+      dueDate,
+      currency,
+    } = params;
 
     // Calculate days until due (Stripe requires integer days)
     const daysUntilDue = dueDate
-      ? Math.max(1, Math.ceil((dueDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+      ? Math.max(
+          1,
+          Math.ceil((dueDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)),
+        )
       : 1;
 
     // Build footer with full order context for transparency
     const footerText =
       params.footer ||
       `Order Total: ${this.formatCurrency(params.orderTotal, currency)} | ` +
-      `Previously Paid: ${this.formatCurrency(params.alreadyPaid, currency)} | ` +
-      `This Payment: ${this.formatCurrency(params.totalAmount, currency)} | ` +
-      `Remaining After This: ${this.formatCurrency(params.remainingAfter, currency)}`;
+        `Previously Paid: ${this.formatCurrency(params.alreadyPaid, currency)} | ` +
+        `This Payment: ${this.formatCurrency(params.totalAmount, currency)} | ` +
+        `Remaining After This: ${this.formatCurrency(params.remainingAfter, currency)}`;
 
     // Step 1: Create the invoice in draft state first
     const invoice = await this.stripe.invoices.create({
@@ -160,11 +170,17 @@ export class StripeService {
   // ─────────────────────────────────────────────────────────────────────────
 
   constructWebhookEvent(rawBody: Buffer, signature: string): Stripe.Event {
-    const webhookSecret = this.configService.get<string>('stripe.webhookSecret');
+    const webhookSecret = this.configService.get<string>(
+      'stripe.webhookSecret',
+    );
     if (!webhookSecret) {
       throw new BadRequestException('Stripe webhook secret is not configured');
     }
-    return this.stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
+    return this.stripe.webhooks.constructEvent(
+      rawBody,
+      signature,
+      webhookSecret,
+    );
   }
 
   // ─────────────────────────────────────────────────────────────────────────

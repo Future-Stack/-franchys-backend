@@ -35,7 +35,8 @@ export class CustomerInvoiceController {
 
   @Get()
   @ApiOperation({
-    summary: 'List all invoices (with optional filters: customerId, quoteId, status)',
+    summary:
+      'List all invoices (with optional filters: customerId, quoteId, status)',
   })
   findAll(@Query() query: GetInvoicesDto) {
     return this.invoiceService.findAll(query);
@@ -50,7 +51,8 @@ export class CustomerInvoiceController {
 
   @Patch(':id')
   @ApiOperation({
-    summary: 'Update a DRAFT invoice (line items, payment term, due date, notes)',
+    summary:
+      'Update a DRAFT invoice (line items, payment term, due date, notes)',
   })
   @ApiParam({ name: 'id', description: 'Invoice UUID' })
   update(@Param('id') id: string, @Body() dto: UpdateCustomerInvoiceDto) {
@@ -78,7 +80,9 @@ export class CustomerInvoiceController {
   }
 
   @Post(':id/void')
-  @ApiOperation({ summary: 'Cancel/void an invoice (cannot void a paid invoice)' })
+  @ApiOperation({
+    summary: 'Cancel/void an invoice (cannot void a paid invoice)',
+  })
   @ApiParam({ name: 'id', description: 'Invoice UUID' })
   void(@Param('id') id: string) {
     return this.invoiceService.voidInvoice(id);
