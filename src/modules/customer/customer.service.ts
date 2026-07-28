@@ -70,12 +70,38 @@ export class CustomerService {
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
+        include: {
+          quotes: {
+            where: { status: { in: ['APPROVED', 'SENT'] } },
+            select: { total: true },
+          },
+          payments: {
+            where: { status: 'succeeded' },
+            select: { amount: true },
+          },
+        },
       }),
       this.prisma.customer.count({ where }),
     ]);
 
+    const formattedData = data.map((customer) => {
+      const quotes = (customer as any).quotes || [];
+      const payments = (customer as any).payments || [];
+      const orders = quotes.length;
+      const totalSpent = payments.reduce(
+        (sum, p) => sum + Number(p.amount),
+        0,
+      );
+      const { quotes: _, payments: __, ...rest } = customer as any;
+      return {
+        ...rest,
+        orders,
+        totalSpent,
+      };
+    });
+
     return {
-      data,
+      data: formattedData,
       meta: {
         total,
         page,
@@ -86,11 +112,35 @@ export class CustomerService {
   }
 
   async findOne(id: string) {
-    const customer = await this.prisma.customer.findUnique({ where: { id } });
+    const customer = await this.prisma.customer.findUnique({
+      where: { id },
+      include: {
+        quotes: {
+          where: { status: { in: ['APPROVED', 'SENT'] } },
+          select: { total: true },
+        },
+        payments: {
+          where: { status: 'succeeded' },
+          select: { amount: true },
+        },
+      },
+    });
     if (!customer || customer.isDeleted) {
       throw new NotFoundException(`Customer with ID ${id} not found`);
     }
-    return customer;
+    const quotes = (customer as any).quotes || [];
+    const payments = (customer as any).payments || [];
+    const orders = quotes.length;
+    const totalSpent = payments.reduce(
+      (sum, p) => sum + Number(p.amount),
+      0,
+    );
+    const { quotes: _, payments: __, ...rest } = customer as any;
+    return {
+      ...rest,
+      orders,
+      totalSpent,
+    };
   }
 
   async update(id: string, dto: UpdateCustomerDto, file?: Express.Multer.File) {
