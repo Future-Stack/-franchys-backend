@@ -14,6 +14,7 @@ import {
 import { JobService } from '../job/job.service';
 import { MailService } from '../mail/mail.service';
 import { WhatsAppService } from '../whatsapp/whatsapp.service';
+import { CustomerInvoiceService } from '../invoice/customer-invoice.service';
 
 interface CalcLineItemInput {
   groupName?: string;
@@ -59,6 +60,7 @@ export class QuoteService {
     private readonly jobService: JobService,
     private readonly mailService: MailService,
     private readonly whatsAppService: WhatsAppService,
+    private readonly customerInvoiceService: CustomerInvoiceService,
   ) {}
 
   private async generateNextQuoteNumber(): Promise<string> {
@@ -718,6 +720,8 @@ export class QuoteService {
 
     if (updatedQuote.status === QuoteStatus.APPROVED) {
       await this.jobService.createOrUpdateJobFromQuote(updatedQuote.id);
+      // Auto-create a DRAFT invoice from this approved quote
+      await this.customerInvoiceService.createFromQuote(updatedQuote.id);
     }
 
     return this.formatGroupedResponse(updatedQuote);
@@ -758,6 +762,8 @@ export class QuoteService {
 
     if (quote.status === QuoteStatus.APPROVED) {
       await this.jobService.createOrUpdateJobFromQuote(quote.id);
+      // Auto-create a DRAFT invoice from this approved quote
+      await this.customerInvoiceService.createFromQuote(quote.id);
     }
 
     return this.formatGroupedResponse(quote);
@@ -812,7 +818,7 @@ export class QuoteService {
     const customer = quote.customer;
     const recipient = customer.email;
 
-    const quoteLink = `${frontendDomain}/quotes/view?id=${id}`;
+    const quoteLink = `${frontendDomain}/quotes/public/${id}`;
     const dueDate = quote.dueDate
       ? new Date(quote.dueDate).toLocaleDateString('en-US', {
           year: 'numeric',
@@ -844,9 +850,13 @@ export class QuoteService {
     try {
       await this.mailService.sendQuote(recipient, context);
       // Update sentAt on success
+      const updateData: any = { sentAt: new Date() };
+      if (quote.status !== QuoteStatus.APPROVED && quote.status !== QuoteStatus.DECLINED) {
+        updateData.status = QuoteStatus.SENT;
+      }
       await this.prisma.quote.update({
         where: { id },
-        data: { sentAt: new Date() },
+        data: updateData,
       });
     } catch (err: any) {
       status = 'FAILED';
@@ -880,7 +890,7 @@ export class QuoteService {
     const customer = quote.customer;
     const phone = customer.phone;
 
-    const quoteLink = `${frontendDomain}/quotes/view?id=${id}`;
+    const quoteLink = `${frontendDomain}/quotes/public/${id}`;
     const dueDate = quote.dueDate
       ? new Date(quote.dueDate).toLocaleDateString('en-US', {
           year: 'numeric',
@@ -906,9 +916,13 @@ export class QuoteService {
       deliveryMethod = result.method;
 
       // Update sentAt on success
+      const updateData: any = { sentAt: new Date() };
+      if (quote.status !== QuoteStatus.APPROVED && quote.status !== QuoteStatus.DECLINED) {
+        updateData.status = QuoteStatus.SENT;
+      }
       await this.prisma.quote.update({
         where: { id },
-        data: { sentAt: new Date() },
+        data: updateData,
       });
     } catch (err: any) {
       status = 'FAILED';

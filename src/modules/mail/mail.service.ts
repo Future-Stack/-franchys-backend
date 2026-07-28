@@ -16,6 +16,16 @@ export interface QuoteEmailContext {
   year: number;
 }
 
+export interface InvoiceEmailContext {
+  customerName: string;
+  invoiceNumber: string;
+  total: string;
+  amountDue: string;
+  dueDate?: string | null;
+  hostedInvoiceUrl: string;
+  year: number;
+}
+
 @Injectable()
 export class MailService {
   private readonly logger = new Logger(MailService.name);
@@ -81,6 +91,28 @@ export class MailService {
 
     this.logger.log(
       `✅ [Quote Email] Successfully sent ${context.quoteNumber} to ${email}`,
+    );
+  }
+
+  /**
+   * Send an invoice payment email to the customer.
+   * Uses the invoice-delivery.hbs Handlebars template.
+   * Contains the hosted_invoice_url (Stripe link, never expires).
+   */
+  async sendInvoice(email: string, context: InvoiceEmailContext): Promise<void> {
+    this.logger.log(
+      `📧 [Invoice Email] Sending invoice ${context.invoiceNumber} to ${email}`,
+    );
+
+    await this.mailerService.sendMail({
+      to: email,
+      subject: `Invoice ${context.invoiceNumber} — Payment Due`,
+      template: './invoice-delivery',
+      context,
+    });
+
+    this.logger.log(
+      `✅ [Invoice Email] Successfully sent ${context.invoiceNumber} to ${email}`,
     );
   }
 }

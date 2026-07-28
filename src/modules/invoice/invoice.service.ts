@@ -24,10 +24,22 @@ export class InvoiceService implements OnModuleInit {
         data: {
           currency: 'USD',
           language: 'English',
-          termsAndCondition: 'Default terms and conditions.',
-          paymentTramsAndCondition: 'Default payment terms and conditions.',
-          invoiceTaxRate: 0,
+          invoiceTaxRate: 7.0,
           invoiceSeed: 1,
+          invoiceCommentary: 'Thank you for your business!',
+          termsAndCondition:
+            '1. Payment is due within the terms specified on the invoice.\n' +
+            '2. Late payments may be subject to a 1.5% monthly finance charge.\n' +
+            '3. All sales are final unless otherwise agreed in writing.',
+          refundPolicy:
+            'If you are not 100% satisfied with your purchase, you may return your order for a full refund or exchange within 14 days. Some customized products may not be eligible for a refund.',
+          deliveryPolicy:
+            'All orders are shipped within 48 hours Monday–Friday. Tracking information will be provided when the product has been shipped.',
+          showTotalQuantity: true,
+          makeImprintsVisible: true,
+          showPoNumber: true,
+          printingLayout: 'PORTRAIT',
+          invoicePrivacy: 'ANYONE_WITH_LINK',
         },
       });
       this.logger.log('Automatically created default invoice information.');
