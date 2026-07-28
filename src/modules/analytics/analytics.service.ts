@@ -31,9 +31,11 @@ export class AnalyticsService {
       where: { status: 'SENT' },
     });
 
-    // 4. Unpaid Invoices (invoices with UNPAID status)
+    // 4. Unpaid Invoices (invoices awaiting payment: OPEN, OVERDUE, PARTIAL)
     const unpaidInvoicesCount = await this.prisma.customerInvoice.count({
-      where: { status: 'UNPAID' },
+      where: {
+        status: { in: ['OPEN', 'OVERDUE', 'PARTIAL'] },
+      },
     });
 
     // 5. Conversion Rate (APPROVED quotes / total quotes)
