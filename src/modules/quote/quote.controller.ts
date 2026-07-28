@@ -7,7 +7,6 @@ import {
   Param,
   Delete,
   Query,
-  Req,
   UseInterceptors,
   UploadedFiles,
   BadRequestException,
@@ -34,7 +33,6 @@ import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { Public } from 'src/common/decorators/public.decorator';
 
 @ApiTags('Quote')
-@ApiBearerAuth()
 @Controller('quote')
 export class QuoteController {
   constructor(
@@ -43,6 +41,7 @@ export class QuoteController {
     private readonly cloudinaryService: CloudinaryService,
   ) {}
 
+  @ApiBearerAuth()
   @Post('upload-mockups')
   @UseInterceptors(FilesInterceptor('files', 10))
   @ApiConsumes('multipart/form-data')
@@ -74,6 +73,7 @@ export class QuoteController {
     return { urls };
   }
 
+  @ApiBearerAuth()
   @Post('refresh-pricing/new')
   @ApiOperation({
     summary:
@@ -83,6 +83,7 @@ export class QuoteController {
     return this.quoteService.calculatePreview(dto);
   }
 
+  @ApiBearerAuth()
   @Post(':id/refresh-pricing/existing')
   @ApiOperation({
     summary:
@@ -95,72 +96,35 @@ export class QuoteController {
     return this.quoteService.refreshPricingExisting(id, dto);
   }
 
+  @ApiBearerAuth()
   @Post()
   @ApiOperation({ summary: 'Create a new quote' })
   create(@Body() dto: CreateQuoteDto) {
     return this.quoteService.create(dto);
   }
 
+  @ApiBearerAuth()
   @Get()
   @ApiOperation({ summary: 'Get all quotes' })
   findAll(@Query() query: GetQuotesDto) {
     return this.quoteService.findAll(query);
   }
 
+  @ApiBearerAuth()
   @Get(':id')
   @ApiOperation({ summary: 'Get a quote by ID' })
   findOne(@Param('id') id: string) {
     return this.quoteService.findOne(id);
   }
 
+  @ApiBearerAuth()
   @Patch(':id')
   @ApiOperation({ summary: 'Update a quote by ID' })
   update(@Param('id') id: string, @Body() dto: UpdateQuoteDto) {
     return this.quoteService.update(id, dto);
   }
 
-  @Post(':id/approve')
-  @ApiOperation({ summary: 'Approve a quote' })
-  approve(
-    @Param('id') id: string,
-    @Req() req: { user: { userId: string; email: string; role: string } },
-  ) {
-    const user = req.user;
-    return this.quoteService.updateStatusWithPermissionCheck(
-      id,
-      'APPROVED',
-      user,
-    );
-  }
-
-  @Post(':id/request-revision')
-  @ApiOperation({ summary: 'Request revision on a quote' })
-  requestRevision(
-    @Param('id') id: string,
-    @Req() req: { user: { userId: string; email: string; role: string } },
-  ) {
-    const user = req.user;
-    return this.quoteService.updateStatusWithPermissionCheck(
-      id,
-      'REVISION_REQUESTED',
-      user,
-    );
-  }
-
-  @Post(':id/decline')
-  @ApiOperation({ summary: 'Decline a quote' })
-  decline(
-    @Param('id') id: string,
-    @Req() req: { user: { userId: string; email: string; role: string } },
-  ) {
-    const user = req.user;
-    return this.quoteService.updateStatusWithPermissionCheck(
-      id,
-      'DECLINED',
-      user,
-    );
-  }
-
+  @ApiBearerAuth()
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a quote by ID' })
   remove(@Param('id') id: string) {
@@ -228,6 +192,7 @@ export class QuoteController {
   // DELIVERY: Send quote via Email
   // ─────────────────────────────────────────────────────────────────────────
 
+  @ApiBearerAuth()
   @Post(':id/send-email')
   @ApiOperation({
     summary: 'Send quote to customer via Email',
@@ -245,6 +210,7 @@ export class QuoteController {
   // DELIVERY: Send quote via WhatsApp
   // ─────────────────────────────────────────────────────────────────────────
 
+  @ApiBearerAuth()
   @Post(':id/send-whatsapp')
   @ApiOperation({
     summary: 'Send quote to customer via WhatsApp',
