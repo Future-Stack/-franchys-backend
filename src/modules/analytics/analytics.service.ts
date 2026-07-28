@@ -32,7 +32,7 @@ export class AnalyticsService {
     });
 
     // 4. Unpaid Invoices (invoices with UNPAID status)
-    const unpaidInvoicesCount = await this.prisma.invoice.count({
+    const unpaidInvoicesCount = await this.prisma.customerInvoice.count({
       where: { status: 'UNPAID' },
     });
 
@@ -323,7 +323,7 @@ export class AnalyticsService {
 
   private async getProductPerformance() {
     const productStats = await this.prisma.quoteLineItem.groupBy({
-      by: ['productName', 'category'],
+      by: ['description', 'category'],
       where: {
         quote: {
           status: 'APPROVED',
@@ -331,22 +331,22 @@ export class AnalyticsService {
       },
       _sum: {
         itemsCount: true,
-        totalPrice: true,
+        total: true,
       },
       orderBy: {
         _sum: {
-          totalPrice: 'desc',
+          total: 'desc',
         },
       },
       take: 5,
     });
 
     return productStats.map((item) => ({
-      productName: item.productName || 'Custom Line Item',
+      productName: item.description || 'Custom Line Item',
       category: item.category || 'General',
-      unitsSold: item._sum.itemsCount || 0,
+      unitsSold: item._sum?.itemsCount || 0,
       revenue: parseFloat(
-        (item._sum.totalPrice ? Number(item._sum.totalPrice) : 0).toFixed(2),
+        (item._sum?.total ? Number(item._sum.total) : 0).toFixed(2),
       ),
     }));
   }

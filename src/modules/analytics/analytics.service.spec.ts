@@ -13,7 +13,7 @@ const mockPrisma = {
   job: {
     count: jest.fn(),
   },
-  invoice: {
+  customerInvoice: {
     count: jest.fn(),
   },
   campaign: {
