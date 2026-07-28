@@ -47,6 +47,8 @@ const mockPrisma = {
   thread: {
     create: jest.fn(),
     findMany: jest.fn(),
+    findFirst: jest.fn(),
+    update: jest.fn(),
   },
 };
 
@@ -129,7 +131,9 @@ describe('EmailTrackerService (unit)', () => {
         id: 'contact-1',
         email: 'client@client.com',
       });
+      mockPrisma.thread.findFirst.mockResolvedValue(null);
       mockPrisma.thread.create.mockResolvedValue({ id: 'thread-1' });
+      mockPrisma.thread.update.mockResolvedValue({ id: 'thread-1' });
       mockPrisma.message.create.mockResolvedValue({ id: 'msg-row-1' });
 
       await service.syncEmails();
@@ -142,7 +146,9 @@ describe('EmailTrackerService (unit)', () => {
 
   describe('getThreads', () => {
     it('should retrieve all threads from prisma', async () => {
-      mockPrisma.thread.findMany.mockResolvedValue([{ id: 'thread-1' }]);
+      mockPrisma.thread.findMany.mockResolvedValue([
+        { id: 'thread-1', contact: { name: 'Jane', email: 'jane@test.com' } },
+      ]);
 
       const result = await service.getThreads();
 
