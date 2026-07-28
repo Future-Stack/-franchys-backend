@@ -782,16 +782,7 @@ export class QuoteService {
       where: { id },
       include: {
         lineItems: true,
-        customer: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-            phone: true,
-            companyName: true,
-          },
-        },
+        customer: true,
         rep: {
           select: {
             userId: true,
@@ -806,7 +797,7 @@ export class QuoteService {
       throw new NotFoundException(`Quote with ID ${id} not found`);
     }
 
-    return quote;
+    return this.formatGroupedResponse(quote);
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
