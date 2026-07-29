@@ -8,20 +8,18 @@ model InvoiceInformation {
     invoiceSeed    Int     @default(1)
 
     // Text content shown on invoices & public pages
-    invoiceCommentary        String? @db.Text // e.g. "Thank you for your business!"
-    termsAndCondition        String  @db.Text // shown at bottom of public invoice page
-    refundPolicy             String? @db.Text // shown at bottom of public invoice page
-    deliveryPolicy           String? @db.Text // shown at bottom of public invoice page
-    paymentTramsAndCondition String? @db.Text // legacy — keep for compatibility
+    invoiceCommentary        String? @db.Text 
+    termsAndCondition        String  @db.Text 
+    refundPolicy             String? @db.Text 
+    deliveryPolicy           String? @db.Text 
+    paymentTramsAndCondition String? @db.Text 
 
-    // Display toggles (control what shows on invoice PDF / public page)
     showTotalQuantity   Boolean @default(true)
     makeImprintsVisible Boolean @default(true)
     showPoNumber        Boolean @default(true)
 
-    // Layout & access
-    printingLayout  String @default("PORTRAIT")          // "PORTRAIT" | "LANDSCAPE"
-    invoicePrivacy  String @default("ANYONE_WITH_LINK")  // "ANYONE_WITH_LINK" | "EMAIL_REQUIRED"
+    printingLayout  String @default("PORTRAIT")        
+    invoicePrivacy  String @default("ANYONE_WITH_LINK")  
 
     updatedAt DateTime @updatedAt
     createAt  DateTime @default(now())

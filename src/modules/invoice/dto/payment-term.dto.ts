@@ -30,8 +30,8 @@ export class CreatePaymentTermDto {
     example: 50,
   })
   @IsNumber()
-  @Min(1)
-  @Max(99)
+  @Min(0)
+  @Max(100)
   @IsOptional()
   depositPercent?: number;
 
@@ -60,8 +60,8 @@ export class UpdatePaymentTermDto {
 
   @ApiPropertyOptional({ example: 50 })
   @IsNumber()
-  @Min(1)
-  @Max(99)
+  @Min(0)
+  @Max(100)
   @IsOptional()
   depositPercent?: number;
 
