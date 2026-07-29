@@ -1,7 +1,3 @@
-// Payment Terms — reusable templates the admin creates
-// Admin selects one when creating/editing an invoice
-// Examples: "Net 30", "50% Deposit", "50% now + 50% net 30", "Due on Receipt"
-
 model PaymentTerm {
     id   String @id @default(uuid())
     name String // "Net 30", "50% Deposit / Down Payment", etc.

@@ -22,12 +22,14 @@ export class TransformInterceptor<T> implements NestInterceptor<T, any> {
           'data' in data &&
           'meta' in data
         ) {
+          const { data: listData, meta, statusCode, message, ...rest } = data;
           return {
-            statusCode: data?.statusCode ?? response.statusCode,
+            statusCode: statusCode ?? response.statusCode,
             success: true,
-            message: data?.message ?? 'Request successful',
-            data: data.data,
-            meta: data.meta,
+            message: message ?? 'Request successful',
+            data: listData,
+            meta,
+            ...rest,
           };
         }
 

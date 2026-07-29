@@ -235,6 +235,35 @@ export class CustomerInvoiceService {
       this.prisma.customerInvoice.count({ where }),
     ]);
 
+    // Calculate status counts for tab badges (keep customer/quote filters but ignore status filter)
+    const statusCountsWhere: any = {};
+    if (customerId) statusCountsWhere.customerId = customerId;
+    if (quoteId) statusCountsWhere.quoteId = quoteId;
+
+    const rawStatusCounts = await this.prisma.customerInvoice.groupBy({
+      by: ['status'],
+      where: statusCountsWhere,
+      _count: {
+        id: true,
+      },
+    });
+
+    const statusCounts = {
+      DRAFT: 0,
+      OPEN: 0,
+      PARTIAL: 0,
+      PAID: 0,
+      OVERDUE: 0,
+      VOID: 0,
+      UNCOLLECTIBLE: 0,
+    };
+
+    rawStatusCounts.forEach((group) => {
+      if (statusCounts[group.status] !== undefined) {
+        statusCounts[group.status] = group._count.id;
+      }
+    });
+
     return {
       data,
       meta: {
@@ -243,6 +272,7 @@ export class CustomerInvoiceService {
         limit,
         totalPages: Math.ceil(total / limit),
       },
+      statusCounts,
     };
   }
 
@@ -308,23 +338,47 @@ export class CustomerInvoiceService {
   }
 
   async getPaymentSummary() {
-    const [succeededAgg, completedCount, pendingCount, failedCount] = await Promise.all([
-      this.prisma.payment.aggregate({
-        where: { status: 'succeeded' },
-        _sum: { amount: true },
-      }),
-      this.prisma.payment.count({
-        where: { status: 'succeeded' },
-      }),
-      this.prisma.payment.count({
-        where: { status: 'pending' },
-      }),
-      this.prisma.payment.count({
-        where: { status: 'failed' },
-      }),
-    ]);
-
+    // 1. Fetch completed revenue sum
+    const succeededAgg = await this.prisma.payment.aggregate({
+      where: { status: 'succeeded' },
+      _sum: { amount: true },
+    });
     const totalRevenue = Number(succeededAgg._sum.amount) || 0;
+
+    // 2. Fetch all succeeded Payments count
+    const completedCount = await this.prisma.payment.count({
+      where: { status: 'succeeded' },
+    });
+
+    // 3. Fetch sent unpaid installments
+    const unpaidInstallments = await this.prisma.invoiceInstallment.findMany({
+      where: {
+        status: { in: ['SENT', 'OVERDUE'] },
+      },
+    });
+
+    // 4. Fetch sent unpaid full invoices
+    const unpaidFullInvoices = await this.prisma.customerInvoice.findMany({
+      where: {
+        status: { in: ['OPEN', 'OVERDUE'] },
+        installments: {
+          none: {},
+        },
+      },
+    });
+
+    let pendingCount = 0;
+    let failedCount = 0;
+
+    unpaidInstallments.forEach((inst) => {
+      if (inst.status === 'OVERDUE') failedCount++;
+      else pendingCount++;
+    });
+
+    unpaidFullInvoices.forEach((inv) => {
+      if (inv.status === 'OVERDUE') failedCount++;
+      else pendingCount++;
+    });
 
     return {
       totalRevenue: parseFloat(totalRevenue.toFixed(2)),
@@ -339,47 +393,69 @@ export class CustomerInvoiceService {
     const limit = Number(query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    const where: any = {};
-    if (query.status) {
-      const statusLower = query.status.toLowerCase();
-      if (statusLower === 'completed') {
-        where.status = 'succeeded';
-      } else if (statusLower === 'pending') {
-        where.status = 'pending';
-      } else if (statusLower === 'failed') {
-        where.status = 'failed';
-      } else {
-        where.status = query.status;
-      }
-    }
+    // 1. Fetch completed payments
+    const payments = await this.prisma.payment.findMany({
+      include: {
+        invoice: { select: { invoiceNumber: true } },
+        customer: {
+          select: {
+            firstName: true,
+            lastName: true,
+            companyName: true,
+          },
+        },
+      },
+    });
 
-    const [payments, total] = await Promise.all([
-      this.prisma.payment.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-        include: {
-          invoice: { select: { invoiceNumber: true } },
-          customer: {
-            select: {
-              firstName: true,
-              lastName: true,
-              companyName: true,
+    // 2. Fetch sent unpaid installments
+    const unpaidInstallments = await this.prisma.invoiceInstallment.findMany({
+      where: {
+        status: { in: ['SENT', 'OVERDUE'] },
+      },
+      include: {
+        invoice: {
+          include: {
+            customer: {
+              select: {
+                firstName: true,
+                lastName: true,
+                companyName: true,
+              },
             },
           },
         },
-      }),
-      this.prisma.payment.count({ where }),
-    ]);
+      },
+    });
 
-    const formattedPayments = payments.map((p) => {
-      let displayStatus = 'Pending';
-      if (p.status === 'succeeded') displayStatus = 'Completed';
-      else if (p.status === 'failed') displayStatus = 'Failed';
+    // 3. Fetch sent unpaid full invoices
+    const unpaidFullInvoices = await this.prisma.customerInvoice.findMany({
+      where: {
+        status: { in: ['OPEN', 'OVERDUE'] },
+        installments: {
+          none: {},
+        },
+      },
+      include: {
+        customer: {
+          select: {
+            firstName: true,
+            lastName: true,
+            companyName: true,
+          },
+        },
+      },
+    });
+
+    const items: any[] = [];
+
+    // Add completed payments
+    payments.forEach((p) => {
+      let displayStatus = 'Completed';
+      if (p.status === 'failed') displayStatus = 'Failed';
+      else if (p.status === 'pending') displayStatus = 'Pending';
       else if (p.status === 'refunded') displayStatus = 'Refunded';
 
-      return {
+      items.push({
         id: p.id,
         paymentId: `PAY-${p.id.substring(0, 6).toUpperCase()}`,
         invoiceId: p.invoiceId,
@@ -389,19 +465,93 @@ export class CustomerInvoiceService {
           : '',
         amount: Number(p.amount),
         date: p.paidAt || p.createdAt,
-        method: p.paymentMethod,
+        method: p.paymentMethod || 'Stripe',
         status: displayStatus,
-      };
+      });
     });
 
+    // Add unpaid installments
+    unpaidInstallments.forEach((inst) => {
+      const suffix = String.fromCharCode(64 + inst.installmentNumber);
+      items.push({
+        id: inst.id,
+        paymentId: `PAY-${inst.id.substring(0, 6).toUpperCase()}`,
+        invoiceId: inst.invoiceId,
+        invoiceNumber: `${inst.invoice.invoiceNumber}-${suffix}`,
+        customerName: inst.invoice.customer
+          ? inst.invoice.customer.companyName || `${inst.invoice.customer.firstName} ${inst.invoice.customer.lastName}`
+          : '',
+        amount: Number(inst.amount),
+        date: inst.sentAt || inst.createdAt,
+        method: 'Stripe Checkout (Pending)',
+        status: inst.status === 'OVERDUE' ? 'Failed' : 'Pending',
+      });
+    });
+
+    // Add unpaid full invoices
+    unpaidFullInvoices.forEach((inv) => {
+      items.push({
+        id: inv.id,
+        paymentId: `PAY-${inv.id.substring(0, 6).toUpperCase()}`,
+        invoiceId: inv.id,
+        invoiceNumber: inv.invoiceNumber,
+        customerName: inv.customer
+          ? inv.customer.companyName || `${inv.customer.firstName} ${inv.customer.lastName}`
+          : '',
+        amount: Number(inv.total),
+        date: inv.sentAt || inv.createdAt,
+        method: 'Stripe Checkout (Pending)',
+        status: inv.status === 'OVERDUE' ? 'Failed' : 'Pending',
+      });
+    });
+
+    // Sort items by date descending
+    items.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    // Calculate status counts on the combined list (before applying status filter)
+    const statusCounts = {
+      Completed: 0,
+      Pending: 0,
+      Failed: 0,
+    };
+
+    items.forEach((item) => {
+      if (item.status === 'Completed') statusCounts.Completed++;
+      else if (item.status === 'Pending') statusCounts.Pending++;
+      else if (item.status === 'Failed') statusCounts.Failed++;
+    });
+
+    // Apply status filter
+    let filteredItems = items;
+    if (query.status) {
+      const statusLower = query.status.toLowerCase();
+      filteredItems = items.filter((item) => {
+        const itemStatusLower = item.status.toLowerCase();
+        if (statusLower === 'completed' || statusLower === 'succeeded') {
+          return itemStatusLower === 'completed';
+        }
+        if (statusLower === 'pending') {
+          return itemStatusLower === 'pending';
+        }
+        if (statusLower === 'failed') {
+          return itemStatusLower === 'failed';
+        }
+        return itemStatusLower === statusLower;
+      });
+    }
+
+    const total = filteredItems.length;
+    const paginatedItems = filteredItems.slice(skip, skip + limit);
+
     return {
-      data: formattedPayments,
+      data: paginatedItems,
       meta: {
         total,
         page,
         limit,
         totalPages: Math.ceil(total / limit),
       },
+      statusCounts,
     };
   }
 
@@ -518,7 +668,10 @@ export class CustomerInvoiceService {
 
     let hostedInvoiceUrl: string;
 
-    if (paymentTerm?.depositPercent) {
+    const depositPercent = paymentTerm?.depositPercent ? Number(paymentTerm.depositPercent) : null;
+    const isPartial = depositPercent !== null && depositPercent > 0 && depositPercent < 100;
+
+    if (isPartial) {
       // ── PARTIAL PAYMENT: create installment records + send installment #1 ──
       hostedInvoiceUrl = await this.createAndSendPartialPayment(
         invoice,
@@ -528,6 +681,12 @@ export class CustomerInvoiceService {
       );
     } else {
       // ── FULL PAYMENT: single Stripe invoice ──
+      let finalDueDate = invoice.dueDate;
+      if (!finalDueDate && paymentTerm?.paymentDaysAllowed) {
+        finalDueDate = new Date();
+        finalDueDate.setDate(finalDueDate.getDate() + paymentTerm.paymentDaysAllowed);
+      }
+
       const stripeResult = await this.stripeService.createAndFinalizeInvoice({
         stripeCustomerId,
         invoiceNumber: invoice.invoiceNumber,
@@ -538,7 +697,7 @@ export class CustomerInvoiceService {
           quantity: li.quantity,
         })),
         totalAmount: total,
-        dueDate: invoice.dueDate,
+        dueDate: finalDueDate,
         currency,
         orderTotal: total,
         alreadyPaid: 0,
@@ -555,6 +714,7 @@ export class CustomerInvoiceService {
           invoicePdfUrl: stripeResult.invoicePdfUrl,
           status: 'OPEN',
           sentAt: new Date(),
+          dueDate: finalDueDate,
         },
       });
 

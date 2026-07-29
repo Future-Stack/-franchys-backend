@@ -156,3 +156,26 @@ export class GetInvoicesDto {
   @IsOptional()
   status?: InvoiceStatus;
 }
+
+export class GetPaymentsDto {
+  @ApiPropertyOptional({ example: 1 })
+  @IsInt()
+  @IsOptional()
+  @Type(() => Number)
+  page?: number;
+
+  @ApiPropertyOptional({ example: 10 })
+  @IsInt()
+  @IsOptional()
+  @Type(() => Number)
+  limit?: number;
+
+  @ApiPropertyOptional({
+    description: 'Filter by payment status (Completed, Pending, Failed)',
+    example: 'Pending',
+    enum: ['Completed', 'Pending', 'Failed'],
+  })
+  @IsString()
+  @IsOptional()
+  status?: string;
+}
