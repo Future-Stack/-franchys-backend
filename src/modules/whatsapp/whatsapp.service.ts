@@ -148,7 +148,11 @@ export class WhatsAppService {
   async sendReply(
     conversationId: string,
     text: string,
-  ): Promise<{ success: boolean }> {
+  ): Promise<{
+    success: boolean;
+    is24HourWindowExpired?: boolean;
+    message?: string;
+  }> {
     const conversation = await this.prisma.whatsAppConversation.findUnique({
       where: { id: conversationId },
       include: { contact: true },
@@ -162,32 +166,138 @@ export class WhatsAppService {
     const myPhoneNumberId = this.configService.get<string>(
       'whatsapp.phoneNumberId',
     )!;
+    const defaultTemplate =
+      this.configService.get<string>('whatsapp.defaultTemplateName') ||
+      'hello_world';
+    const templateLang =
+      this.configService.get<string>('whatsapp.defaultTemplateLanguage') ||
+      'en_US';
 
-    const { messageId: wamid } = await this.client.sendTextMessage(to, text);
-
-    await this.prisma.whatsAppMessage.create({
-      data: {
-        conversationId,
-        direction: 'OUTBOUND',
-        from: myPhoneNumberId,
-        to,
-        body: text,
-        messageId: wamid,
-        type: 'text',
-        status: 'sent',
-      },
+    // Check 24-hour window by fetching the last INBOUND message from customer
+    const lastInbound = await this.prisma.whatsAppMessage.findFirst({
+      where: { conversationId, direction: 'INBOUND' },
+      orderBy: { createdAt: 'desc' },
     });
 
-    // Update conversation lastActivity
-    await this.prisma.whatsAppConversation.update({
-      where: { id: conversationId },
-      data: { lastActivity: new Date() },
-    });
+    const isWindowExpired =
+      !lastInbound ||
+      Date.now() - new Date(lastInbound.createdAt).getTime() >
+        24 * 60 * 60 * 1000;
 
-    this.logger.log(
-      `OUTBOUND message sent to ${to} in conversation ${conversationId}`,
-    );
-    return { success: true };
+    if (isWindowExpired) {
+      this.logger.warn(
+        `24-hour customer service window expired for conversation ${conversationId} (contact: ${to}). Automatically sending template '${defaultTemplate}'...`,
+      );
+
+      try {
+        const { messageId: wamid } = await this.client.sendTemplateMessage(
+          to,
+          defaultTemplate,
+          templateLang,
+        );
+
+        await this.prisma.whatsAppMessage.create({
+          data: {
+            conversationId,
+            direction: 'OUTBOUND',
+            from: myPhoneNumberId,
+            to,
+            body: `[Auto Template Re-engagement: ${defaultTemplate}] ${text}`,
+            messageId: wamid,
+            type: 'template',
+            status: 'sent',
+          },
+        });
+
+        await this.prisma.whatsAppConversation.update({
+          where: { id: conversationId },
+          data: { lastActivity: new Date() },
+        });
+
+        return {
+          success: true,
+          is24HourWindowExpired: true,
+          message: `24-hour customer service window was expired. Automatically sent approved template '${defaultTemplate}' to re-engage customer.`,
+        };
+      } catch (templateErr: any) {
+        this.logger.error(
+          `Failed to auto-send template '${defaultTemplate}': ${templateErr.message}`,
+        );
+        throw templateErr;
+      }
+    }
+
+    // Within 24-hour window: send free-form text message
+    try {
+      const { messageId: wamid } = await this.client.sendTextMessage(to, text);
+
+      await this.prisma.whatsAppMessage.create({
+        data: {
+          conversationId,
+          direction: 'OUTBOUND',
+          from: myPhoneNumberId,
+          to,
+          body: text,
+          messageId: wamid,
+          type: 'text',
+          status: 'sent',
+        },
+      });
+
+      await this.prisma.whatsAppConversation.update({
+        where: { id: conversationId },
+        data: { lastActivity: new Date() },
+      });
+
+      this.logger.log(
+        `OUTBOUND message sent to ${to} in conversation ${conversationId}`,
+      );
+      return { success: true };
+    } catch (err: any) {
+      // Dynamic fallback if Meta returns 24-hour window error (Code 131047)
+      const isCode131047 =
+        err?.status === 400 &&
+        (err?.response?.code === 131047 ||
+          err?.message?.includes('131047') ||
+          err?.message?.includes('24-Hour'));
+
+      if (isCode131047) {
+        this.logger.warn(
+          `Meta rejected text message (Code 131047). Attempting template fallback '${defaultTemplate}'...`,
+        );
+
+        const { messageId: wamid } = await this.client.sendTemplateMessage(
+          to,
+          defaultTemplate,
+          templateLang,
+        );
+
+        await this.prisma.whatsAppMessage.create({
+          data: {
+            conversationId,
+            direction: 'OUTBOUND',
+            from: myPhoneNumberId,
+            to,
+            body: `[Auto Template Re-engagement: ${defaultTemplate}] ${text}`,
+            messageId: wamid,
+            type: 'template',
+            status: 'sent',
+          },
+        });
+
+        await this.prisma.whatsAppConversation.update({
+          where: { id: conversationId },
+          data: { lastActivity: new Date() },
+        });
+
+        return {
+          success: true,
+          is24HourWindowExpired: true,
+          message: `24-hour customer service window was expired. Automatically sent approved template '${defaultTemplate}' to re-engage customer.`,
+        };
+      }
+      throw err;
+    }
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
