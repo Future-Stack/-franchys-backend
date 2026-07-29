@@ -88,16 +88,17 @@ export class WhatsAppHttpClient {
     to: string,
     body: string,
   ): Promise<{ messageId: string }> {
+    const cleanTo = to.replace(/[^0-9]/g, '');
     const response = await this.axios.post('/messages', {
       messaging_product: 'whatsapp',
       recipient_type: 'individual',
-      to,
+      to: cleanTo,
       type: 'text',
       text: { body },
     });
 
     const wamid: string = response.data?.messages?.[0]?.id ?? '';
-    this.logger.log(`Text message sent to ${to}. wamid=${wamid}`);
+    this.logger.log(`Text message sent to ${cleanTo}. wamid=${wamid}`);
     return { messageId: wamid };
   }
 
@@ -111,9 +112,10 @@ export class WhatsAppHttpClient {
     templateName: string,
     languageCode: string,
   ): Promise<{ messageId: string }> {
+    const cleanTo = to.replace(/[^0-9]/g, '');
     const response = await this.axios.post('/messages', {
       messaging_product: 'whatsapp',
-      to,
+      to: cleanTo,
       type: 'template',
       template: {
         name: templateName,
@@ -123,7 +125,7 @@ export class WhatsAppHttpClient {
 
     const wamid: string = response.data?.messages?.[0]?.id ?? '';
     this.logger.log(
-      `Template message [${templateName}] sent to ${to}. wamid=${wamid}`,
+      `Template message [${templateName}] sent to ${cleanTo}. wamid=${wamid}`,
     );
     return { messageId: wamid };
   }
@@ -163,9 +165,10 @@ export class WhatsAppHttpClient {
       parameters: { type: string; text: string }[];
     }[],
   ): Promise<{ messageId: string }> {
+    const cleanTo = to.replace(/[^0-9]/g, '');
     const response = await this.axios.post('/messages', {
       messaging_product: 'whatsapp',
-      to,
+      to: cleanTo,
       type: 'template',
       template: {
         name: templateName,
@@ -176,7 +179,7 @@ export class WhatsAppHttpClient {
 
     const wamid: string = response.data?.messages?.[0]?.id ?? '';
     this.logger.log(
-      `Template message [${templateName}] with components sent to ${to}. wamid=${wamid}`,
+      `Template message [${templateName}] with components sent to ${cleanTo}. wamid=${wamid}`,
     );
     return { messageId: wamid };
   }

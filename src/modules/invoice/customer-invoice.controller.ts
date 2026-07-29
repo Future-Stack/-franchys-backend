@@ -19,6 +19,7 @@ import {
   UpdateCustomerInvoiceDto,
   SendInvoiceDto,
   GetInvoicesDto,
+  GetPaymentsDto,
 } from './dto/customer-invoice.dto';
 
 @ApiTags('Customer Invoices')
@@ -63,7 +64,7 @@ export class CustomerInvoiceController {
     summary: 'List all payment transactions with pagination and optional status filter',
   })
   getPayments(
-    @Query() query: { page?: number; limit?: number; status?: string },
+    @Query() query: GetPaymentsDto,
   ) {
     return this.invoiceService.getPaymentsList(query);
   }
