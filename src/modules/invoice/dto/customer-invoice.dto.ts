@@ -155,6 +155,15 @@ export class GetInvoicesDto {
   @IsEnum(InvoiceStatus)
   @IsOptional()
   status?: InvoiceStatus;
+
+  @ApiPropertyOptional({
+    description:
+      'Search across invoiceNumber, quoteNumber, customer firstName/lastName, and companyName',
+    example: 'INV-1001',
+  })
+  @IsString()
+  @IsOptional()
+  search?: string;
 }
 
 export class GetPaymentsDto {

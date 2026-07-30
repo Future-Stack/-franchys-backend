@@ -13,6 +13,7 @@ import { CampaignService } from './campaign.service';
 import { CreateCampaignDto, UpdateCampaignDto } from './dto/campaign.dto';
 import { ValidateDiscountDto } from './dto/validate-discount.dto';
 import { GetCampaignsDto } from './dto/get-campaigns.dto';
+import { SendPromotionalEmailDto } from './dto/send-promotional-email.dto';
 
 @ApiTags('Campaign')
 @ApiBearerAuth()
@@ -30,6 +31,12 @@ export class CampaignController {
   @ApiOperation({ summary: 'Validate a promotional discount code' })
   validateDiscountCode(@Body() dto: ValidateDiscountDto) {
     return this.campaignService.validateDiscountCode(dto);
+  }
+
+  @Post('send-promotional-email')
+  @ApiOperation({ summary: 'Send promotional email to selected or all customers' })
+  sendPromotionalEmail(@Body() dto: SendPromotionalEmailDto) {
+    return this.campaignService.sendPromotionalEmail(dto);
   }
 
   @Get()

@@ -7,6 +7,7 @@ import { WhatsAppHttpClient } from './whatsapp.http';
 const mockPrisma = {
   whatsAppMessage: {
     findUnique: jest.fn(),
+    findFirst: jest.fn(),
     create: jest.fn(),
     findMany: jest.fn(),
   },
@@ -27,7 +28,7 @@ const mockPrisma = {
 const mockWhatsAppHttpClient = {
   markAsRead: jest.fn(),
   sendTextMessage: jest.fn(),
-  sendTemplateMessage: jest.fn(),
+  sendTemplateMessage: jest.fn().mockResolvedValue({ messageId: 'wamid.template-1' }),
 };
 
 const mockConfigService = {
@@ -108,6 +109,10 @@ describe('WhatsAppService (unit)', () => {
       mockPrisma.whatsAppConversation.findUnique.mockResolvedValue({
         id: 'conv-1',
         contact: { phone: '+8801700000000' },
+      });
+      mockPrisma.whatsAppMessage.findFirst.mockResolvedValue({
+        createdAt: new Date(),
+        direction: 'INBOUND',
       });
       mockWhatsAppHttpClient.sendTextMessage.mockResolvedValue({
         messageId: 'wamid.out-1',
