@@ -373,10 +373,37 @@ export class WhatsAppService {
   }
 
   async getConversationMessages(conversationId: string) {
-    return this.prisma.whatsAppMessage.findMany({
+    const messages = await this.prisma.whatsAppMessage.findMany({
       where: { conversationId },
       orderBy: { createdAt: 'asc' },
     });
+
+    // Get conversation + contact to resolve customer profileImage
+    const conversation = await this.prisma.whatsAppConversation.findUnique({
+      where: { id: conversationId },
+      include: { contact: true },
+    });
+
+    let customerImage: string | null = null;
+    if (conversation?.contact?.phone) {
+      const customer = await this.prisma.customer.findFirst({
+        where: { phone: conversation.contact.phone },
+        select: { profileImage: true },
+      });
+      customerImage = customer?.profileImage ?? null;
+    }
+
+    return {
+      contact: conversation?.contact
+        ? {
+            id: conversation.contact.id,
+            phone: conversation.contact.phone,
+            name: conversation.contact.name,
+            profileImage: customerImage,
+          }
+        : null,
+      messages,
+    };
   }
 
   async getContacts() {

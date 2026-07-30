@@ -202,13 +202,40 @@ export class CustomerInvoiceService {
   // ─────────────────────────────────────────────────────────────────────────
 
   async findAll(query: GetInvoicesDto) {
-    const { page = 1, limit = 10, customerId, quoteId, status } = query;
+    const { page = 1, limit = 10, customerId, quoteId, status, search } = query;
     const skip = (page - 1) * limit;
 
     const where: any = {};
     if (customerId) where.customerId = customerId;
     if (quoteId) where.quoteId = quoteId;
     if (status) where.status = status;
+
+    // Search across invoiceNumber, quoteNumber, customer name / company name
+    if (search) {
+      where.OR = [
+        { invoiceNumber: { contains: search, mode: 'insensitive' } },
+        {
+          quote: {
+            quoteNumber: { contains: search, mode: 'insensitive' },
+          },
+        },
+        {
+          customer: {
+            firstName: { contains: search, mode: 'insensitive' },
+          },
+        },
+        {
+          customer: {
+            lastName: { contains: search, mode: 'insensitive' },
+          },
+        },
+        {
+          customer: {
+            companyName: { contains: search, mode: 'insensitive' },
+          },
+        },
+      ];
+    }
 
     const [data, total] = await Promise.all([
       this.prisma.customerInvoice.findMany({
@@ -235,14 +262,11 @@ export class CustomerInvoiceService {
       this.prisma.customerInvoice.count({ where }),
     ]);
 
-    // Calculate status counts for tab badges (keep customer/quote filters but ignore status filter)
-    const statusCountsWhere: any = {};
-    if (customerId) statusCountsWhere.customerId = customerId;
-    if (quoteId) statusCountsWhere.quoteId = quoteId;
-
+    // Calculate status counts for tab badges — always across the entire DB,
+    // ignoring ALL query params (no status, customerId, or quoteId filter).
+    // This ensures badge counts are consistent regardless of active filters.
     const rawStatusCounts = await this.prisma.customerInvoice.groupBy({
       by: ['status'],
-      where: statusCountsWhere,
       _count: {
         id: true,
       },
@@ -1134,6 +1158,11 @@ export class CustomerInvoiceService {
       return;
     }
 
+    // Fetch shop info to include company logo in notifications
+    const shopInfo = await this.prisma.shopInformation.findFirst();
+    const shopLogoUrl = shopInfo?.companyLogo ?? null;
+    const shopName = shopInfo?.companyName ?? 'MAK SERVI';
+
     const customer = freshInvoice.customer;
     const fmt = (v: number) => `$${v.toFixed(2)}`;
 
@@ -1194,6 +1223,8 @@ export class CustomerInvoiceService {
       amountRemaining: fmt(Number(freshInvoice.amountDue)),
       installmentsList,
       hostedInvoiceUrl,
+      shopLogoUrl,
+      shopName,
       year: new Date().getFullYear(),
     };
 
