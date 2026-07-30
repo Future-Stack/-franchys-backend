@@ -524,10 +524,37 @@ export class EmailTrackerService {
   }
 
   async getThreadMessages(threadId: string) {
-    return this.prisma.message.findMany({
+    const messages = await this.prisma.message.findMany({
       where: { threadId },
       orderBy: { createdAt: 'asc' },
     });
+
+    // Get thread + contact to resolve customer profileImage
+    const thread = await this.prisma.thread.findUnique({
+      where: { id: threadId },
+      include: { contact: true },
+    });
+
+    let customerImage: string | null = null;
+    if (thread?.contact?.email) {
+      const customer = await this.prisma.customer.findUnique({
+        where: { email: thread.contact.email },
+        select: { profileImage: true },
+      });
+      customerImage = customer?.profileImage ?? null;
+    }
+
+    return {
+      contact: thread?.contact
+        ? {
+            id: thread.contact.id,
+            email: thread.contact.email,
+            name: thread.contact.name,
+            profileImage: customerImage,
+          }
+        : null,
+      messages,
+    };
   }
 
   async getContacts() {

@@ -2,8 +2,17 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { MailService } from './mail.service';
 import { MailerService } from '@nestjs-modules/mailer';
 
+import { ConfigService } from '@nestjs/config';
+
 const mockMailerService = {
   sendMail: jest.fn(),
+};
+
+const mockConfigService = {
+  get: jest.fn().mockImplementation((key: string) => {
+    if (key === 'MAIL_USER') return 'no-reply@example.com';
+    return null;
+  }),
 };
 
 describe('MailService (unit)', () => {
@@ -19,6 +28,10 @@ describe('MailService (unit)', () => {
           provide: MailerService,
           useValue: mockMailerService,
         },
+        {
+          provide: ConfigService,
+          useValue: mockConfigService,
+        },
       ],
     }).compile();
 
@@ -33,7 +46,8 @@ describe('MailService (unit)', () => {
 
       expect(mockMailerService.sendMail).toHaveBeenCalledWith({
         to: 'jane@test.com',
-        subject: 'Welcome to T-price - Verify Your Email',
+        from: '"No Reply" <no-reply@example.com>',
+        subject: 'Welcome to MAK SERVI - Verify Your Email',
         template: './verification',
         context: { code: '123456' },
       });
@@ -59,7 +73,8 @@ describe('MailService (unit)', () => {
 
       expect(mockMailerService.sendMail).toHaveBeenCalledWith({
         to: 'jane@test.com',
-        subject: 'T-price - Password Reset Request',
+        from: '"No Reply" <no-reply@example.com>',
+        subject: 'MAK SERVI - Password Reset Request',
         template: './password-reset',
         context: { code: '654321' },
       });

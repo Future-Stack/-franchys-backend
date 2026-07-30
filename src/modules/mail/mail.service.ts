@@ -41,6 +41,18 @@ export interface InvoiceEmailContext {
   }>;
 }
 
+export interface PromotionalEmailContext {
+  customerName: string;
+  subject: string;
+  title?: string | null;
+  messageContent: string;
+  promoCode?: string | null;
+  ctaUrl?: string | null;
+  shopName?: string | null;
+  shopLogoUrl?: string | null;
+  year: number;
+}
+
 @Injectable()
 export class MailService {
   private readonly logger = new Logger(MailService.name);
@@ -139,5 +151,57 @@ export class MailService {
     this.logger.log(
       `✅ [Invoice Email] Successfully sent ${context.invoiceNumber} to ${email}`,
     );
+  }
+
+  /**
+   * Send a promotional marketing email to a customer.
+   * Uses the promotional-email.hbs Handlebars template.
+   * Does NOT log to message database history.
+   */
+  async sendPromotionalEmail(
+    email: string,
+    context: PromotionalEmailContext,
+  ): Promise<void> {
+    this.logger.log(
+      `📧 [Promotional Email] Sending "${context.subject}" to ${email}`,
+    );
+
+    try {
+      const mailUser =
+        this.configService.get('MAIL_USER') ||
+        this.configService.get('MAIL_FROM');
+      const shopName = context.shopName || 'MAK SERVI';
+      const title = context.title || shopName;
+      const from = mailUser ? `"${shopName}" <${mailUser}>` : undefined;
+
+      const safeContext = {
+        customerName: context.customerName || 'Valued Customer',
+        subject: context.subject,
+        title,
+        messageContent: context.messageContent || '',
+        promoCode: context.promoCode || null,
+        ctaUrl: context.ctaUrl || null,
+        shopName,
+        shopLogoUrl: context.shopLogoUrl || null,
+        year: context.year || new Date().getFullYear(),
+      };
+
+      await this.mailerService.sendMail({
+        to: email,
+        ...(from && { from }),
+        subject: context.subject,
+        template: './promotional-email',
+        context: safeContext,
+      });
+
+      this.logger.log(
+        `✅ [Promotional Email] Successfully sent "${context.subject}" to ${email}`,
+      );
+    } catch (error: any) {
+      this.logger.error(
+        `❌ [Promotional Email Failed] To: ${email} | Reason: ${error.message}`,
+      );
+      throw error;
+    }
   }
 }

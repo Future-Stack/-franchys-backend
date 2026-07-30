@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { CampaignService } from './campaign.service';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { MailService } from '../mail/mail.service';
 import { CampaignStatus as PrismaCampaignStatus } from '@prisma/client';
 
 // ─── Prisma Mock ─────────────────────────────────────────────────────────────
@@ -47,10 +48,15 @@ describe('CampaignService', () => {
   let service: CampaignService;
 
   beforeEach(async () => {
+    const mockMailService = {
+      sendPromotionalEmail: jest.fn().mockResolvedValue(undefined),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CampaignService,
         { provide: PrismaService, useValue: mockPrisma },
+        { provide: MailService, useValue: mockMailService },
       ],
     }).compile();
 
