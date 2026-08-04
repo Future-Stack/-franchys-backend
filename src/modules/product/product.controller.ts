@@ -46,8 +46,12 @@ export class ProductController {
   @ApiOperation({ summary: 'Create a new product (optionally with colors)' })
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(
-    FilesInterceptor('images', 10, {
+    FilesInterceptor('images', 20, {
       storage: memoryStorage(),
+      limits: {
+        fileSize: 50 * 1024 * 1024,
+        fieldSize: 50 * 1024 * 1024,
+      },
     }),
   )
   async create(
@@ -102,8 +106,12 @@ export class ProductController {
   @ApiOperation({ summary: 'Update a product by ID' })
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(
-    FilesInterceptor('images', 10, {
+    FilesInterceptor('images', 20, {
       storage: memoryStorage(),
+      limits: {
+        fileSize: 50 * 1024 * 1024,
+        fieldSize: 50 * 1024 * 1024,
+      },
     }),
   )
   async update(
