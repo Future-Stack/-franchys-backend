@@ -659,4 +659,3 @@ export class WhatsAppService {
     return { success: true };
   }
 }
-
