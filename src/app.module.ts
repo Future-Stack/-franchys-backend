@@ -10,6 +10,7 @@ import databaseConfig from './config/database.config';
 import jwtConfig from './config/jwt.config';
 import whatsappConfig from './config/whatsapp.config';
 import stripeConfig from './config/stripe.config';
+import sanmarConfig from './config/sanmar.config';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { PrismaModule } from './prisma/prisma.module';
@@ -34,6 +35,7 @@ import { CampaignModule } from './modules/campaign/campaign.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { LineItemCustomizationModule } from './modules/line-item-customization/line-item-customization.module';
 import { CategoryModule } from './modules/category/category.module';
+import { SanMarModule } from './modules/sanmar/sanmar.module';
 
 @Module({
   imports: [
@@ -45,6 +47,7 @@ import { CategoryModule } from './modules/category/category.module';
         jwtConfig,
         whatsappConfig,
         stripeConfig,
+        sanmarConfig,
       ],
       envFilePath: ['.env.local', '.env'],
     }),
@@ -73,6 +76,7 @@ import { CategoryModule } from './modules/category/category.module';
     CampaignModule,
     AnalyticsModule,
     LineItemCustomizationModule,
+    SanMarModule,
   ],
   controllers: [AppController],
   providers: [
