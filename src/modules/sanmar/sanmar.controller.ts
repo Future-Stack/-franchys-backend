@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Post,
   Param,
   Query,
 } from '@nestjs/common';
@@ -11,6 +12,7 @@ import {
   ApiParam,
   ApiQuery,
 } from '@nestjs/swagger';
+import { Public } from '../../common/decorators/public.decorator';
 import { SanMarService } from './sanmar.service';
 import { SanMarProductSearchDto, SanMarAutocompleteDto } from './dto/sanmar.dto';
 
@@ -20,6 +22,7 @@ import { SanMarProductSearchDto, SanMarAutocompleteDto } from './dto/sanmar.dto'
 export class SanMarController {
   constructor(private readonly sanMarService: SanMarService) {}
 
+  @Public()
   @Get('products/autocomplete')
   @ApiOperation({
     summary:
@@ -34,9 +37,23 @@ export class SanMarController {
     };
   }
 
+  @Public()
+  @Post('sync-sftp')
+  @ApiOperation({
+    summary: 'Download & Sync SanMar product catalog CSV (SanMar_EPDD.csv) from ftp.sanmar.com:2200.',
+  })
+  async syncSftp() {
+    const result = await this.sanMarService.syncSftpCatalog();
+    return {
+      message: result.message,
+      data: result,
+    };
+  }
+
+  @Public()
   @Get('products/raw/:styleNo')
   @ApiOperation({
-    summary: 'Get raw unparsed SOAP response from SanMar for debugging.',
+    summary: 'Get raw unparsed SOAP response and SFTP match from SanMar for debugging.',
   })
   @ApiParam({
     name: 'styleNo',
@@ -46,7 +63,7 @@ export class SanMarController {
   async getRawProduct(@Param('styleNo') styleNo: string) {
     const data = await this.sanMarService.getRawProduct(styleNo.toUpperCase());
     return {
-      message: 'Raw SanMar SOAP response fetched successfully',
+      message: 'Raw SanMar response fetched successfully',
       data,
     };
   }

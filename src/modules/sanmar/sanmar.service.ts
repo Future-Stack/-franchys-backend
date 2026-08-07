@@ -1,12 +1,16 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { SanMarSoapService } from './sanmar-soap.service';
+import { SanMarSftpService } from './sanmar-sftp.service';
 import { SanMarAutocompleteDto, SanMarProductSearchDto } from './dto/sanmar.dto';
 
 @Injectable()
 export class SanMarService {
   private readonly logger = new Logger(SanMarService.name);
 
-  constructor(private readonly soapService: SanMarSoapService) {}
+  constructor(
+    private readonly soapService: SanMarSoapService,
+    private readonly sftpService: SanMarSftpService,
+  ) {}
 
   async autocomplete(dto: SanMarAutocompleteDto) {
     const search = dto.search?.trim();
@@ -31,57 +35,41 @@ export class SanMarService {
   }
 
   /**
-   * Generates standard SanMar CDN image URLs for product style & color swatches
-   */
-  private generateSanMarImageUrls(style: string, colorName?: string | null): string[] {
-    const cleanStyle = style.trim().toUpperCase();
-    const urls: string[] = [];
-
-    // Model / Product Main Image
-    urls.push(`https://img.sanmar.com/images/catalog/product/${cleanStyle}_front_flat.jpg`);
-    urls.push(`https://img.sanmar.com/images/catalog/product/${cleanStyle}_model_front.jpg`);
-
-    // Color Swatch Image
-    if (colorName) {
-      const cleanColor = colorName.trim().replace(/\s+/g, '').toLowerCase();
-      urls.unshift(`https://img.sanmar.com/swatches/${cleanStyle}_${cleanColor}.jpg`);
-    }
-
-    return urls;
-  }
-
-  /**
-   * Transforms SanMar's PromoStandards GetProduct SOAP response into rich product data
+   * Transforms SanMar's SOAP response and merges real prices & image URLs from SFTP
    */
   private formatToProductAutocomplete(raw: any, searchStyle: string) {
     if (!raw) return [];
 
     const product = raw.Product || raw.product || raw.ProductData || raw;
 
+    const style = (product.productId || searchStyle).trim().toUpperCase();
+    const itemNo = style;
+
+    // Fetch matching SFTP CSV variants for this style
+    const csvVariants = this.sftpService.getStyleVariants(style);
+
     const productName =
+      csvVariants[0]?.productTitle ||
       product.ProductName ||
       product.productName ||
       `SanMar Style ${searchStyle}`;
 
-    const style = product.productId || searchStyle;
-    const itemNo = style;
     const brandName =
+      csvVariants[0]?.brand ||
       product.productBrand ||
       product.Brand ||
       product.brand ||
       'SanMar';
 
-    // Description / Material
+    const categoryName =
+      csvVariants[0]?.category ||
+      product.ProductCategoryArray?.ProductCategory?.category ||
+      'Apparel';
+
     const descArray = this.toArray(product.description);
-    const material = descArray.join(', ') || null;
+    const material = csvVariants[0]?.description || descArray.join(', ') || null;
 
-    // Category
-    const categoryObj =
-      product.ProductCategoryArray?.ProductCategory ||
-      product.productCategoryArray?.productCategory;
-    const categoryName = categoryObj?.category || 'Apparel';
-
-    // Parse parts (colors & sizes)
+    // Parse SOAP product parts
     const partArray = this.toArray(
       product.ProductPartArray?.ProductPart ||
         product.productPartArray?.productPart,
@@ -90,33 +78,25 @@ export class SanMarService {
     const availableSizesSet = new Set<string>();
     const colorMap = new Map<
       string,
-      { name: string; pms: string | null; weight: number | null }
+      { name: string; pms: string | null }
     >();
 
     for (const part of partArray) {
-      // 1. Color
       const colorObj = part.ColorArray?.Color || part.colorArray?.color;
       const colorName = colorObj?.colorName || part.colorName || null;
       const pms = colorObj?.approximatePms || null;
 
-      // 2. Size
       const sizeName =
         part.ApparelSize?.labelSize ||
         part.apparelSize?.labelSize ||
         null;
 
-      if (sizeName) {
-        availableSizesSet.add(sizeName);
-      }
-
-      // 3. Weight
-      const weight = part.Dimension?.weight || null;
+      if (sizeName) availableSizesSet.add(sizeName);
 
       if (colorName && !colorMap.has(colorName)) {
         colorMap.set(colorName, {
           name: colorName,
           pms: pms,
-          weight: weight,
         });
       }
     }
@@ -124,8 +104,15 @@ export class SanMarService {
     const availableSizes = Array.from(availableSizesSet);
     const results: any[] = [];
 
+    // If SOAP returned color variants, merge each with SFTP CSV data
     if (colorMap.size > 0) {
       for (const [colorName, colorObj] of colorMap.entries()) {
+        const csvMatch = this.sftpService.getVariant(style, colorName);
+
+        const price = csvMatch?.piecePrice || 0;
+        const casePrice = csvMatch?.casePrice || price;
+        const images = csvMatch?.images && csvMatch.images.length > 0 ? csvMatch.images : [];
+
         const labelParts = [
           productName,
           colorName,
@@ -134,31 +121,31 @@ export class SanMarService {
           itemNo,
         ].filter(Boolean);
 
-        const images = this.generateSanMarImageUrls(style, colorName);
-
         results.push({
           label: labelParts.join(' - '),
           productId: `sanmar-${style}`,
           productName: productName,
           itemNo: itemNo,
           style: style,
-          price: 0, // Note: Net Wholesale Price is obtained via Pricing WSDL / SFTP CSV
-          unitPrice: 0,
+          price: price,
+          unitPrice: price,
+          casePrice: casePrice,
           brandId: null,
           brandName: brandName,
           categoryId: null,
           categoryName: categoryName,
           colorId: null,
           color: colorName,
-          colorCode: colorObj.pms,
+          colorCode: colorObj.pms || csvMatch?.colorCode || null,
           availableSizes: availableSizes,
           material: material,
           images: images,
         });
       }
     } else {
+      const price = csvVariants[0]?.piecePrice || 0;
+      const images = csvVariants[0]?.images || [];
       const labelParts = [productName, brandName, style, itemNo].filter(Boolean);
-      const images = this.generateSanMarImageUrls(style, null);
 
       results.push({
         label: labelParts.join(' - '),
@@ -166,8 +153,9 @@ export class SanMarService {
         productName: productName,
         itemNo: itemNo,
         style: style,
-        price: 0,
-        unitPrice: 0,
+        price: price,
+        unitPrice: price,
+        casePrice: price,
         brandId: null,
         brandName: brandName,
         categoryId: null,
@@ -184,8 +172,14 @@ export class SanMarService {
     return results;
   }
 
+  async syncSftpCatalog() {
+    return this.sftpService.syncSftpCatalog();
+  }
+
   async getRawProduct(styleNo: string) {
-    return this.soapService.getProduct(styleNo);
+    const soapData = await this.soapService.getProduct(styleNo);
+    const sftpVariants = this.sftpService.getStyleVariants(styleNo);
+    return { soapData, sftpVariants };
   }
 
   async getProduct(styleNo: string) {
