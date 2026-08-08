@@ -193,8 +193,8 @@ describe('WhatsApp Tracker (e2e)', () => {
         .expect(200);
 
       expect(res.body.success).toBe(true);
-      expect(Array.isArray(res.body.data)).toBe(true);
-      expect(res.body.data[0].id).toBe(seededMessageId);
+      expect(Array.isArray(res.body.data.messages)).toBe(true);
+      expect(res.body.data.messages[0].id).toBe(seededMessageId);
     });
   });
 
