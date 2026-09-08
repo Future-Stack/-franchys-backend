@@ -37,6 +37,12 @@ coverage/
 uploads/
 uploads-file/
 
+# SanMar Data & Large Sync Files (never commit - 500MB+)
+data/
+data/sanmar/
+scratch/
+*.pdf
+
 # Prisma
 prisma/migrations/*.sql.bak
 franchys __ Innosight __ FO8228FDA7F82
