@@ -31,7 +31,7 @@ export class CreateProductDto {
   productName: string;
 
   @ApiPropertyOptional({
-    description: 'Category ID',
+    description: 'Category ID (UUID) or "other"',
     example: 'uuid-here',
   })
   @IsString()
@@ -39,9 +39,14 @@ export class CreateProductDto {
   categoryId?: string;
 
   @ApiPropertyOptional({
-    description: 'Category name',
+    description:
+      'Custom category name (used when categoryId is omitted, "other", or custom)',
     example: 'Footwear',
   })
+  @IsString()
+  @IsOptional()
+  categoryName?: string;
+
   @IsString()
   @IsOptional()
   category?: string;
@@ -163,7 +168,7 @@ export class UpdateProductDto {
   productName?: string;
 
   @ApiPropertyOptional({
-    description: 'Category ID',
+    description: 'Category ID (UUID) or "other"',
     example: 'uuid-here',
   })
   @IsString()
@@ -171,9 +176,14 @@ export class UpdateProductDto {
   categoryId?: string;
 
   @ApiPropertyOptional({
-    description: 'Category name',
+    description:
+      'Custom category name (used when categoryId is omitted, "other", or custom)',
     example: 'Footwear',
   })
+  @IsString()
+  @IsOptional()
+  categoryName?: string;
+
   @IsString()
   @IsOptional()
   category?: string;

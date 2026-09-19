@@ -24,45 +24,76 @@ export class ProductService {
     brandId?: string,
     brandName?: string,
   ): Promise<string> {
-    const isOther =
-      brandId?.trim().toLowerCase() === 'other' ||
-      brandName?.trim().toLowerCase() === 'other';
+    const cleanId = brandId?.trim();
+    const cleanName = brandName?.trim();
 
-    let targetName = brandName?.trim();
-    if (!targetName && isOther) {
-      targetName = 'Other';
-    }
+    const isIdOther = cleanId?.toLowerCase() === 'other';
+    const isNameOther = cleanName?.toLowerCase() === 'other';
 
-    if (targetName) {
+    if (isIdOther || isNameOther) {
+      const customName = isNameOther ? undefined : cleanName;
+      if (!customName || customName.toLowerCase() === 'other') {
+        throw new BadRequestException(
+          'Brand name is required when brand is set to "other"',
+        );
+      }
       const existing = await this.prisma.brand.findFirst({
-        where: { name: { equals: targetName, mode: 'insensitive' } },
+        where: { name: { equals: customName, mode: 'insensitive' } },
       });
       if (existing) {
         return existing.id;
       }
-      const created = await this.prisma.brand.create({
-        data: { name: targetName },
-      });
-      return created.id;
+      try {
+        const created = await this.prisma.brand.create({
+          data: { name: customName },
+        });
+        if (created?.id) {
+          return created.id;
+        }
+      } catch {}
+      return customName;
     }
 
-    if (brandId && !isOther) {
+    if (cleanName) {
+      const existing = await this.prisma.brand.findFirst({
+        where: { name: { equals: cleanName, mode: 'insensitive' } },
+      });
+      if (existing) {
+        return existing.id;
+      }
+      try {
+        const created = await this.prisma.brand.create({
+          data: { name: cleanName },
+        });
+        if (created?.id) {
+          return created.id;
+        }
+      } catch {}
+      return cleanName;
+    }
+
+    if (cleanId) {
       const existingById = await this.prisma.brand.findUnique({
-        where: { id: brandId },
+        where: { id: cleanId },
       });
       if (existingById) {
         return existingById.id;
       }
       const existingByName = await this.prisma.brand.findFirst({
-        where: { name: { equals: brandId, mode: 'insensitive' } },
+        where: { name: { equals: cleanId, mode: 'insensitive' } },
       });
       if (existingByName) {
         return existingByName.id;
       }
-      const created = await this.prisma.brand.create({
-        data: { name: brandId },
-      });
-      return created.id;
+      try {
+        const created = await this.prisma.brand.create({
+          data: { name: cleanId },
+        });
+        if (created?.id) {
+          return created.id;
+        }
+      } catch {}
+      return cleanId;
     }
 
     throw new BadRequestException('Brand ID or brand name is required');
@@ -71,45 +102,87 @@ export class ProductService {
   private async resolveCategory(
     categoryId?: string,
     categoryName?: string,
-  ): Promise<string | null> {
-    const isOther =
-      categoryId?.trim().toLowerCase() === 'other' ||
-      categoryName?.trim().toLowerCase() === 'other';
+    category?: string,
+  ): Promise<string> {
+    const cleanId = categoryId?.trim();
+    const cleanName = (categoryName || category)?.trim();
 
-    let targetName = categoryName?.trim();
-    if (!targetName && isOther) {
-      targetName = 'Other';
+    if (!cleanId && !cleanName) {
+      throw new BadRequestException(
+        'Category ID or category name is required',
+      );
     }
 
-    if (targetName) {
+    const isIdOther = cleanId?.toLowerCase() === 'other';
+    const isNameOther = cleanName?.toLowerCase() === 'other';
+
+    if (isIdOther || isNameOther) {
+      const customName = isNameOther ? undefined : cleanName;
+      if (!customName || customName.toLowerCase() === 'other') {
+        throw new BadRequestException(
+          'Category name is required when category is set to "other"',
+        );
+      }
       const existing = await this.prisma.category.findFirst({
-        where: { name: { equals: targetName, mode: 'insensitive' } },
+        where: { name: { equals: customName, mode: 'insensitive' } },
       });
       if (existing) {
         return existing.id;
       }
-      const created = await this.prisma.category.create({
-        data: { name: targetName },
-      });
-      return created.id;
+      try {
+        const created = await this.prisma.category.create({
+          data: { name: customName },
+        });
+        if (created?.id) {
+          return created.id;
+        }
+      } catch {}
+      return customName;
     }
 
-    if (categoryId && !isOther) {
+    if (cleanName) {
+      const existing = await this.prisma.category.findFirst({
+        where: { name: { equals: cleanName, mode: 'insensitive' } },
+      });
+      if (existing) {
+        return existing.id;
+      }
+      try {
+        const created = await this.prisma.category.create({
+          data: { name: cleanName },
+        });
+        if (created?.id) {
+          return created.id;
+        }
+      } catch {}
+      return cleanName;
+    }
+
+    if (cleanId) {
       const existingById = await this.prisma.category.findUnique({
-        where: { id: categoryId },
+        where: { id: cleanId },
       });
       if (existingById) {
         return existingById.id;
       }
       const existingByName = await this.prisma.category.findFirst({
-        where: { name: { equals: categoryId, mode: 'insensitive' } },
+        where: { name: { equals: cleanId, mode: 'insensitive' } },
       });
       if (existingByName) {
         return existingByName.id;
       }
+      try {
+        const created = await this.prisma.category.create({
+          data: { name: cleanId },
+        });
+        if (created?.id) {
+          return created.id;
+        }
+      } catch {}
+      return cleanId;
     }
 
-    return categoryId || null;
+    throw new BadRequestException('Category ID or category name is required');
   }
 
   // ─── Product CRUD ────────────────────────────────────────────────────────────
@@ -128,8 +201,9 @@ export class ProductService {
 
     const resolvedBrandId = await this.resolveBrand(brandId, brandName);
     const resolvedCategoryId = await this.resolveCategory(
-      categoryId || category,
+      categoryId,
       categoryName,
+      category,
     );
 
     let imagePaths: string[] = [];
@@ -339,8 +413,9 @@ export class ProductService {
       categoryName !== undefined
     ) {
       updateInput.categoryId = await this.resolveCategory(
-        categoryId || category,
+        categoryId,
         categoryName,
+        category,
       );
     }
 

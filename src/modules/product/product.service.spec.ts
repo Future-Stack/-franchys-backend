@@ -1,5 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  NotFoundException,
+  ConflictException,
+  BadRequestException,
+} from '@nestjs/common';
 import { ProductService } from './product.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
@@ -105,7 +109,7 @@ describe('ProductService (unit)', () => {
       mockPrisma.brand.findFirst.mockResolvedValue(null);
       mockPrisma.brand.create.mockResolvedValue({
         id: 'new-brand-id',
-        name: 'Other',
+        name: 'Custom Brand',
       });
 
       mockPrisma.product.create.mockResolvedValue({
@@ -119,6 +123,7 @@ describe('ProductService (unit)', () => {
         categoryId: 'other',
         categoryName: 'Custom Category',
         brandId: 'other',
+        brandName: 'Custom Brand',
       };
 
       const result = await service.create(customDto);
@@ -127,7 +132,7 @@ describe('ProductService (unit)', () => {
         data: { name: 'Custom Category' },
       });
       expect(mockPrisma.brand.create).toHaveBeenCalledWith({
-        data: { name: 'Other' },
+        data: { name: 'Custom Brand' },
       });
       expect(mockPrisma.product.create).toHaveBeenCalledWith({
         data: {
@@ -141,6 +146,47 @@ describe('ProductService (unit)', () => {
         include: { colors: true, category: true, brand: true },
       });
       expect(result.id).toBe('prod-2');
+    });
+
+    it('should throw BadRequestException when no category is provided', async () => {
+      const customDto = {
+        productName: 'No Cat Product',
+        price: 29.99 as any,
+        brandId: 'brand-1',
+      };
+      mockPrisma.brand.findUnique.mockResolvedValue({ id: 'brand-1' });
+
+      await expect(service.create(customDto)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should throw BadRequestException when category is "other" without custom categoryName', async () => {
+      const customDto = {
+        productName: 'Other Product',
+        price: 29.99 as any,
+        categoryId: 'other',
+        brandId: 'brand-1',
+      };
+      mockPrisma.brand.findUnique.mockResolvedValue({ id: 'brand-1' });
+
+      await expect(service.create(customDto)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should throw BadRequestException when brand is "other" without custom brandName', async () => {
+      const customDto = {
+        productName: 'Other Product',
+        price: 29.99 as any,
+        categoryId: 'cat-1',
+        brandId: 'other',
+      };
+      mockPrisma.category.findUnique.mockResolvedValue({ id: 'cat-1' });
+
+      await expect(service.create(customDto)).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 
