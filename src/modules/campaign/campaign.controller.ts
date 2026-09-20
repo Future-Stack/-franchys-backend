@@ -34,7 +34,9 @@ export class CampaignController {
   }
 
   @Post('send-promotional-email')
-  @ApiOperation({ summary: 'Send promotional email to selected or all customers' })
+  @ApiOperation({
+    summary: 'Send promotional email to selected or all customers',
+  })
   sendPromotionalEmail(@Body() dto: SendPromotionalEmailDto) {
     return this.campaignService.sendPromotionalEmail(dto);
   }

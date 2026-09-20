@@ -28,7 +28,9 @@ const mockPrisma = {
 const mockWhatsAppHttpClient = {
   markAsRead: jest.fn(),
   sendTextMessage: jest.fn(),
-  sendTemplateMessage: jest.fn().mockResolvedValue({ messageId: 'wamid.template-1' }),
+  sendTemplateMessage: jest
+    .fn()
+    .mockResolvedValue({ messageId: 'wamid.template-1' }),
 };
 
 const mockConfigService = {
