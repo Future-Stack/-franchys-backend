@@ -88,11 +88,10 @@ export class CustomerService {
       const quotes = (customer as any).quotes || [];
       const payments = (customer as any).payments || [];
       const orders = quotes.length;
-      const totalSpent = payments.reduce(
-        (sum, p) => sum + Number(p.amount),
-        0,
-      );
-      const { quotes: _, payments: __, ...rest } = customer as any;
+      const totalSpent = payments.reduce((sum, p) => sum + Number(p.amount), 0);
+      const rest = { ...(customer as any) };
+      delete rest.quotes;
+      delete rest.payments;
       return {
         ...rest,
         orders,
@@ -131,11 +130,10 @@ export class CustomerService {
     const quotes = (customer as any).quotes || [];
     const payments = (customer as any).payments || [];
     const orders = quotes.length;
-    const totalSpent = payments.reduce(
-      (sum, p) => sum + Number(p.amount),
-      0,
-    );
-    const { quotes: _, payments: __, ...rest } = customer as any;
+    const totalSpent = payments.reduce((sum, p) => sum + Number(p.amount), 0);
+    const rest = { ...(customer as any) };
+    delete rest.quotes;
+    delete rest.payments;
     return {
       ...rest,
       orders,

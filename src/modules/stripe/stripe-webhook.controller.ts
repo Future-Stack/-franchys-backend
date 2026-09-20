@@ -90,8 +90,14 @@ export class StripeWebhookController {
 
         case 'invoice.payment_failed': {
           const stripeInvoice = event.data.object;
+          const customerId =
+            typeof stripeInvoice.customer === 'string'
+              ? stripeInvoice.customer
+              : stripeInvoice.customer && 'id' in stripeInvoice.customer
+                ? stripeInvoice.customer.id
+                : '';
           this.logger.warn(
-            `⚠️  Payment failed for Stripe invoice ${stripeInvoice.id}. Customer: ${stripeInvoice.customer}`,
+            `⚠️  Payment failed for Stripe invoice ${stripeInvoice.id}. Customer: ${customerId}`,
           );
           // TODO: Optionally notify admin or update status to reflect failed attempt
           break;

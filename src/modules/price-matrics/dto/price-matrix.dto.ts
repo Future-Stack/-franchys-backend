@@ -7,6 +7,7 @@ import {
   IsArray,
   ValidateNested,
   IsOptional,
+  IsObject,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -16,15 +17,27 @@ export class CreatePriceTierDto {
   @IsNotEmpty()
   quantity: number;
 
-  @ApiProperty({ description: 'Base price of the tier', example: 100.0 })
+  @ApiPropertyOptional({
+    description: 'Base price of the tier (fallback/single-column price)',
+    example: 100.0,
+  })
   @IsNumber()
-  @IsNotEmpty()
-  basePrice: number;
+  @IsOptional()
+  basePrice?: number;
 
   @ApiProperty({ description: 'Markup percentage or amount', example: 10.0 })
   @IsNumber()
   @IsNotEmpty()
   markup: number;
+
+  @ApiPropertyOptional({
+    description:
+      'Grid prices per column variable, e.g. { "1 Color": 3.50, "2 Colors": 4.20 }',
+    example: { '1 Color': 3.5, '2 Colors': 4.2 },
+  })
+  @IsObject()
+  @IsOptional()
+  columnPrices?: Record<string, number>;
 }
 
 export class CreatePriceMatrixDto {
@@ -44,7 +57,17 @@ export class CreatePriceMatrixDto {
   @IsNotEmpty()
   priceType: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
+    description: 'Column headers for 2D matrix (e.g. ["1 Color", "2 Colors"])',
+    example: ['1 Color', '2 Colors', '3 Colors'],
+    type: [String],
+  })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  columns?: string[];
+
+  @ApiPropertyOptional({
     description: 'List of price tiers to create with the matrix',
     type: [CreatePriceTierDto],
   })
@@ -68,15 +91,26 @@ export class UpdatePriceTierDto {
   @IsNotEmpty()
   quantity: number;
 
-  @ApiProperty({ description: 'Base price of the tier', example: 100.0 })
+  @ApiPropertyOptional({
+    description: 'Base price of the tier',
+    example: 100.0,
+  })
   @IsNumber()
-  @IsNotEmpty()
-  basePrice: number;
+  @IsOptional()
+  basePrice?: number;
 
   @ApiProperty({ description: 'Markup percentage or amount', example: 10.0 })
   @IsNumber()
   @IsNotEmpty()
   markup: number;
+
+  @ApiPropertyOptional({
+    description: 'Grid prices per column variable',
+    example: { '1 Color': 3.5, '2 Colors': 4.2 },
+  })
+  @IsObject()
+  @IsOptional()
+  columnPrices?: Record<string, number>;
 }
 
 export class UpdatePriceMatrixDto {
@@ -95,4 +129,24 @@ export class UpdatePriceMatrixDto {
   @IsString()
   @IsOptional()
   priceType?: string;
+
+  @ApiPropertyOptional({
+    description: 'Column headers for 2D matrix',
+    example: ['1 Color', '2 Colors'],
+    type: [String],
+  })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  columns?: string[];
+
+  @ApiPropertyOptional({
+    description: 'List of price tiers to replace/update in matrix',
+    type: [CreatePriceTierDto],
+  })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreatePriceTierDto)
+  @IsOptional()
+  priceTiers?: CreatePriceTierDto[];
 }
