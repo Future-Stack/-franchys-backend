@@ -20,6 +20,10 @@ const mockPrisma = {
     delete: jest.fn(),
     count: jest.fn(),
   },
+  priceMatrix: {
+    findUnique: jest.fn(),
+    findMany: jest.fn(),
+  },
   customer: {
     findUnique: jest.fn(),
   },
@@ -37,6 +41,10 @@ const mockPrisma = {
 
 const mockJobService = {
   createOrUpdateJobFromQuote: jest.fn(),
+};
+
+const mockCustomerInvoiceService = {
+  createFromQuote: jest.fn(),
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -105,7 +113,7 @@ describe('QuoteService', () => {
         },
         {
           provide: CustomerInvoiceService,
-          useValue: { createFromQuote: jest.fn() },
+          useValue: mockCustomerInvoiceService,
         },
       ],
     }).compile();
@@ -312,7 +320,7 @@ describe('QuoteService', () => {
       ).rejects.toThrow(NotFoundException);
     });
 
-    it('should trigger job creation when status is APPROVED', async () => {
+    it('should trigger job and invoice creation when status is APPROVED', async () => {
       mockPrisma.quote.findFirst.mockResolvedValue(null);
       mockPrisma.customer.findUnique.mockResolvedValue({ id: 'cust-1' });
       mockPrisma.user.findUnique.mockResolvedValue({ userId: 'rep-1' });
@@ -320,6 +328,7 @@ describe('QuoteService', () => {
         buildQuote({ status: QuoteStatus.APPROVED }),
       );
       mockJobService.createOrUpdateJobFromQuote.mockResolvedValue({});
+      mockCustomerInvoiceService.createFromQuote.mockResolvedValue({});
 
       await service.create({
         customerId: 'cust-1',
@@ -329,6 +338,9 @@ describe('QuoteService', () => {
       });
 
       expect(mockJobService.createOrUpdateJobFromQuote).toHaveBeenCalledWith(
+        'quote-1',
+      );
+      expect(mockCustomerInvoiceService.createFromQuote).toHaveBeenCalledWith(
         'quote-1',
       );
     });
@@ -580,6 +592,180 @@ describe('QuoteService', () => {
         NotFoundException,
       );
       expect(mockPrisma.quote.delete).not.toHaveBeenCalled();
+    });
+  });
+
+  // ─── 2D Pricing Matrix & Group Volume Pooling ──────────────────────────────
+
+  describe('2D Matrix & Group Volume Pooling (calculatePreview)', () => {
+    const mockMatrix = {
+      priceMatrixId: 'matrix-screen-print',
+      name: 'Screen Printing',
+      priceType: 'markup',
+      columns: ['1 Color', '2 Colors'],
+      priceTiers: [
+        {
+          quantity: 12,
+          basePrice: 5.0,
+          markup: 20.0,
+          columnPrices: { '1 Color': 4.0, '2 Colors': 5.5 },
+        },
+        {
+          quantity: 24,
+          basePrice: 4.0,
+          markup: 15.0,
+          columnPrices: { '1 Color': 3.0, '2 Colors': 4.2 },
+        },
+        {
+          quantity: 48,
+          basePrice: 3.0,
+          markup: 10.0,
+          columnPrices: { '1 Color': 2.0, '2 Colors': 3.0 },
+        },
+      ],
+    };
+
+    beforeEach(() => {
+      mockPrisma.priceMatrix.findMany.mockResolvedValue([mockMatrix]);
+    });
+
+    it('should resolve correct cell price based on matrixColumn (1 Color vs 2 Colors)', async () => {
+      const result = await service.calculatePreview({
+        lineItems: [
+          {
+            groupName: 'Group 1',
+            matrixId: 'matrix-screen-print',
+            matrixColumn: '2 Colors',
+            baseCost: 10,
+            sizeBreakdown: { S: 12 }, // 12 units -> Tier 12
+          },
+        ],
+      });
+
+      const item = result.groups[0].lineItems[0];
+      // Tier 12: markup is 20%, printCost for '2 Colors' is 5.5
+      // unitPrice = (10 * 1.20) + 5.5 = 12 + 5.5 = 17.5
+      expect(item.printCost).toBe(5.5);
+      expect(item.markupPrice).toBe(20);
+      expect(item.unitPrice).toBe(17.5);
+      expect(item.total).toBe(17.5 * 12);
+      expect(item.matrixColumn).toBe('2 Colors');
+    });
+
+    it('should pool item quantities within the same group to unlock higher volume tier', async () => {
+      // Two line items in same group with 24 units each -> pooled 48 units!
+      // Should unlock Tier 48 ('2 Colors' = 3.0, markup = 10%)
+      const result = await service.calculatePreview({
+        groups: [
+          {
+            name: 'Group 1',
+            lineItems: [
+              {
+                matrixId: 'matrix-screen-print',
+                matrixColumn: '2 Colors',
+                baseCost: 10,
+                sizeBreakdown: { S: 24 },
+              },
+              {
+                matrixId: 'matrix-screen-print',
+                matrixColumn: '2 Colors',
+                baseCost: 10,
+                sizeBreakdown: { L: 24 },
+              },
+            ],
+          },
+        ],
+      });
+
+      expect(mockPrisma.priceMatrix.findMany).toHaveBeenCalledTimes(1);
+
+      const items = result.groups[0].lineItems;
+      expect(items).toHaveLength(2);
+      // Both items get Tier 48 pricing
+      expect(items[0].printCost).toBe(3.0);
+      expect(items[0].markupPrice).toBe(10);
+      expect(items[0].unitPrice).toBe(10 * 1.1 + 3.0); // 14
+
+      expect(items[1].printCost).toBe(3.0);
+      expect(items[1].markupPrice).toBe(10);
+      expect(items[1].unitPrice).toBe(14);
+    });
+
+    it('should NOT pool quantities across different groups (cross-group isolation)', async () => {
+      // Item 1 in Group A (24 units), Item 2 in Group B (24 units)
+      // Neither reaches Tier 48; both stay at Tier 24 ('2 Colors' = 4.2, markup = 15%)
+      const result = await service.calculatePreview({
+        groups: [
+          {
+            name: 'Group A',
+            lineItems: [
+              {
+                matrixId: 'matrix-screen-print',
+                matrixColumn: '2 Colors',
+                baseCost: 10,
+                sizeBreakdown: { S: 24 },
+              },
+            ],
+          },
+          {
+            name: 'Group B',
+            lineItems: [
+              {
+                matrixId: 'matrix-screen-print',
+                matrixColumn: '2 Colors',
+                baseCost: 10,
+                sizeBreakdown: { S: 24 },
+              },
+            ],
+          },
+        ],
+      });
+
+      const itemA = result.groups[0].lineItems[0];
+      const itemB = result.groups[1].lineItems[0];
+
+      expect(itemA.printCost).toBe(4.2);
+      expect(itemA.markupPrice).toBe(15);
+      expect(itemB.printCost).toBe(4.2);
+      expect(itemB.markupPrice).toBe(15);
+    });
+
+    it('should preserve explicit 0 markup and 0 printCost without matrix overwrite', async () => {
+      const result = await service.calculatePreview({
+        lineItems: [
+          {
+            groupName: 'Group 1',
+            matrixId: 'matrix-screen-print',
+            matrixColumn: '1 Color',
+            baseCost: 10,
+            markupPrice: 0,
+            printCost: 0,
+            sizeBreakdown: { S: 12 },
+          },
+        ],
+      });
+
+      const item = result.groups[0].lineItems[0];
+      expect(item.markupPrice).toBe(0);
+      expect(item.printCost).toBe(0);
+      expect(item.unitPrice).toBe(10);
+    });
+
+    it('should respect admin quote total override of $0.00 (Gap A fix)', async () => {
+      const result = await service.calculatePreview({
+        total: 0,
+        lineItems: [
+          {
+            groupName: 'Group 1',
+            baseCost: 10,
+            unitPrice: 15,
+            sizeBreakdown: { S: 10 },
+          },
+        ],
+      });
+
+      expect(result.subtotal).toBe(100);
+      expect(result.total).toBe(0);
     });
   });
 });

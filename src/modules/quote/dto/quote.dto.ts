@@ -71,6 +71,15 @@ export class CreateQuoteLineItemDto {
   @IsOptional()
   matrixId?: string;
 
+  @ApiPropertyOptional({
+    example: '2 Colors',
+    description:
+      'Selected 2D price matrix column (e.g. "1 Color", "2 Colors", "5,000 Stitches")',
+  })
+  @IsString()
+  @IsOptional()
+  matrixColumn?: string;
+
   @ApiPropertyOptional({ example: 8.0 })
   @IsNumber()
   @IsOptional()

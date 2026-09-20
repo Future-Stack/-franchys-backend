@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException } from '@nestjs/common';
+import { NotFoundException, ConflictException } from '@nestjs/common';
 import { PriceMatricsService } from './price-matrics.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 
@@ -17,7 +17,12 @@ const mockPrisma = {
     findUnique: jest.fn(),
     update: jest.fn(),
     delete: jest.fn(),
+    deleteMany: jest.fn(),
   },
+  quoteLineItem: {
+    count: jest.fn().mockResolvedValue(0),
+  },
+  $transaction: jest.fn((cb) => cb(mockPrisma)),
 };
 
 describe('PriceMatricsService (unit)', () => {
@@ -43,10 +48,18 @@ describe('PriceMatricsService (unit)', () => {
     const dto = {
       name: 'Custom Markup Matrix',
       priceType: 'markup',
-      priceTiers: [{ quantity: 10, basePrice: 5.0, markup: 2.0 }],
+      columns: ['1 Color', '2 Colors'],
+      priceTiers: [
+        {
+          quantity: 10,
+          basePrice: 5.0,
+          markup: 2.0,
+          columnPrices: { '1 Color': 3.5, '2 Colors': 4.5 },
+        },
+      ],
     };
 
-    it('should create price matrix and associated tiers successfully', async () => {
+    it('should create 2D price matrix and associated tiers with columnPrices', async () => {
       mockPrisma.priceMatrix.create.mockResolvedValue({
         priceMatrixId: 'matrix-1',
         ...dto,
@@ -58,12 +71,14 @@ describe('PriceMatricsService (unit)', () => {
         data: {
           name: dto.name,
           priceType: dto.priceType,
+          columns: ['1 Color', '2 Colors'],
           priceTiers: {
             create: [
               {
                 quantity: 10,
                 basePrice: 5.0,
                 markup: 2.0,
+                columnPrices: { '1 Color': 3.5, '2 Colors': 4.5 },
               },
             ],
           },
@@ -130,21 +145,47 @@ describe('PriceMatricsService (unit)', () => {
 
       expect(mockPrisma.priceMatrix.update).toHaveBeenCalledWith({
         where: { priceMatrixId: 'matrix-1' },
-        data: { name: 'Updated Matrix', priceType: undefined },
+        data: { name: 'Updated Matrix' },
+        include: { priceTiers: true },
       });
       expect(result.name).toBe('Updated Matrix');
+    });
+
+    it('should atomically replace tiers when priceTiers array is provided', async () => {
+      mockPrisma.priceMatrix.findUnique.mockResolvedValue({
+        priceMatrixId: 'matrix-1',
+      });
+      mockPrisma.priceMatrix.update.mockResolvedValue({
+        priceMatrixId: 'matrix-1',
+        name: 'Updated Matrix',
+        priceTiers: [{ quantity: 24, basePrice: 3.0, markup: 1.5 }],
+      });
+
+      await service.update('matrix-1', {
+        name: 'Updated Matrix',
+        priceTiers: [{ quantity: 24, basePrice: 3.0, markup: 1.5 }],
+      });
+
+      expect(mockPrisma.$transaction).toHaveBeenCalled();
+      expect(mockPrisma.priceTier.deleteMany).toHaveBeenCalledWith({
+        where: { priceMatrixId: 'matrix-1' },
+      });
     });
   });
 
   describe('remove', () => {
-    it('should delete matrix and return deletion status', async () => {
+    it('should delete matrix when no quotes reference it', async () => {
       mockPrisma.priceMatrix.findUnique.mockResolvedValue({
         priceMatrixId: 'matrix-1',
       });
+      mockPrisma.quoteLineItem.count.mockResolvedValue(0);
       mockPrisma.priceMatrix.delete.mockResolvedValue({});
 
       const result = await service.remove('matrix-1');
 
+      expect(mockPrisma.quoteLineItem.count).toHaveBeenCalledWith({
+        where: { matrixId: 'matrix-1' },
+      });
       expect(mockPrisma.priceMatrix.delete).toHaveBeenCalledWith({
         where: { priceMatrixId: 'matrix-1' },
       });
@@ -152,10 +193,22 @@ describe('PriceMatricsService (unit)', () => {
         'Price Matrix and all its associated tiers deleted successfully',
       );
     });
+
+    it('should throw ConflictException if quote line items reference the matrix (Gap H)', async () => {
+      mockPrisma.priceMatrix.findUnique.mockResolvedValue({
+        priceMatrixId: 'matrix-1',
+      });
+      mockPrisma.quoteLineItem.count.mockResolvedValue(3);
+
+      await expect(service.remove('matrix-1')).rejects.toThrow(
+        ConflictException,
+      );
+      expect(mockPrisma.priceMatrix.delete).not.toHaveBeenCalled();
+    });
   });
 
   describe('addTier', () => {
-    it('should add a tier to an existing price matrix', async () => {
+    it('should add a tier to an existing price matrix with columnPrices', async () => {
       mockPrisma.priceMatrix.findUnique.mockResolvedValue({
         priceMatrixId: 'matrix-1',
       });
@@ -168,6 +221,7 @@ describe('PriceMatricsService (unit)', () => {
         quantity: 20,
         basePrice: 4.0,
         markup: 1.0,
+        columnPrices: { '1 Color': 2.5 },
       });
 
       expect(mockPrisma.priceTier.create).toHaveBeenCalledWith({
@@ -175,6 +229,7 @@ describe('PriceMatricsService (unit)', () => {
           quantity: 20,
           basePrice: 4.0,
           markup: 1.0,
+          columnPrices: { '1 Color': 2.5 },
           priceMatrixId: 'matrix-1',
         },
       });
@@ -183,7 +238,7 @@ describe('PriceMatricsService (unit)', () => {
   });
 
   describe('updateTier', () => {
-    it('should update a specific price tier successfully', async () => {
+    it('should update a specific price tier successfully with columnPrices', async () => {
       mockPrisma.priceTier.findUnique.mockResolvedValue({
         priceTierId: 'tier-1',
       });
@@ -196,11 +251,17 @@ describe('PriceMatricsService (unit)', () => {
         quantity: 25,
         basePrice: 4.5,
         markup: 1.2,
+        columnPrices: { '2 Colors': 3.75 },
       });
 
       expect(mockPrisma.priceTier.update).toHaveBeenCalledWith({
         where: { priceTierId: 'tier-1' },
-        data: { quantity: 25, basePrice: 4.5, markup: 1.2 },
+        data: {
+          quantity: 25,
+          basePrice: 4.5,
+          markup: 1.2,
+          columnPrices: { '2 Colors': 3.75 },
+        },
       });
       expect(result.quantity).toBe(25);
     });
