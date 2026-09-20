@@ -11,21 +11,6 @@ jobs:
     name: Lint, Compile & Run Specs
     runs-on: ubuntu-latest
 
-    services:
-      postgres:
-        image: postgres:15-alpine
-        env:
-          POSTGRES_USER: test_user
-          POSTGRES_PASSWORD: test_password
-          POSTGRES_DB: test_db
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -42,36 +27,8 @@ jobs:
       - name: Generate Prisma Client
         run: npx prisma generate
 
-      # - name: Run Prisma Database Migrations
-      #   run: npx prisma db push --force-reset
-      #   env:
-      #     DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_db?sslmode=disable
-
-      # - name: Verify Lint Rules
-      #   run: npm run lint
-
-      # - name: Verify TypeScript Compilation
-      #   run: npx tsc --noEmit
-
-      # - name: Run Unit Tests
-      #   run: npm run test
-
-      # - name: Run Integration Tests
-      #   run: npm run test:int
-      #   env:
-      #     DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_db?sslmode=disable
-      #     JWT_SECRET: test-super-secret-key-at-least-32-chars-long
-      #     SHOP_NAME: Francys
-
-      # - name: Run End-to-End (E2E) Tests
-      #   run: npm run test:e2e
-      #   env:
-      #     DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_db?sslmode=disable
-      #     JWT_SECRET: test-super-secret-key-at-least-32-chars-long
-      #     SHOP_NAME: Francys
-
-      # - name: Build Code Artifacts
-      #   run: npm run build
+      - name: Run Unit Tests
+        run: npm run test
 
   # ─── BUILD & PUSH JOB ───────────────────────────────────────────────────────
   build-and-push:
@@ -83,9 +40,6 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -105,7 +59,8 @@ jobs:
           tags: |
             ${{ secrets.DOCKER_HUB_USERNAME }}/francys-backend:latest
             ${{ secrets.DOCKER_HUB_USERNAME }}/francys-backend:${{ github.sha }}
-          no-cache: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
   # ─── DEPLOY JOB ─────────────────────────────────────────────────────────────
   deploy:
