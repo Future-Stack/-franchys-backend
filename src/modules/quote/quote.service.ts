@@ -167,8 +167,8 @@ export class QuoteService {
       const matrixId = item.matrixId?.trim() || null;
       const matrixColumn = item.matrixColumn?.trim() || null;
 
-      // Group volume pooling key (Gap E: case-insensitive & trimmed)
-      const poolKey = `${groupName.toLowerCase()}:::${matrixId || ''}:::${(matrixColumn || '').toLowerCase()}`;
+      // Group volume pooling key: garments in the same group sharing a matrix pool quantities
+      const poolKey = `${groupName.toLowerCase()}:::${matrixId || ''}`;
 
       if (matrixId && itemsCount > 0) {
         uniqueMatrixIds.add(matrixId);
@@ -200,18 +200,14 @@ export class QuoteService {
       }
     }
 
-    // Step 3: Determine winning tier and resolved pricing per pool
-    interface ResolvedPoolPricing {
-      printCost: number;
-      markup: number;
-    }
-    const poolPricingMap = new Map<string, ResolvedPoolPricing>();
+    // Step 3: Determine winning tier per pool based on pooled total quantity
+    const poolWinningTierMap = new Map<string, any>();
 
     for (const item of preparedItems) {
       if (
         !item.matrixId ||
         item.itemsCount <= 0 ||
-        poolPricingMap.has(item.poolKey)
+        poolWinningTierMap.has(item.poolKey)
       ) {
         continue;
       }
@@ -236,36 +232,7 @@ export class QuoteService {
         }
       }
 
-      // Resolve 2D grid printCost with case-tolerant column match
-      let resolvedPrintCost: number | null = null;
-      if (
-        item.matrixColumn &&
-        matchingTier.columnPrices &&
-        typeof matchingTier.columnPrices === 'object'
-      ) {
-        const colPrices = matchingTier.columnPrices as Record<string, any>;
-        const targetCol = item.matrixColumn.toLowerCase();
-        for (const [colKey, colVal] of Object.entries(colPrices)) {
-          if (colKey.trim().toLowerCase() === targetCol) {
-            const parsed = Number(colVal);
-            if (Number.isFinite(parsed)) {
-              resolvedPrintCost = parsed;
-              break;
-            }
-          }
-        }
-      }
-
-      if (resolvedPrintCost === null || !Number.isFinite(resolvedPrintCost)) {
-        resolvedPrintCost = Number(matchingTier.basePrice) || 0;
-      }
-
-      const resolvedMarkup = Number(matchingTier.markup) || 0;
-
-      poolPricingMap.set(item.poolKey, {
-        printCost: resolvedPrintCost,
-        markup: resolvedMarkup,
-      });
+      poolWinningTierMap.set(item.poolKey, matchingTier);
     }
 
     // Step 4: Pass 2 - Calculate each line item's unit price and line total
@@ -290,13 +257,39 @@ export class QuoteService {
 
       // Matrix lookup applies only when not explicitly provided (preserves intentional 0 values)
       if (matrixId && itemsCount > 0) {
-        const poolPricing = poolPricingMap.get(prep.poolKey);
-        if (poolPricing) {
-          if (printCost === undefined || isNaN(printCost)) {
-            printCost = poolPricing.printCost;
-          }
+        const winningTier = poolWinningTierMap.get(prep.poolKey);
+        if (winningTier) {
           if (markupPrice === undefined || isNaN(markupPrice)) {
-            markupPrice = poolPricing.markup;
+            markupPrice = Number(winningTier.markup) || 0;
+          }
+
+          if (printCost === undefined || isNaN(printCost)) {
+            let resolvedPrintCost: number | null = null;
+            if (
+              matrixColumn &&
+              winningTier.columnPrices &&
+              typeof winningTier.columnPrices === 'object'
+            ) {
+              const colPrices = winningTier.columnPrices as Record<string, any>;
+              const targetCol = matrixColumn.toLowerCase();
+              for (const [colKey, colVal] of Object.entries(colPrices)) {
+                if (colKey.trim().toLowerCase() === targetCol) {
+                  const parsed = Number(colVal);
+                  if (Number.isFinite(parsed)) {
+                    resolvedPrintCost = parsed;
+                    break;
+                  }
+                }
+              }
+            }
+
+            if (
+              resolvedPrintCost === null ||
+              !Number.isFinite(resolvedPrintCost)
+            ) {
+              resolvedPrintCost = Number(winningTier.basePrice) || 0;
+            }
+            printCost = resolvedPrintCost;
           }
         }
       }
