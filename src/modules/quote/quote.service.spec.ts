@@ -691,6 +691,44 @@ describe('QuoteService', () => {
       expect(items[1].unitPrice).toBe(14);
     });
 
+    it('should pool item quantities within the same group and resolve distinct column prices for each item', async () => {
+      // Two line items in same group with 24 units each -> pooled 48 units (Tier 48)
+      // Item 1 selects '1 Color' -> Tier 48 '1 Color' = 2.0
+      // Item 2 selects '2 Colors' -> Tier 48 '2 Colors' = 3.0
+      const result = await service.calculatePreview({
+        groups: [
+          {
+            name: 'Group 1',
+            lineItems: [
+              {
+                matrixId: 'matrix-screen-print',
+                matrixColumn: '1 Color',
+                baseCost: 10,
+                sizeBreakdown: { S: 24 },
+              },
+              {
+                matrixId: 'matrix-screen-print',
+                matrixColumn: '2 Colors',
+                baseCost: 10,
+                sizeBreakdown: { L: 24 },
+              },
+            ],
+          },
+        ],
+      });
+
+      const items = result.groups[0].lineItems;
+      expect(items).toHaveLength(2);
+      // Both items get Tier 48 markup (10%)
+      expect(items[0].markupPrice).toBe(10);
+      expect(items[0].printCost).toBe(2.0); // '1 Color' in Tier 48
+      expect(items[0].unitPrice).toBe(10 * 1.1 + 2.0); // 13.0
+
+      expect(items[1].markupPrice).toBe(10);
+      expect(items[1].printCost).toBe(3.0); // '2 Colors' in Tier 48
+      expect(items[1].unitPrice).toBe(10 * 1.1 + 3.0); // 14.0
+    });
+
     it('should NOT pool quantities across different groups (cross-group isolation)', async () => {
       // Item 1 in Group A (24 units), Item 2 in Group B (24 units)
       // Neither reaches Tier 48; both stay at Tier 24 ('2 Colors' = 4.2, markup = 15%)
