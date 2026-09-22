@@ -7,7 +7,6 @@ import {
   UploadedFile,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { memoryStorage } from 'multer';
 import {
   ApiTags,
   ApiOperation,
@@ -16,6 +15,7 @@ import {
 } from '@nestjs/swagger';
 import { ProfileShopService } from './profile-shop.service';
 import { UpdateShopDto } from './dto/update-shop.dto';
+import { createMulterOptions } from '../../common/utils/file-upload.util';
 
 @ApiTags('Profile Shop')
 @ApiBearerAuth()
@@ -32,11 +32,7 @@ export class ProfileShopController {
   @Patch()
   @ApiOperation({ summary: 'Update active shop information' })
   @ApiConsumes('multipart/form-data')
-  @UseInterceptors(
-    FileInterceptor('companyLogo', {
-      storage: memoryStorage(),
-    }),
-  )
+  @UseInterceptors(FileInterceptor('companyLogo', createMulterOptions(20)))
   updateActiveShop(
     @Body() updateShopDto: UpdateShopDto,
     @UploadedFile() file?: Express.Multer.File,

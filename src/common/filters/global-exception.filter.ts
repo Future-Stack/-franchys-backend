@@ -74,6 +74,11 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       return this.handlePrismaError(exception, baseResponse);
     }
 
+    // Handle Multer upload errors
+    if (this.isMulterError(exception)) {
+      return this.handleMulterError(exception, baseResponse);
+    }
+
     // Handle generic errors
     if (exception instanceof Error) {
       return this.handleGenericError(exception, baseResponse);
@@ -270,6 +275,56 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       message: exception.message || 'An error occurred',
       error: exception.constructor.name,
       ...(process.env.NODE_ENV === 'development' && { stack: exception.stack }),
+    };
+  }
+
+  private isMulterError(exception: unknown): boolean {
+    if (!exception || typeof exception !== 'object') {
+      return false;
+    }
+    const err = exception as any;
+    return (
+      err.name === 'MulterError' ||
+      err.constructor?.name === 'MulterError' ||
+      (typeof err.code === 'string' && err.code.startsWith('LIMIT_'))
+    );
+  }
+
+  private handleMulterError(
+    exception: any,
+    baseResponse: ErrorResponse,
+  ): ErrorResponse {
+    let message = 'File upload failed';
+    let statusCode = HttpStatus.BAD_REQUEST;
+
+    switch (exception.code) {
+      case 'LIMIT_FILE_SIZE':
+        message =
+          'Uploaded file is too large. Maximum allowed file size is 50MB.';
+        statusCode = HttpStatus.PAYLOAD_TOO_LARGE;
+        break;
+      case 'LIMIT_FILE_COUNT':
+        message = 'Too many files uploaded in a single request.';
+        break;
+      case 'LIMIT_UNEXPECTED_FILE':
+        message = `Unexpected upload field: "${exception.field || 'unknown'}"`;
+        break;
+      case 'LIMIT_FIELD_VALUE':
+        message = 'Form field value is too large.';
+        break;
+      default:
+        message = exception.message || 'File upload failed';
+    }
+
+    return {
+      ...baseResponse,
+      statusCode,
+      message,
+      error: 'MulterError',
+      errorDetails: {
+        code: exception.code,
+        field: exception.field,
+      },
     };
   }
 

@@ -8,6 +8,8 @@ import { parse } from 'csv-parse';
 export interface SanMarCsvVariant {
   style: string;
   colorName: string;
+  /** SanMar's native unique identifier per style+color group (INVENTORY_KEY column). Used as productId: "sanmar-{inventoryKey}" */
+  inventoryKey: string;
   colorCode?: string;
   productTitle?: string;
   description?: string;
@@ -20,6 +22,8 @@ export interface SanMarCsvVariant {
   primaryImageUrl?: string;
   colorSquareUrl?: string;
   images: string[];
+  /** All sizes available for this style+color combination, collected from all size rows */
+  availableSizes: string[];
 }
 
 @Injectable()
@@ -35,10 +39,12 @@ export class SanMarSftpService implements OnModuleInit {
   private readonly localCsvFile = path.join(this.localDataDir, 'SanMar_EPDD.csv');
   private readonly localZipFile = path.join(this.localDataDir, 'SanMar_EPDD_csv.zip');
 
-  // Fast In-Memory Map: "STYLE_COLOR" => SanMarCsvVariant
+  // Fast In-Memory Map: "STYLE_COLOR" => SanMarCsvVariant (one entry per unique color variant)
   private catalogMap = new Map<string, SanMarCsvVariant>();
-  // Fast Style Index: "STYLE" => SanMarCsvVariant[]
+  // Fast Style Index: "STYLE" => SanMarCsvVariant[] (all color variants for a style)
   private styleIndexMap = new Map<string, SanMarCsvVariant[]>();
+  // Fast Inventory Key Map: INVENTORY_KEY => SanMarCsvVariant (SanMar's native unique per-color ID)
+  private inventoryKeyMap = new Map<string, SanMarCsvVariant>();
 
   constructor(private readonly configService: ConfigService) {
     this.sftpHost = this.configService.get<string>('sanmar.sftpHost', 'ftp.sanmar.com');
@@ -152,6 +158,9 @@ export class SanMarSftpService implements OnModuleInit {
 
       const newCatalogMap = new Map<string, SanMarCsvVariant>();
       const newStyleIndexMap = new Map<string, SanMarCsvVariant[]>();
+      const newInventoryKeyMap = new Map<string, SanMarCsvVariant>();
+      // Accumulate sizes per style+color key across multiple size rows
+      const sizeAccumulator = new Map<string, Set<string>>();
 
       for await (const row of parser) {
         const style = (
@@ -164,10 +173,22 @@ export class SanMarSftpService implements OnModuleInit {
           .trim()
           .toUpperCase();
         const colorName = (row.COLOR_NAME || row.COLOR || '').trim();
+        const inventoryKey = (row.INVENTORY_KEY || '').trim();
+        const sizeLabel = (row.SIZE || '').trim();
 
         if (!style || !colorName) continue;
 
         const key = `${style}_${colorName.toLowerCase()}`;
+
+        // Accumulate sizes — each row in the CSV is one size for this style+color
+        if (sizeLabel) {
+          const existingSizes = sizeAccumulator.get(key) || new Set<string>();
+          existingSizes.add(sizeLabel);
+          sizeAccumulator.set(key, existingSizes);
+        }
+
+        // Only process the rest once per style+color (first row wins for variant-level data)
+        if (newCatalogMap.has(key)) continue;
 
         const piecePrice =
           parseFloat(row.PIECE_PRICE || row.PIECE_PRICE_NET || row.PRICE || '0') || 0;
@@ -208,6 +229,7 @@ export class SanMarSftpService implements OnModuleInit {
         const variant: SanMarCsvVariant = {
           style,
           colorName,
+          inventoryKey,
           colorCode: row.PMS_COLOR || row.COLOR_CODE || row.PMS_CODE || undefined,
           productTitle: row.PRODUCT_TITLE || row.PRODUCT_NAME || undefined,
           description: row.PRODUCT_DESCRIPTION || row.DESCRIPTION || undefined,
@@ -220,6 +242,8 @@ export class SanMarSftpService implements OnModuleInit {
           primaryImageUrl,
           colorSquareUrl,
           images: Array.from(imagesSet),
+          // availableSizes is populated after all rows are processed (see below)
+          availableSizes: [],
         };
 
         newCatalogMap.set(key, variant);
@@ -227,13 +251,27 @@ export class SanMarSftpService implements OnModuleInit {
         const existingStyleList = newStyleIndexMap.get(style) || [];
         existingStyleList.push(variant);
         newStyleIndexMap.set(style, existingStyleList);
+
+        if (inventoryKey) {
+          newInventoryKeyMap.set(inventoryKey, variant);
+        }
+      }
+
+      // Back-fill availableSizes on each variant now that all rows have been processed
+      for (const [key, variant] of newCatalogMap.entries()) {
+        const sizes = sizeAccumulator.get(key);
+        if (sizes) {
+          variant.availableSizes = Array.from(sizes);
+        }
       }
 
       this.catalogMap = newCatalogMap;
       this.styleIndexMap = newStyleIndexMap;
+      this.inventoryKeyMap = newInventoryKeyMap;
 
       this.logger.log(
-        `Loaded ${this.catalogMap.size} product variants across ${this.styleIndexMap.size} styles from SanMar CSV.`,
+        `Loaded ${this.catalogMap.size} color variants across ${this.styleIndexMap.size} styles ` +
+        `(${this.inventoryKeyMap.size} with INVENTORY_KEY) from SanMar CSV.`,
       );
     } catch (err) {
       this.logger.error(`Error parsing SanMar CSV file: ${err?.message}`);
@@ -274,5 +312,24 @@ export class SanMarSftpService implements OnModuleInit {
    */
   getStyleVariants(style: string): SanMarCsvVariant[] {
     return this.styleIndexMap.get(style.trim().toUpperCase()) || [];
+  }
+
+  /**
+   * Instant lookup by SanMar's native INVENTORY_KEY (unique per style+color).
+   * This is the key used as productId: "sanmar-{inventoryKey}" in autocomplete responses.
+   */
+  getVariantByInventoryKey(inventoryKey: string): SanMarCsvVariant | undefined {
+    return this.inventoryKeyMap.get(inventoryKey.trim());
+  }
+
+  /**
+   * Returns the total number of loaded color variants (for health/status checks)
+   */
+  getCatalogStats() {
+    return {
+      totalColorVariants: this.catalogMap.size,
+      totalStyles: this.styleIndexMap.size,
+      totalWithInventoryKey: this.inventoryKeyMap.size,
+    };
   }
 }
