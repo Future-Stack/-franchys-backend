@@ -13,7 +13,6 @@ import {
   Req,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { memoryStorage } from 'multer';
 import {
   ApiTags,
   ApiOperation,
@@ -22,6 +21,7 @@ import {
   ApiBody,
   ApiConsumes,
 } from '@nestjs/swagger';
+import { createMulterOptions } from '../../common/utils/file-upload.util';
 import { UsersService } from './users.service';
 import { CreateAdminDto } from './dto/create-admin.dto';
 import { GetAdminsDto } from './dto/get-admins.dto';
@@ -111,11 +111,7 @@ export class UsersController {
   @Patch('profile')
   @ApiOperation({ summary: 'Update personal profile information & avatar' })
   @ApiConsumes('multipart/form-data')
-  @UseInterceptors(
-    FileInterceptor('profileImage', {
-      storage: memoryStorage(),
-    }),
-  )
+  @UseInterceptors(FileInterceptor('profileImage', createMulterOptions(20)))
   updateProfile(
     @Req() req: any,
     @Body() updateUserDto: UpdateUserDto,
@@ -127,11 +123,7 @@ export class UsersController {
   @Patch(':id')
   @ApiOperation({ summary: 'Update user personal info by ID' })
   @ApiConsumes('multipart/form-data')
-  @UseInterceptors(
-    FileInterceptor('profileImage', {
-      storage: memoryStorage(),
-    }),
-  )
+  @UseInterceptors(FileInterceptor('profileImage', createMulterOptions(20)))
   updateUser(
     @Param('id') id: string,
     @Body() updateUserDto: UpdateUserDto,

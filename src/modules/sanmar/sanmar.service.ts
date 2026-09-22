@@ -123,7 +123,8 @@ export class SanMarService {
 
         results.push({
           label: labelParts.join(' - '),
-          productId: `sanmar-${style}`,
+          // Use SanMar's INVENTORY_KEY as the unique per-color productId
+          productId: `sanmar-${csvMatch?.inventoryKey || style}`,
           productName: productName,
           itemNo: itemNo,
           style: style,
@@ -137,7 +138,7 @@ export class SanMarService {
           colorId: null,
           color: colorName,
           colorCode: colorObj.pms || csvMatch?.colorCode || null,
-          availableSizes: availableSizes,
+          availableSizes: csvMatch?.availableSizes?.length ? csvMatch.availableSizes : availableSizes,
           material: material,
           images: images,
         });
@@ -149,7 +150,8 @@ export class SanMarService {
 
       results.push({
         label: labelParts.join(' - '),
-        productId: `sanmar-${style}`,
+        // Use SanMar's INVENTORY_KEY as the unique per-color productId
+        productId: `sanmar-${csvVariants[0]?.inventoryKey || style}`,
         productName: productName,
         itemNo: itemNo,
         style: style,
@@ -163,7 +165,7 @@ export class SanMarService {
         colorId: null,
         color: null,
         colorCode: null,
-        availableSizes: availableSizes,
+        availableSizes: csvVariants[0]?.availableSizes?.length ? csvVariants[0].availableSizes : availableSizes,
         material: material,
         images: images,
       });
