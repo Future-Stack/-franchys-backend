@@ -9,10 +9,10 @@ import {
   UseInterceptors,
   UploadedFiles,
   BadRequestException,
+  NotFoundException,
   Query,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
-import { memoryStorage } from 'multer';
 import {
   ApiTags,
   ApiOperation,
@@ -32,28 +32,25 @@ import {
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { ApiQuery } from '@nestjs/swagger';
+import { SanMarSftpService } from '../sanmar/sanmar-sftp.service';
+import { createMulterOptions } from '../../common/utils/file-upload.util';
 
 @ApiTags('Product')
 @ApiBearerAuth()
 @ApiExtraModels(CreateProductColorDto)
 @Controller('product')
 export class ProductController {
-  constructor(private readonly productService: ProductService) {}
+  constructor(
+    private readonly productService: ProductService,
+    private readonly sanMarSftpService: SanMarSftpService,
+  ) {}
 
   // ─── Product Endpoints ───────────────────────────────────────────────────────
 
   @Post()
   @ApiOperation({ summary: 'Create a new product (optionally with colors)' })
   @ApiConsumes('multipart/form-data')
-  @UseInterceptors(
-    FilesInterceptor('images', 20, {
-      storage: memoryStorage(),
-      limits: {
-        fileSize: 50 * 1024 * 1024,
-        fieldSize: 50 * 1024 * 1024,
-      },
-    }),
-  )
+  @UseInterceptors(FilesInterceptor('images', 20, createMulterOptions(50)))
   async create(
     @Body() dto: CreateProductDto,
     @UploadedFiles() files: Express.Multer.File[],
@@ -93,8 +90,49 @@ export class ProductController {
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get a product by ID' })
+  @ApiOperation({
+    summary:
+      'Get a product by ID. Supports both internal products (UUID) and SanMar products (sanmar-{inventoryKey}).',
+  })
   async findOne(@Param('id') id: string) {
+    // ── SanMar product: id starts with "sanmar-" ──────────────────────────────
+    // productId format: "sanmar-{INVENTORY_KEY}" (e.g. "sanmar-26088")
+    // INVENTORY_KEY is SanMar's own unique identifier per style+color combination
+    if (id.startsWith('sanmar-')) {
+      const inventoryKey = id.slice('sanmar-'.length);
+      const variant = this.sanMarSftpService.getVariantByInventoryKey(inventoryKey);
+      if (!variant) {
+        throw new NotFoundException(
+          `SanMar product with INVENTORY_KEY "${inventoryKey}" not found. ` +
+          `Ensure the catalog is synced via POST /api/v1/sanmar/sync-sftp.`,
+        );
+      }
+      return {
+        message: 'SanMar product fetched successfully',
+        data: {
+          productId: id,
+          isSanMar: true,
+          style: variant.style,
+          inventoryKey: variant.inventoryKey,
+          productName: variant.productTitle || `SanMar Style ${variant.style}`,
+          colorName: variant.colorName,
+          colorCode: variant.colorCode || null,
+          brand: variant.brand || 'SanMar',
+          category: variant.category || null,
+          subCategory: variant.subCategory || null,
+          piecePrice: variant.piecePrice,
+          casePrice: variant.casePrice,
+          salePrice: variant.salePrice || null,
+          description: variant.description || null,
+          primaryImageUrl: variant.primaryImageUrl || null,
+          colorSquareUrl: variant.colorSquareUrl || null,
+          images: variant.images,
+          availableSizes: variant.availableSizes,
+        },
+      };
+    }
+
+    // ── Internal product: UUID from PostgreSQL ────────────────────────────────
     const data = await this.productService.findOne(id);
     return {
       message: 'Product fetched successfully',
@@ -105,15 +143,7 @@ export class ProductController {
   @Patch(':id')
   @ApiOperation({ summary: 'Update a product by ID' })
   @ApiConsumes('multipart/form-data')
-  @UseInterceptors(
-    FilesInterceptor('images', 20, {
-      storage: memoryStorage(),
-      limits: {
-        fileSize: 50 * 1024 * 1024,
-        fieldSize: 50 * 1024 * 1024,
-      },
-    }),
-  )
+  @UseInterceptors(FilesInterceptor('images', 20, createMulterOptions(50)))
   async update(
     @Param('id') id: string,
     @Body() dto: UpdateProductDto,
