@@ -9,6 +9,7 @@ model LineItemCustomization {
   showColor       Boolean @default(false)
   showMarkup      Boolean @default(false)
   showPrice       Boolean @default(true)
+  showMatrixColumn Boolean @default(true)
 
   // Sizing Options - Adult Sizes (Boolean)
   sizeAdultXS  Boolean @default(false)

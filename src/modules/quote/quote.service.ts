@@ -26,6 +26,7 @@ interface CalcLineItemInput {
   sizeBreakdown?: Record<string, number> | null;
   markupPrice?: any;
   matrixId?: string | null;
+  matrixColumn?: string | null;
   printCost?: any;
   unitPrice?: any;
   isTaxed?: boolean;
@@ -45,6 +46,7 @@ interface CalcLineItemOutput {
   itemsCount: number;
   markupPrice: number;
   matrixId: string | null;
+  matrixColumn: string | null;
   printCost: number;
   unitPrice: number;
   isTaxed: boolean;
@@ -122,9 +124,22 @@ export class QuoteService {
     total: number;
     processedItems: CalcLineItemOutput[];
   }> {
-    let subtotal = 0;
-    const processedItems: CalcLineItemOutput[] = [];
+    interface PreparedItem {
+      raw: CalcLineItemInput;
+      groupName: string;
+      matrixId: string | null;
+      matrixColumn: string | null;
+      poolKey: string;
+      itemsCount: number;
+      baseCost: number;
+      breakdown: Record<string, number> | null;
+    }
 
+    const preparedItems: PreparedItem[] = [];
+    const poolQtyMap = new Map<string, number>();
+    const uniqueMatrixIds = new Set<string>();
+
+    // Pass 1: Pre-process items, compute quantities, and group by (groupName, matrixId, matrixColumn)
     for (const item of lineItems) {
       const breakdown = item.sizeBreakdown || null;
       let itemsCount = 0;
@@ -148,37 +163,139 @@ export class QuoteService {
         }
       }
 
-      const baseCost = Number(item.baseCost) || 0;
-      const matrixId = item.matrixId || null;
+      const groupName = (item.groupName || 'Group 1').trim();
+      const matrixId = item.matrixId?.trim() || null;
+      const matrixColumn = item.matrixColumn?.trim() || null;
 
-      let printCost = Number(item.printCost) || 0;
-      let markupPrice = Number(item.markupPrice) || 0;
+      // Group volume pooling key: garments in the same group sharing a matrix pool quantities
+      const poolKey = `${groupName.toLowerCase()}:::${matrixId || ''}`;
 
-      // Price Matrix Lookup if matrixId is provided and printCost/markupPrice aren't explicitly provided
       if (matrixId && itemsCount > 0) {
-        const matrix = await this.prisma.priceMatrix.findUnique({
-          where: { priceMatrixId: matrixId },
-          include: { priceTiers: { orderBy: { quantity: 'asc' } } },
-        });
+        uniqueMatrixIds.add(matrixId);
+        const currentQty = poolQtyMap.get(poolKey) || 0;
+        poolQtyMap.set(poolKey, currentQty + itemsCount);
+      }
 
-        if (matrix && matrix.priceTiers.length > 0) {
-          const matchingTier = matrix.priceTiers.reduce((acc, tier) => {
-            if (itemsCount >= tier.quantity) {
-              return tier;
-            }
-            return acc;
-          }, matrix.priceTiers[0]);
+      preparedItems.push({
+        raw: item,
+        groupName,
+        matrixId,
+        matrixColumn,
+        poolKey,
+        itemsCount,
+        baseCost: Number(item.baseCost) || 0,
+        breakdown,
+      });
+    }
 
-          if (matchingTier) {
-            if (!item.printCost) {
-              printCost = Number(matchingTier.basePrice);
+    // Step 2: Single-Batch DB Query for all referenced matrices (Eliminates N+1 query loop)
+    const matricesMap = new Map<string, any>();
+    if (uniqueMatrixIds.size > 0) {
+      const matrices = await this.prisma.priceMatrix.findMany({
+        where: { priceMatrixId: { in: Array.from(uniqueMatrixIds) } },
+        include: { priceTiers: { orderBy: { quantity: 'asc' } } },
+      });
+      for (const m of matrices) {
+        matricesMap.set(m.priceMatrixId, m);
+      }
+    }
+
+    // Step 3: Determine winning tier per pool based on pooled total quantity
+    const poolWinningTierMap = new Map<string, any>();
+
+    for (const item of preparedItems) {
+      if (
+        !item.matrixId ||
+        item.itemsCount <= 0 ||
+        poolWinningTierMap.has(item.poolKey)
+      ) {
+        continue;
+      }
+
+      const matrix = matricesMap.get(item.matrixId);
+      if (!matrix || !matrix.priceTiers || matrix.priceTiers.length === 0) {
+        continue;
+      }
+
+      const pooledQty = poolQtyMap.get(item.poolKey) || item.itemsCount;
+      const sortedTiers = [...matrix.priceTiers].sort(
+        (a, b) => a.quantity - b.quantity,
+      );
+
+      // Find highest tier where pooledQty >= tier.quantity
+      let matchingTier = sortedTiers[0];
+      for (const tier of sortedTiers) {
+        if (pooledQty >= tier.quantity) {
+          matchingTier = tier;
+        } else {
+          break;
+        }
+      }
+
+      poolWinningTierMap.set(item.poolKey, matchingTier);
+    }
+
+    // Step 4: Pass 2 - Calculate each line item's unit price and line total
+    let subtotal = 0;
+    const processedItems: CalcLineItemOutput[] = [];
+
+    for (const prep of preparedItems) {
+      const item = prep.raw;
+      const itemsCount = prep.itemsCount;
+      const baseCost = prep.baseCost;
+      const matrixId = prep.matrixId;
+      const matrixColumn = prep.matrixColumn;
+
+      let printCost =
+        item.printCost !== undefined && item.printCost !== null
+          ? Number(item.printCost)
+          : undefined;
+      let markupPrice =
+        item.markupPrice !== undefined && item.markupPrice !== null
+          ? Number(item.markupPrice)
+          : undefined;
+
+      // Matrix lookup applies only when not explicitly provided (preserves intentional 0 values)
+      if (matrixId && itemsCount > 0) {
+        const winningTier = poolWinningTierMap.get(prep.poolKey);
+        if (winningTier) {
+          if (markupPrice === undefined || isNaN(markupPrice)) {
+            markupPrice = Number(winningTier.markup) || 0;
+          }
+
+          if (printCost === undefined || isNaN(printCost)) {
+            let resolvedPrintCost: number | null = null;
+            if (
+              matrixColumn &&
+              winningTier.columnPrices &&
+              typeof winningTier.columnPrices === 'object'
+            ) {
+              const colPrices = winningTier.columnPrices as Record<string, any>;
+              const targetCol = matrixColumn.toLowerCase();
+              for (const [colKey, colVal] of Object.entries(colPrices)) {
+                if (colKey.trim().toLowerCase() === targetCol) {
+                  const parsed = Number(colVal);
+                  if (Number.isFinite(parsed)) {
+                    resolvedPrintCost = parsed;
+                    break;
+                  }
+                }
+              }
             }
-            if (!item.markupPrice) {
-              markupPrice = Number(matchingTier.markup);
+
+            if (
+              resolvedPrintCost === null ||
+              !Number.isFinite(resolvedPrintCost)
+            ) {
+              resolvedPrintCost = Number(winningTier.basePrice) || 0;
             }
+            printCost = resolvedPrintCost;
           }
         }
       }
+
+      if (printCost === undefined || isNaN(printCost)) printCost = 0;
+      if (markupPrice === undefined || isNaN(markupPrice)) markupPrice = 0;
 
       let finalUnitPrice = 0;
       let total = 0;
@@ -216,16 +333,17 @@ export class QuoteService {
       subtotal += total;
 
       processedItems.push({
-        groupName: item.groupName || 'Group 1',
+        groupName: prep.groupName,
         category: item.category || null,
         itemNumber: item.itemNumber || null,
         color: item.color || null,
         description: item.description || null,
         baseCost,
-        sizeBreakdown: breakdown,
+        sizeBreakdown: prep.breakdown,
         itemsCount,
         markupPrice,
         matrixId,
+        matrixColumn,
         printCost,
         unitPrice: finalUnitPrice,
         isTaxed: !!item.isTaxed,
@@ -237,10 +355,12 @@ export class QuoteService {
 
     const taxAmount = (subtotal - discountVal) * (taxRateVal / 100);
     const calculatedTotal = subtotal - discountVal + taxAmount;
+    // Gap A: Respect 0.00 quote total override
     const total =
       quoteTotalOverride !== undefined &&
       quoteTotalOverride !== null &&
-      Number(quoteTotalOverride) > 0
+      !isNaN(Number(quoteTotalOverride)) &&
+      Number(quoteTotalOverride) >= 0
         ? Number(quoteTotalOverride)
         : calculatedTotal;
 
@@ -326,11 +446,13 @@ export class QuoteService {
         sizeBreakdown: item.sizeBreakdown || null,
         markupPrice: Number(item.markupPrice),
         matrixId: item.matrixId,
+        matrixColumn: item.matrixColumn,
         printCost: Number(item.printCost),
         unitPrice: Number(item.unitPrice),
         isTaxed: item.isTaxed,
         total: Number(item.total),
         imprintType: item.imprintType,
+        mockups: item.mockups || [],
       }));
     }
 
@@ -372,6 +494,7 @@ export class QuoteService {
               itemsCount: item.itemsCount,
               markupPrice: item.markupPrice,
               matrixId: item.matrixId,
+              matrixColumn: item.matrixColumn,
               printCost: item.printCost,
               unitPrice: item.unitPrice,
               isTaxed: item.isTaxed,
@@ -454,6 +577,7 @@ export class QuoteService {
             itemsCount: item.itemsCount,
             markupPrice: item.markupPrice,
             matrixId: item.matrixId,
+            matrixColumn: item.matrixColumn,
             printCost: item.printCost,
             unitPrice: item.unitPrice,
             isTaxed: item.isTaxed,
@@ -478,6 +602,8 @@ export class QuoteService {
 
     if (quote.status === QuoteStatus.APPROVED) {
       await this.jobService.createOrUpdateJobFromQuote(quote.id);
+      // Auto-create a DRAFT invoice from this approved quote (Gap B)
+      await this.customerInvoiceService.createFromQuote(quote.id);
     }
 
     return this.formatGroupedResponse(quote);
@@ -633,11 +759,13 @@ export class QuoteService {
           sizeBreakdown: item.sizeBreakdown || null,
           markupPrice: Number(item.markupPrice),
           matrixId: item.matrixId,
+          matrixColumn: item.matrixColumn,
           printCost: Number(item.printCost),
           unitPrice: Number(item.unitPrice),
           isTaxed: item.isTaxed,
           total: Number(item.total),
           imprintType: item.imprintType,
+          mockups: item.mockups || [],
         }),
       );
 
@@ -693,6 +821,7 @@ export class QuoteService {
                       itemsCount: item.itemsCount,
                       markupPrice: item.markupPrice,
                       matrixId: item.matrixId,
+                      matrixColumn: item.matrixColumn,
                       printCost: item.printCost,
                       unitPrice: item.unitPrice,
                       isTaxed: item.isTaxed,

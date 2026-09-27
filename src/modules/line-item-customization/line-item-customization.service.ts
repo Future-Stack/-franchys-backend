@@ -11,6 +11,7 @@ const DEFAULT_CUSTOMIZATION = {
   showColor: false,
   showMarkup: false,
   showPrice: true,
+  showMatrixColumn: true,
 
   sizeAdultXS: false,
   sizeAdultS: true,
@@ -71,6 +72,7 @@ export class LineItemCustomizationService implements OnModuleInit {
             showColor: false,
             showMarkup: false,
             showPrice: true,
+            showMatrixColumn: true,
 
             sizeAdultXS: false,
             sizeAdultS: true,
@@ -135,6 +137,7 @@ export class LineItemCustomizationService implements OnModuleInit {
         color: c.showColor,
         markup: c.showMarkup,
         price: c.showPrice,
+        matrixColumn: c.showMatrixColumn ?? true,
       },
       sizingOptions: {
         adultSizes: [

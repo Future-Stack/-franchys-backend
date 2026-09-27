@@ -412,7 +412,11 @@ export class CustomerInvoiceService {
     };
   }
 
-  async getPaymentsList(query: { page?: number; limit?: number; status?: string }) {
+  async getPaymentsList(query: {
+    page?: number;
+    limit?: number;
+    status?: string;
+  }) {
     const page = Number(query.page) || 1;
     const limit = Number(query.limit) || 10;
     const skip = (page - 1) * limit;
@@ -485,7 +489,8 @@ export class CustomerInvoiceService {
         invoiceId: p.invoiceId,
         invoiceNumber: p.invoice?.invoiceNumber || '',
         customerName: p.customer
-          ? p.customer.companyName || `${p.customer.firstName} ${p.customer.lastName}`
+          ? p.customer.companyName ||
+            `${p.customer.firstName} ${p.customer.lastName}`
           : '',
         amount: Number(p.amount),
         date: p.paidAt || p.createdAt,
@@ -503,7 +508,8 @@ export class CustomerInvoiceService {
         invoiceId: inst.invoiceId,
         invoiceNumber: `${inst.invoice.invoiceNumber}-${suffix}`,
         customerName: inst.invoice.customer
-          ? inst.invoice.customer.companyName || `${inst.invoice.customer.firstName} ${inst.invoice.customer.lastName}`
+          ? inst.invoice.customer.companyName ||
+            `${inst.invoice.customer.firstName} ${inst.invoice.customer.lastName}`
           : '',
         amount: Number(inst.amount),
         date: inst.sentAt || inst.createdAt,
@@ -520,7 +526,8 @@ export class CustomerInvoiceService {
         invoiceId: inv.id,
         invoiceNumber: inv.invoiceNumber,
         customerName: inv.customer
-          ? inv.customer.companyName || `${inv.customer.firstName} ${inv.customer.lastName}`
+          ? inv.customer.companyName ||
+            `${inv.customer.firstName} ${inv.customer.lastName}`
           : '',
         amount: Number(inv.total),
         date: inv.sentAt || inv.createdAt,
@@ -530,7 +537,9 @@ export class CustomerInvoiceService {
     });
 
     // Sort items by date descending
-    items.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    items.sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+    );
 
     // Calculate status counts on the combined list (before applying status filter)
     const statusCounts = {
@@ -692,8 +701,11 @@ export class CustomerInvoiceService {
 
     let hostedInvoiceUrl: string;
 
-    const depositPercent = paymentTerm?.depositPercent ? Number(paymentTerm.depositPercent) : null;
-    const isPartial = depositPercent !== null && depositPercent > 0 && depositPercent < 100;
+    const depositPercent = paymentTerm?.depositPercent
+      ? Number(paymentTerm.depositPercent)
+      : null;
+    const isPartial =
+      depositPercent !== null && depositPercent > 0 && depositPercent < 100;
 
     if (isPartial) {
       // ── PARTIAL PAYMENT: create installment records + send installment #1 ──
@@ -708,7 +720,9 @@ export class CustomerInvoiceService {
       let finalDueDate = invoice.dueDate;
       if (!finalDueDate && paymentTerm?.paymentDaysAllowed) {
         finalDueDate = new Date();
-        finalDueDate.setDate(finalDueDate.getDate() + paymentTerm.paymentDaysAllowed);
+        finalDueDate.setDate(
+          finalDueDate.getDate() + paymentTerm.paymentDaysAllowed,
+        );
       }
 
       const stripeResult = await this.stripeService.createAndFinalizeInvoice({
@@ -1217,7 +1231,9 @@ export class CustomerInvoiceService {
         : null,
       installmentLabel,
       isInstallment: !!activeInstallment,
-      installmentNumber: activeInstallment ? activeInstallment.installmentNumber : null,
+      installmentNumber: activeInstallment
+        ? activeInstallment.installmentNumber
+        : null,
       totalInstallmentsCount: freshInvoice.installments.length,
       amountPaidTotal: fmt(Number(freshInvoice.amountPaid)),
       amountRemaining: fmt(Number(freshInvoice.amountDue)),

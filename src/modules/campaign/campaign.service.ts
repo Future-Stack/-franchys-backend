@@ -150,10 +150,12 @@ export class CampaignService {
         sendToAll: true,
         subject: campaign.title,
         title: campaign.title,
-        messageContent: campaign.termsCondition || `<p>Special Offer: Use promo code <strong>${campaign.promoCode || ''}</strong> at checkout!</p>`,
+        messageContent:
+          campaign.termsCondition ||
+          `<p>Special Offer: Use promo code <strong>${campaign.promoCode || ''}</strong> at checkout!</p>`,
         promoCode: campaign.promoCode || undefined,
       });
-    } catch (err: any) {
+    } catch {
       // Gracefully ignore error if no customers exist or email is unconfigured
     }
 
@@ -191,7 +193,9 @@ export class CampaignService {
     });
 
     if (customers.length === 0) {
-      throw new BadRequestException('No eligible customers found to send email.');
+      throw new BadRequestException(
+        'No eligible customers found to send email.',
+      );
     }
 
     const shopInfo = await this.prisma.shopInformation.findFirst();

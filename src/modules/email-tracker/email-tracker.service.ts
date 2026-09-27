@@ -29,32 +29,42 @@ function stripHtml(html: string): string {
   // 5. Clean up extra whitespace/newlines
   text = text
     .split('\n')
-    .map(line => line.trim())
-    .filter(line => line.length > 0)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
     .join('\n');
 
   return text.trim();
 }
 
-function parseStructuredEmail(subject: string, htmlBody: string): { isStructured: boolean; body: string } {
+function parseStructuredEmail(
+  subject: string,
+  htmlBody: string,
+): { isStructured: boolean; body: string } {
   const subjectLower = subject.toLowerCase();
 
   try {
     // 1. QUOTE DELIVERY EMAIL
     if (subjectLower.includes('your quote') && subjectLower.includes('ready')) {
-      const quoteNumberMatch = subject.match(/(Q-\d+)/i) || subject.match(/Quote\s+(\S+)/i);
+      const quoteNumberMatch =
+        subject.match(/(Q-\d+)/i) || subject.match(/Quote\s+(\S+)/i);
       const quoteNumber = quoteNumberMatch ? quoteNumberMatch[1] : 'Unknown';
 
-      const linkMatch = htmlBody.match(/class="cta-btn"\s+href="([^"]+)"/i) || htmlBody.match(/href="([^"]+)"/i);
+      const linkMatch =
+        htmlBody.match(/class="cta-btn"\s+href="([^"]+)"/i) ||
+        htmlBody.match(/href="([^"]+)"/i);
       const quoteLink = linkMatch ? linkMatch[1] : '';
 
-      const totalMatch = htmlBody.match(/class="summary-value total">([^<]+)</i);
+      const totalMatch = htmlBody.match(
+        /class="summary-value total">([^<]+)</i,
+      );
       const total = totalMatch ? totalMatch[1].trim() : '';
 
       const customerMatch = htmlBody.match(/Hello,\s+([^!]+)!/i);
       const customerName = customerMatch ? customerMatch[1].trim() : '';
 
-      const dueDateMatch = htmlBody.match(/Due Date<\/span>\s*<span class="summary-value">([^<]+)</i);
+      const dueDateMatch = htmlBody.match(
+        /Due Date<\/span>\s*<span class="summary-value">([^<]+)</i,
+      );
       const dueDate = dueDateMatch ? dueDateMatch[1].trim() : '';
 
       return {
@@ -73,27 +83,47 @@ function parseStructuredEmail(subject: string, htmlBody: string): { isStructured
     }
 
     // 2. INVOICE DELIVERY EMAIL
-    if (subjectLower.includes('invoice') && subjectLower.includes('payment due')) {
-      const invoiceNumberMatch = subject.match(/(INV-\d+)/i) || subject.match(/Invoice\s+(\S+)/i);
-      const invoiceNumber = invoiceNumberMatch ? invoiceNumberMatch[1] : 'Unknown';
+    if (
+      subjectLower.includes('invoice') &&
+      subjectLower.includes('payment due')
+    ) {
+      const invoiceNumberMatch =
+        subject.match(/(INV-\d+)/i) || subject.match(/Invoice\s+(\S+)/i);
+      const invoiceNumber = invoiceNumberMatch
+        ? invoiceNumberMatch[1]
+        : 'Unknown';
 
-      const linkMatch = htmlBody.match(/class="pay-btn"\s+href="([^"]+)"/i) || htmlBody.match(/href="([^"]+)"/i);
+      const linkMatch =
+        htmlBody.match(/class="pay-btn"\s+href="([^"]+)"/i) ||
+        htmlBody.match(/href="([^"]+)"/i);
       const hostedInvoiceUrl = linkMatch ? linkMatch[1] : '';
 
       const customerMatch = htmlBody.match(/Hi\s+<strong>([^<]+)<\/strong>/i);
       const customerName = customerMatch ? customerMatch[1].trim() : '';
 
-      const amountDueMatch = htmlBody.match(/Amount Due<\/div>\s*<div class="value">([^<]+)<\/div>/i) || 
-                              htmlBody.match(/Amount Due\s*\(([^)]+)\)<\/div>\s*<div class="value">([^<]+)<\/div>/i);
+      const amountDueMatch =
+        htmlBody.match(
+          /Amount Due<\/div>\s*<div class="value">([^<]+)<\/div>/i,
+        ) ||
+        htmlBody.match(
+          /Amount Due\s*\(([^)]+)\)<\/div>\s*<div class="value">([^<]+)<\/div>/i,
+        );
       let amountDue = '';
       if (amountDueMatch) {
-        amountDue = amountDueMatch.length === 3 ? amountDueMatch[2].trim() : amountDueMatch[1].trim();
+        amountDue =
+          amountDueMatch.length === 3
+            ? amountDueMatch[2].trim()
+            : amountDueMatch[1].trim();
       }
 
-      const totalMatch = htmlBody.match(/Total Invoice Amount<\/span>\s*<span class="meta-value">([^<]+)</i);
+      const totalMatch = htmlBody.match(
+        /Total Invoice Amount<\/span>\s*<span class="meta-value">([^<]+)</i,
+      );
       const total = totalMatch ? totalMatch[1].trim() : '';
 
-      const dueDateMatch = htmlBody.match(/Due Date<\/span>\s*<span class="meta-value">([^<]+)</i);
+      const dueDateMatch = htmlBody.match(
+        /Due Date<\/span>\s*<span class="meta-value">([^<]+)</i,
+      );
       const dueDate = dueDateMatch ? dueDateMatch[1].trim() : '';
 
       return {
@@ -111,7 +141,7 @@ function parseStructuredEmail(subject: string, htmlBody: string): { isStructured
         }),
       };
     }
-  } catch (err) {
+  } catch {
     // Fallback
   }
 
@@ -168,7 +198,9 @@ export class EmailTrackerService {
   @Cron('*/5 * * * *')
   async syncEmails() {
     if (this.isSyncing) {
-      this.logger.log('Email sync is already running. Skipping concurrent run.');
+      this.logger.log(
+        'Email sync is already running. Skipping concurrent run.',
+      );
       return;
     }
     this.isSyncing = true;
@@ -234,7 +266,9 @@ export class EmailTrackerService {
           subjectLower.includes('password reset') ||
           subjectLower.includes('verification code')
         ) {
-          this.logger.log(`Skipping system transactional email subject: "${subject}"`);
+          this.logger.log(
+            `Skipping system transactional email subject: "${subject}"`,
+          );
           continue;
         }
 
@@ -262,7 +296,11 @@ export class EmailTrackerService {
                 if (nested) return nested;
               }
             }
-          } else if (payload.mimeType === 'text/html' && payload.body && payload.body.data) {
+          } else if (
+            payload.mimeType === 'text/html' &&
+            payload.body &&
+            payload.body.data
+          ) {
             return Buffer.from(payload.body.data, 'base64').toString('utf8');
           }
           return '';
@@ -280,7 +318,11 @@ export class EmailTrackerService {
                 if (nested) return nested;
               }
             }
-          } else if (payload.mimeType === 'text/plain' && payload.body && payload.body.data) {
+          } else if (
+            payload.mimeType === 'text/plain' &&
+            payload.body &&
+            payload.body.data
+          ) {
             return Buffer.from(payload.body.data, 'base64').toString('utf8');
           }
           return '';
@@ -290,13 +332,17 @@ export class EmailTrackerService {
         const plainBody = getPlainBody(fullMessage.data.payload);
 
         let bodyContent = '';
-        
+
         // Try parsing structured quote/invoice templates first
         const structured = parseStructuredEmail(subject, htmlBody);
         if (structured.isStructured) {
           bodyContent = structured.body;
         } else {
-          const rawBody = plainBody || (htmlBody ? stripHtml(htmlBody) : '') || fullMessage.data.snippet || '';
+          const rawBody =
+            plainBody ||
+            (htmlBody ? stripHtml(htmlBody) : '') ||
+            fullMessage.data.snippet ||
+            '';
 
           // Clean up HTML entities in plain text fallback
           bodyContent = rawBody
@@ -322,10 +368,9 @@ export class EmailTrackerService {
 
         const contactString = isOutbound ? to : from;
         const emailMatch = contactString.match(/<([^>]+)>/);
-        const contactEmail = (emailMatch
-          ? emailMatch[1]
-          : contactString
-        ).trim().toLowerCase();
+        const contactEmail = (emailMatch ? emailMatch[1] : contactString)
+          .trim()
+          .toLowerCase();
 
         let contactName: string | null = null;
         if (emailMatch) {
@@ -347,12 +392,15 @@ export class EmailTrackerService {
             contact = await this.prisma.contact.create({
               data: {
                 email: contactEmail,
-                name: customerExists.firstName && customerExists.lastName
-                  ? `${customerExists.firstName} ${customerExists.lastName}`
-                  : customerExists.firstName || null,
+                name:
+                  customerExists.firstName && customerExists.lastName
+                    ? `${customerExists.firstName} ${customerExists.lastName}`
+                    : customerExists.firstName || null,
               },
             });
-            this.logger.log(`Auto-created tracking contact from Customer CRM: ${contactEmail}`);
+            this.logger.log(
+              `Auto-created tracking contact from Customer CRM: ${contactEmail}`,
+            );
           } else if (structured.isStructured) {
             // Since it is a system quote/invoice email, we must track it! Create a generic contact.
             contact = await this.prisma.contact.create({
@@ -361,14 +409,18 @@ export class EmailTrackerService {
                 name: contactName,
               },
             });
-            this.logger.log(`Created tracking contact for system-sent quote/invoice: ${contactEmail}`);
+            this.logger.log(
+              `Created tracking contact for system-sent quote/invoice: ${contactEmail}`,
+            );
           }
         } else if (contactName && !contact.name) {
           contact = await this.prisma.contact.update({
             where: { id: contact.id },
             data: { name: contactName },
           });
-          this.logger.log(`Updated contact name for ${contactEmail} to: ${contactName}`);
+          this.logger.log(
+            `Updated contact name for ${contactEmail} to: ${contactName}`,
+          );
         }
 
         // If contact still does not exist, skip syncing this message (irrelevant sender/recipient)
@@ -401,7 +453,9 @@ export class EmailTrackerService {
                 subject: subject,
               },
             });
-            this.logger.log(`Reused existing thread ${threadId} for contact ${contactEmail}`);
+            this.logger.log(
+              `Reused existing thread ${threadId} for contact ${contactEmail}`,
+            );
           } else {
             const newThread = await this.prisma.thread.create({
               data: { subject, contactId: contact.id },
@@ -412,7 +466,9 @@ export class EmailTrackerService {
         }
 
         const internalDate = fullMessage.data.internalDate;
-        const messageDate = internalDate ? new Date(parseInt(internalDate, 10)) : new Date();
+        const messageDate = internalDate
+          ? new Date(parseInt(internalDate, 10))
+          : new Date();
 
         await this.prisma.message.create({
           data: {
@@ -457,7 +513,8 @@ export class EmailTrackerService {
 
     if (!lastMessage) throw new Error('Thread or last message not found');
 
-    const recipient = lastMessage.direction === 'OUTBOUND' ? lastMessage.to : lastMessage.from;
+    const recipient =
+      lastMessage.direction === 'OUTBOUND' ? lastMessage.to : lastMessage.from;
     const profile = await gmail.users.getProfile({ userId: 'me' });
     const myEmail = profile.data.emailAddress;
 

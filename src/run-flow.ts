@@ -15,12 +15,16 @@ async function main() {
 
   console.log('Cleaning up specific test payments and invoices...');
   const testInvoice = await prisma.customerInvoice.findFirst({
-    where: { invoiceNumber: 'INV-1' }
+    where: { invoiceNumber: 'INV-1' },
   });
   if (testInvoice) {
     await prisma.payment.deleteMany({ where: { invoiceId: testInvoice.id } });
-    await prisma.invoiceInstallment.deleteMany({ where: { invoiceId: testInvoice.id } });
-    await prisma.invoiceLineItem.deleteMany({ where: { invoiceId: testInvoice.id } });
+    await prisma.invoiceInstallment.deleteMany({
+      where: { invoiceId: testInvoice.id },
+    });
+    await prisma.invoiceLineItem.deleteMany({
+      where: { invoiceId: testInvoice.id },
+    });
     await prisma.customerInvoice.delete({ where: { id: testInvoice.id } });
     console.log('Test payments and invoices for INV-1 cleaned up.');
   }
@@ -31,7 +35,9 @@ async function main() {
     where: { email: 'mypcmail093@gmail.com' },
   });
   if (!customer) {
-    throw new Error('Customer with email mypcmail093@gmail.com not found in the database! Please create them first.');
+    throw new Error(
+      'Customer with email mypcmail093@gmail.com not found in the database! Please create them first.',
+    );
   }
   console.log(`Customer found. ID: ${customer.id}`);
 
@@ -47,7 +53,7 @@ async function main() {
   let paymentTerm = await prisma.paymentTerm.findFirst({
     where: {
       name: '50% now + 50% net 30',
-      depositPercent: 50.00,
+      depositPercent: 50.0,
       paymentDaysAllowed: 30,
       isArchived: false,
     },
@@ -56,7 +62,7 @@ async function main() {
     paymentTerm = await prisma.paymentTerm.create({
       data: {
         name: '50% now + 50% net 30',
-        depositPercent: 50.00,
+        depositPercent: 50.0,
         paymentDaysAllowed: 30,
         dueDateStrategy: 'FROM_INVOICE_DATE',
         isArchived: false,
@@ -86,17 +92,17 @@ async function main() {
       customerId: customer.id,
       repId: repUser.userId,
       status: 'DRAFT',
-      subtotal: 1000.00,
+      subtotal: 1000.0,
       discount: 0,
       taxRate: 7.0,
-      taxAmount: 70.00,
-      total: 1070.00,
+      taxAmount: 70.0,
+      total: 1070.0,
       lineItems: {
         create: [
           {
             description: 'Custom Work Order',
-            unitPrice: 1000.00,
-            total: 1000.00,
+            unitPrice: 1000.0,
+            total: 1000.0,
             groupName: 'Group 1',
             category: 'T-Shirts',
             itemsCount: 1,
@@ -109,8 +115,16 @@ async function main() {
 
   // Transition Quote to APPROVED
   console.log('Approving Quote...');
-  const user = { userId: repUser.userId, email: repUser.email, role: (repUser as any).role || 'ADMIN' };
-  await quoteService.updateStatusWithPermissionCheck(quote.id, 'APPROVED', user);
+  const user = {
+    userId: repUser.userId,
+    email: repUser.email,
+    role: (repUser as any).role || 'ADMIN',
+  };
+  await quoteService.updateStatusWithPermissionCheck(
+    quote.id,
+    'APPROVED',
+    user,
+  );
   console.log('Quote approved.');
 
   // Find generated Draft Invoice
@@ -130,8 +144,13 @@ async function main() {
   console.log('Invoice updated with payment term.');
 
   // Send Invoice
-  console.log('Sending Invoice (generating Stripe customer, invoices, installments)...');
-  await customerInvoiceService.sendInvoice(invoice.id, { sendEmail: true, sendWhatsApp: false });
+  console.log(
+    'Sending Invoice (generating Stripe customer, invoices, installments)...',
+  );
+  await customerInvoiceService.sendInvoice(invoice.id, {
+    sendEmail: true,
+    sendWhatsApp: false,
+  });
   console.log('Invoice sent successfully.');
 
   console.log('====================================');

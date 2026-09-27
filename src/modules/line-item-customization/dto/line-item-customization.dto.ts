@@ -10,6 +10,7 @@ export class UpdateLineItemCustomizationDto {
   @ApiPropertyOptional() @IsOptional() @IsBoolean() showColor?: boolean;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() showMarkup?: boolean;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() showPrice?: boolean;
+  @ApiPropertyOptional() @IsOptional() @IsBoolean() showMatrixColumn?: boolean;
 
   // Adult Sizes
   @ApiPropertyOptional() @IsOptional() @IsBoolean() sizeAdultXS?: boolean;

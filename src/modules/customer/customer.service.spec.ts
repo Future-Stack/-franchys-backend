@@ -166,7 +166,12 @@ describe('CustomerService (unit)', () => {
           },
         },
       });
-      expect(result).toEqual({ id: 'cust-1', firstName: 'Jane', orders: 0, totalSpent: 0 });
+      expect(result).toEqual({
+        id: 'cust-1',
+        firstName: 'Jane',
+        orders: 0,
+        totalSpent: 0,
+      });
     });
 
     it('should throw NotFoundException when customer not found', async () => {

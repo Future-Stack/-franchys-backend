@@ -45,7 +45,8 @@ export class CustomerInvoiceController {
 
   @Get('summary')
   @ApiOperation({
-    summary: 'Get invoice financial summary (Outstanding, Overdue, Collected totals)',
+    summary:
+      'Get invoice financial summary (Outstanding, Overdue, Collected totals)',
   })
   getSummary() {
     return this.invoiceService.getInvoiceSummary();
@@ -53,7 +54,8 @@ export class CustomerInvoiceController {
 
   @Get('payments/summary')
   @ApiOperation({
-    summary: 'Get summary stats for Payment Center (Total Revenue, Completed, Pending, Failed counts)',
+    summary:
+      'Get summary stats for Payment Center (Total Revenue, Completed, Pending, Failed counts)',
   })
   getPaymentSummary() {
     return this.invoiceService.getPaymentSummary();
@@ -61,11 +63,10 @@ export class CustomerInvoiceController {
 
   @Get('payments')
   @ApiOperation({
-    summary: 'List all payment transactions with pagination and optional status filter',
+    summary:
+      'List all payment transactions with pagination and optional status filter',
   })
-  getPayments(
-    @Query() query: GetPaymentsDto,
-  ) {
+  getPayments(@Query() query: GetPaymentsDto) {
     return this.invoiceService.getPaymentsList(query);
   }
 

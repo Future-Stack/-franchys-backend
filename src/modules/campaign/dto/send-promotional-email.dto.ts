@@ -30,7 +30,7 @@ export class SendPromotionalEmailDto {
 
   @ApiProperty({
     description: 'Email Subject line',
-    example: 'Don\'t miss out — Spring Sale 20% Off Custom Patches!',
+    example: "Don't miss out — Spring Sale 20% Off Custom Patches!",
   })
   @IsString()
   @IsNotEmpty()

@@ -2,6 +2,7 @@ model PriceMatrix {
   priceMatrixId String      @id @default(uuid())
   name          String
   priceType     String
+  columns       String[]    @default([])
   priceTiers    PriceTier[]
 }
 
@@ -10,6 +11,7 @@ model PriceTier {
   quantity      Int
   basePrice     Decimal     @db.Decimal(10, 2)
   markup        Decimal     @db.Decimal(10, 2)
+  columnPrices  Json?       @db.JsonB
   priceMatrixId String
   priceMatrix   PriceMatrix @relation(fields: [priceMatrixId], references: [priceMatrixId], onDelete: Cascade)
 
