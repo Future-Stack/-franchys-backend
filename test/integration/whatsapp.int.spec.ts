@@ -33,12 +33,16 @@ describe('WhatsAppService (integration)', () => {
           provide: WhatsAppHttpClient,
           useValue: {
             markAsRead: jest.fn().mockResolvedValue({}),
-            sendTextMessage: jest
-              .fn()
-              .mockResolvedValue({ messageId: 'wamid.test-out-int' }),
-            sendTemplateMessage: jest
-              .fn()
-              .mockResolvedValue({ messageId: 'wamid.test-tpl-int' }),
+            sendTextMessage: jest.fn().mockImplementation(() =>
+              Promise.resolve({
+                messageId: `wamid.test-out-${Date.now()}-${Math.random()}`,
+              }),
+            ),
+            sendTemplateMessage: jest.fn().mockImplementation(() =>
+              Promise.resolve({
+                messageId: `wamid.test-tpl-${Date.now()}-${Math.random()}`,
+              }),
+            ),
           },
         },
         {
@@ -59,6 +63,11 @@ describe('WhatsAppService (integration)', () => {
   });
 
   afterEach(async () => {
+    if (whatsAppConversationIds.length) {
+      await prisma.whatsAppMessage.deleteMany({
+        where: { conversationId: { in: whatsAppConversationIds } },
+      });
+    }
     await cleanupTest(prisma, {
       whatsAppContactIds,
       whatsAppConversationIds,
@@ -133,11 +142,24 @@ describe('WhatsAppService (integration)', () => {
       const conv = await seedWhatsAppConversation(prisma, contact.id);
       whatsAppConversationIds.push(conv.id);
 
+      // Seed an inbound message within 24 hours so sendReply uses regular text instead of auto-template
+      const inMsg = await prisma.whatsAppMessage.create({
+        data: {
+          conversationId: conv.id,
+          direction: 'INBOUND',
+          from: contact.phone,
+          to: '123456789',
+          body: 'Hello inquiry',
+          messageId: `wamid.inbound-${Date.now()}-${Math.random()}`,
+        },
+      });
+      whatsAppMessageIds.push(inMsg.id);
+
       const replyResult = await service.sendReply(conv.id, 'Outbound response');
       expect(replyResult.success).toBe(true);
 
       const messages = await prisma.whatsAppMessage.findMany({
-        where: { conversationId: conv.id },
+        where: { conversationId: conv.id, direction: 'OUTBOUND' },
       });
       expect(messages).toHaveLength(1);
       expect(messages[0].body).toBe('Outbound response');

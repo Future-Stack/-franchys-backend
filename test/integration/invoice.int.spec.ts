@@ -106,7 +106,7 @@ describe('InvoiceService (integration)', () => {
         invoiceTaxRate: 15,
       });
       expect(updated.currency).toBe('USD');
-      expect(updated.invoiceTaxRate).toBe(15);
+      expect(Number(updated.invoiceTaxRate)).toBe(15);
     });
   });
 });

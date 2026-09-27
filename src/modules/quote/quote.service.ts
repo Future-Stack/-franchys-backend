@@ -733,8 +733,7 @@ export class QuoteService {
       dto.discount !== undefined ? dto.discount : Number(existing.discount);
     const taxRate =
       dto.taxRate !== undefined ? dto.taxRate : Number(existing.taxRate);
-    const quoteTotalOverride =
-      dto.total !== undefined ? dto.total : Number(existing.total);
+    const quoteTotalOverride = dto.total;
 
     if (hasLineItemUpdates) {
       updatedTotals = await this.calculateTotals(

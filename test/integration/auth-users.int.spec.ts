@@ -4,6 +4,7 @@ import { PrismaClient, Role, Status } from '@prisma/client';
 import { UsersService } from 'src/modules/users/users.service';
 import { AuthService } from 'src/modules/auth/auth.service';
 import { MailService } from 'src/modules/mail/mail.service';
+import { CloudinaryService } from 'src/modules/cloudinary/cloudinary.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { createTestPrisma, cleanupTest, seedUser } from '../setup/test-helpers';
 import { JwtModule } from '@nestjs/jwt';
@@ -36,6 +37,14 @@ describe('Auth & Users (integration)', () => {
           useValue: {
             sendVerificationCode: jest.fn().mockResolvedValue(true),
             sendPasswordReset: jest.fn().mockResolvedValue(true),
+          },
+        },
+        {
+          provide: CloudinaryService,
+          useValue: {
+            uploadFile: jest.fn().mockResolvedValue({
+              secure_url: 'https://test-cloudinary.com/avatar.png',
+            }),
           },
         },
       ],

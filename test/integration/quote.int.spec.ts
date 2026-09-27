@@ -3,6 +3,9 @@ import { NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { QuoteService } from 'src/modules/quote/quote.service';
 import { JobService } from 'src/modules/job/job.service';
+import { MailService } from 'src/modules/mail/mail.service';
+import { WhatsAppService } from 'src/modules/whatsapp/whatsapp.service';
+import { CustomerInvoiceService } from 'src/modules/invoice/customer-invoice.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import {
   createTestPrisma,
@@ -31,6 +34,24 @@ describe('QuoteService (integration)', () => {
         {
           provide: PrismaService,
           useValue: prisma,
+        },
+        {
+          provide: MailService,
+          useValue: {
+            sendQuote: jest.fn().mockResolvedValue(true),
+          },
+        },
+        {
+          provide: WhatsAppService,
+          useValue: {
+            sendQuoteMessage: jest.fn().mockResolvedValue({ method: 'text' }),
+          },
+        },
+        {
+          provide: CustomerInvoiceService,
+          useValue: {
+            createFromQuote: jest.fn().mockResolvedValue({ id: 'inv-test-id' }),
+          },
         },
       ],
     }).compile();

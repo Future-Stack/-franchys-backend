@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { CampaignService } from 'src/modules/campaign/campaign.service';
+import { MailService } from 'src/modules/mail/mail.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CampaignType } from 'src/modules/campaign/dto/campaign.dto';
 import {
@@ -24,6 +25,12 @@ describe('CampaignService (integration)', () => {
       providers: [
         CampaignService,
         { provide: PrismaService, useValue: prisma },
+        {
+          provide: MailService,
+          useValue: {
+            sendPromotionalEmail: jest.fn().mockResolvedValue(true),
+          },
+        },
       ],
     }).compile();
 

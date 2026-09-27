@@ -2,7 +2,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaClient } from '@prisma/client';
 import { EmailTrackerService } from 'src/modules/email-tracker/email-tracker.service';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { createTestPrisma } from '../setup/test-helpers';
+import {
+  createTestPrisma,
+  seedCustomer,
+  cleanupTest,
+} from '../setup/test-helpers';
 import { google } from 'googleapis';
 
 jest.mock('googleapis', () => {
@@ -39,6 +43,7 @@ describe('EmailTrackerService (integration)', () => {
   let service: EmailTrackerService;
   let prisma: PrismaClient;
   let gmailMock: any;
+  const customerIds: string[] = [];
 
   beforeAll(async () => {
     prisma = createTestPrisma();
@@ -68,6 +73,7 @@ describe('EmailTrackerService (integration)', () => {
     await prisma.contact.deleteMany({
       where: { email: { contains: '@test-e-tracker.com' } },
     });
+    await cleanupTest(prisma, { customerIds });
 
     await prisma.$disconnect();
     await module.close();
@@ -76,6 +82,8 @@ describe('EmailTrackerService (integration)', () => {
   describe('syncEmails and message persistence', () => {
     it('should create new Contact, Thread, and Message row when syncing matching email', async () => {
       const contactEmail = `client-${Date.now()}@test-e-tracker.com`;
+      const customer = await seedCustomer(prisma, { email: contactEmail });
+      customerIds.push(customer.id);
 
       gmailMock.users.getProfile.mockResolvedValue({
         data: { emailAddress: 'my-shop@shop.com' },

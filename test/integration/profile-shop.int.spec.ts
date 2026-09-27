@@ -3,6 +3,7 @@ import { NotFoundException } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { ProfileShopService } from 'src/modules/profile-shop/profile-shop.service';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { CloudinaryService } from 'src/modules/cloudinary/cloudinary.service';
 import {
   createTestPrisma,
   cleanupTest,
@@ -25,6 +26,14 @@ describe('ProfileShopService (integration)', () => {
         {
           provide: PrismaService,
           useValue: prisma,
+        },
+        {
+          provide: CloudinaryService,
+          useValue: {
+            uploadFile: jest.fn().mockResolvedValue({
+              secure_url: 'https://test-cloudinary.com/logo.png',
+            }),
+          },
         },
       ],
     }).compile();
