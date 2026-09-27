@@ -1,9 +1,5 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
-import {
-  v2 as cloudinary,
-  UploadApiResponse,
-  UploadApiErrorResponse,
-} from 'cloudinary';
+import { v2 as cloudinary, UploadApiResponse } from 'cloudinary';
 import * as streamifier from 'streamifier';
 import sharp from 'sharp';
 

@@ -40,13 +40,10 @@ export class SanMarSoapService implements OnModuleInit {
       'sanmar.mediaContentWsdl',
       '',
     );
-    this.pricingWsdl = this.configService.get<string>(
-      'sanmar.pricingWsdl',
-      '',
-    );
+    this.pricingWsdl = this.configService.get<string>('sanmar.pricingWsdl', '');
   }
 
-  async onModuleInit() {
+  onModuleInit() {
     if (!this.username || !this.password) {
       this.logger.warn(
         '⚠️ SanMar credentials not set in .env (SANMAR_USERNAME / SANMAR_PASSWORD)',
@@ -55,7 +52,11 @@ export class SanMarSoapService implements OnModuleInit {
   }
 
   private guardCredentials() {
-    if (!this.username || !this.password || this.username === 'your_sanmar_username') {
+    if (
+      !this.username ||
+      !this.password ||
+      this.username === 'your_sanmar_username'
+    ) {
       throw new UnauthorizedException(
         'SanMar credentials are missing or invalid in .env. Please set valid SANMAR_USERNAME and SANMAR_PASSWORD.',
       );
@@ -65,14 +66,21 @@ export class SanMarSoapService implements OnModuleInit {
   private async getProductClient(): Promise<soap.Client> {
     if (!this.productClient) {
       if (!this.productDataWsdl) {
-        throw new ServiceUnavailableException('SanMar product WSDL URL is missing.');
+        throw new ServiceUnavailableException(
+          'SanMar product WSDL URL is missing.',
+        );
       }
       try {
-        this.productClient = await soap.createClientAsync(this.productDataWsdl, {
-          wsdl_options: { timeout: 15000 },
-        });
+        this.productClient = await soap.createClientAsync(
+          this.productDataWsdl,
+          {
+            wsdl_options: { timeout: 15000 },
+          },
+        );
       } catch (err) {
-        this.logger.error(`Failed to load SanMar Product WSDL: ${err?.message}`);
+        this.logger.error(
+          `Failed to load SanMar Product WSDL: ${err?.message}`,
+        );
         throw new ServiceUnavailableException(
           'Unable to connect to SanMar Web Service WSDL.',
         );
@@ -84,14 +92,21 @@ export class SanMarSoapService implements OnModuleInit {
   private async getInventoryClient(): Promise<soap.Client> {
     if (!this.inventoryClient) {
       if (!this.inventoryWsdl) {
-        throw new ServiceUnavailableException('SanMar inventory WSDL URL is missing.');
+        throw new ServiceUnavailableException(
+          'SanMar inventory WSDL URL is missing.',
+        );
       }
       try {
-        this.inventoryClient = await soap.createClientAsync(this.inventoryWsdl, {
-          wsdl_options: { timeout: 15000 },
-        });
+        this.inventoryClient = await soap.createClientAsync(
+          this.inventoryWsdl,
+          {
+            wsdl_options: { timeout: 15000 },
+          },
+        );
       } catch (err) {
-        this.logger.error(`Failed to load SanMar Inventory WSDL: ${err?.message}`);
+        this.logger.error(
+          `Failed to load SanMar Inventory WSDL: ${err?.message}`,
+        );
         throw new ServiceUnavailableException(
           'Unable to connect to SanMar Inventory WSDL.',
         );
@@ -103,7 +118,9 @@ export class SanMarSoapService implements OnModuleInit {
   private async getMediaClient(): Promise<soap.Client> {
     if (!this.mediaClient) {
       if (!this.mediaContentWsdl) {
-        throw new ServiceUnavailableException('SanMar media content WSDL URL is missing.');
+        throw new ServiceUnavailableException(
+          'SanMar media content WSDL URL is missing.',
+        );
       }
       try {
         this.mediaClient = await soap.createClientAsync(this.mediaContentWsdl, {
@@ -122,14 +139,18 @@ export class SanMarSoapService implements OnModuleInit {
   private async getPricingClient(): Promise<soap.Client> {
     if (!this.pricingClient) {
       if (!this.pricingWsdl) {
-        throw new ServiceUnavailableException('SanMar pricing WSDL URL is missing.');
+        throw new ServiceUnavailableException(
+          'SanMar pricing WSDL URL is missing.',
+        );
       }
       try {
         this.pricingClient = await soap.createClientAsync(this.pricingWsdl, {
           wsdl_options: { timeout: 15000 },
         });
       } catch (err) {
-        this.logger.error(`Failed to load SanMar Pricing WSDL: ${err?.message}`);
+        this.logger.error(
+          `Failed to load SanMar Pricing WSDL: ${err?.message}`,
+        );
         throw new ServiceUnavailableException(
           'Unable to connect to SanMar Pricing WSDL.',
         );
@@ -163,7 +184,9 @@ export class SanMarSoapService implements OnModuleInit {
     const client = await this.getProductClient();
 
     if (!styleNo || styleNo.trim() === '') {
-      throw new BadRequestException('Product style number (productId) is required.');
+      throw new BadRequestException(
+        'Product style number (productId) is required.',
+      );
     }
 
     const args: any = {
@@ -176,9 +199,12 @@ export class SanMarSoapService implements OnModuleInit {
     };
 
     try {
-      const fn = (client as any).GetProductAsync || (client as any).getProductAsync;
+      const fn =
+        (client as any).GetProductAsync || (client as any).getProductAsync;
       if (typeof fn !== 'function') {
-        throw new ServiceUnavailableException('GetProduct method not found on WSDL client.');
+        throw new ServiceUnavailableException(
+          'GetProduct method not found on WSDL client.',
+        );
       }
       const [result] = await fn.call(client, args);
       return result;
@@ -212,7 +238,9 @@ export class SanMarSoapService implements OnModuleInit {
       const [result] = await fn.call(client, args);
       return result;
     } catch (err) {
-      this.logger.warn(`GetMediaContent soft failure for style ${styleNo}: ${err?.message}`);
+      this.logger.warn(
+        `GetMediaContent soft failure for style ${styleNo}: ${err?.message}`,
+      );
       return null;
     }
   }
@@ -243,7 +271,9 @@ export class SanMarSoapService implements OnModuleInit {
       const [result] = await fn.call(client, args);
       return result;
     } catch (err) {
-      this.logger.warn(`GetPricingAndConfiguration soft failure for style ${styleNo}: ${err?.message}`);
+      this.logger.warn(
+        `GetPricingAndConfiguration soft failure for style ${styleNo}: ${err?.message}`,
+      );
       return null;
     }
   }
@@ -257,7 +287,9 @@ export class SanMarSoapService implements OnModuleInit {
     const client = await this.getInventoryClient();
 
     if (!styleNo || styleNo.trim() === '') {
-      throw new BadRequestException('Style number is required for inventory lookup.');
+      throw new BadRequestException(
+        'Style number is required for inventory lookup.',
+      );
     }
 
     const args = {
@@ -277,12 +309,17 @@ export class SanMarSoapService implements OnModuleInit {
         (client as any).GetInventoryLevelsAsync ||
         (client as any).getInventoryLevelsAsync;
       if (typeof fn !== 'function') {
-        throw new ServiceUnavailableException('GetInventoryLevels method not found on WSDL.');
+        throw new ServiceUnavailableException(
+          'GetInventoryLevels method not found on WSDL.',
+        );
       }
       const [result] = await fn.call(client, args);
       return result;
     } catch (err) {
-      this.handleSoapError(err, `GetInventoryLevels failed for style ${styleNo}`);
+      this.handleSoapError(
+        err,
+        `GetInventoryLevels failed for style ${styleNo}`,
+      );
     }
   }
 }

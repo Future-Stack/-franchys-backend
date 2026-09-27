@@ -7,8 +7,10 @@ export default registerAs('sanmar', () => ({
   // Use trim() so an empty-quoted env var ("") falls back to the default host
   sftpHost: (process.env.SANMAR_SFTP_HOST || '').trim() || 'ftp.sanmar.com',
   sftpPort: parseInt(process.env.SANMAR_SFTP_PORT || '2200', 10),
-  sftpUsername: process.env.SANMAR_SFTP_USERNAME || process.env.SANMAR_USERNAME || '',
-  sftpPassword: process.env.SANMAR_SFTP_PASSWORD || process.env.SANMAR_PASSWORD || '',
+  sftpUsername:
+    process.env.SANMAR_SFTP_USERNAME || process.env.SANMAR_USERNAME || '',
+  sftpPassword:
+    process.env.SANMAR_SFTP_PASSWORD || process.env.SANMAR_PASSWORD || '',
   productDataWsdl:
     process.env.SANMAR_PRODUCT_WSDL ||
     'https://ws.sanmar.com:8080/promostandards/ProductDataServiceBinding?WSDL',

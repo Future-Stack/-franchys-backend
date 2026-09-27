@@ -100,11 +100,12 @@ export class ProductController {
     // INVENTORY_KEY is SanMar's own unique identifier per style+color combination
     if (id.startsWith('sanmar-')) {
       const inventoryKey = id.slice('sanmar-'.length);
-      const variant = this.sanMarSftpService.getVariantByInventoryKey(inventoryKey);
+      const variant =
+        this.sanMarSftpService.getVariantByInventoryKey(inventoryKey);
       if (!variant) {
         throw new NotFoundException(
           `SanMar product with INVENTORY_KEY "${inventoryKey}" not found. ` +
-          `Ensure the catalog is synced via POST /api/v1/sanmar/sync-sftp.`,
+            `Ensure the catalog is synced via POST /api/v1/sanmar/sync-sftp.`,
         );
       }
       return {

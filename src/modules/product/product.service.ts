@@ -50,7 +50,9 @@ export class ProductService {
         if (created?.id) {
           return created.id;
         }
-      } catch {}
+      } catch {
+        // Fallback to customName if creation fails
+      }
       return customName;
     }
 
@@ -68,7 +70,9 @@ export class ProductService {
         if (created?.id) {
           return created.id;
         }
-      } catch {}
+      } catch {
+        // Fallback to cleanName if creation fails
+      }
       return cleanName;
     }
 
@@ -92,7 +96,9 @@ export class ProductService {
         if (created?.id) {
           return created.id;
         }
-      } catch {}
+      } catch {
+        // Fallback to cleanId if creation fails
+      }
       return cleanId;
     }
 
@@ -108,9 +114,7 @@ export class ProductService {
     const cleanName = (categoryName || category)?.trim();
 
     if (!cleanId && !cleanName) {
-      throw new BadRequestException(
-        'Category ID or category name is required',
-      );
+      throw new BadRequestException('Category ID or category name is required');
     }
 
     const isIdOther = cleanId?.toLowerCase() === 'other';
@@ -136,7 +140,9 @@ export class ProductService {
         if (created?.id) {
           return created.id;
         }
-      } catch {}
+      } catch {
+        // Fallback to customName if creation fails
+      }
       return customName;
     }
 
@@ -154,7 +160,9 @@ export class ProductService {
         if (created?.id) {
           return created.id;
         }
-      } catch {}
+      } catch {
+        // Fallback to cleanName if creation fails
+      }
       return cleanName;
     }
 
@@ -178,7 +186,9 @@ export class ProductService {
         if (created?.id) {
           return created.id;
         }
-      } catch {}
+      } catch {
+        // Fallback to cleanId if creation fails
+      }
       return cleanId;
     }
 

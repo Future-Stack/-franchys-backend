@@ -4,6 +4,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { execSync } from 'child_process';
 import { parse } from 'csv-parse';
+import SftpClient from 'ssh2-sftp-client';
 
 export interface SanMarCsvVariant {
   style: string;
@@ -36,8 +37,14 @@ export class SanMarSftpService implements OnModuleInit {
   private readonly sftpPassword: string;
 
   private readonly localDataDir = path.join(process.cwd(), 'data', 'sanmar');
-  private readonly localCsvFile = path.join(this.localDataDir, 'SanMar_EPDD.csv');
-  private readonly localZipFile = path.join(this.localDataDir, 'SanMar_EPDD_csv.zip');
+  private readonly localCsvFile = path.join(
+    this.localDataDir,
+    'SanMar_EPDD.csv',
+  );
+  private readonly localZipFile = path.join(
+    this.localDataDir,
+    'SanMar_EPDD_csv.zip',
+  );
 
   // Fast In-Memory Map: "STYLE_COLOR" => SanMarCsvVariant (one entry per unique color variant)
   private catalogMap = new Map<string, SanMarCsvVariant>();
@@ -47,47 +54,61 @@ export class SanMarSftpService implements OnModuleInit {
   private inventoryKeyMap = new Map<string, SanMarCsvVariant>();
 
   constructor(private readonly configService: ConfigService) {
-    this.sftpHost = this.configService.get<string>('sanmar.sftpHost', 'ftp.sanmar.com');
+    this.sftpHost = this.configService.get<string>(
+      'sanmar.sftpHost',
+      'ftp.sanmar.com',
+    );
     this.sftpPort = this.configService.get<number>('sanmar.sftpPort', 2200);
-    this.sftpUsername = this.configService.get<string>('sanmar.sftpUsername', '');
-    this.sftpPassword = this.configService.get<string>('sanmar.sftpPassword', '');
+    this.sftpUsername = this.configService.get<string>(
+      'sanmar.sftpUsername',
+      '',
+    );
+    this.sftpPassword = this.configService.get<string>(
+      'sanmar.sftpPassword',
+      '',
+    );
   }
 
   async onModuleInit() {
     // If local CSV file exists, parse it immediately on startup
     if (fs.existsSync(this.localCsvFile)) {
-      this.logger.log(`Found existing SanMar CSV file at ${this.localCsvFile}. Loading catalog into memory…`);
+      this.logger.log(
+        `Found existing SanMar CSV file at ${this.localCsvFile}. Loading catalog into memory…`,
+      );
       await this.parseCsvFile(this.localCsvFile);
     } else {
-      this.logger.log('No local SanMar CSV file found yet. Call POST /api/v1/sanmar/sync-sftp to download.');
+      this.logger.log(
+        'No local SanMar CSV file found yet. Call POST /api/v1/sanmar/sync-sftp to download.',
+      );
     }
   }
 
   /**
    * Downloads SanMar_EPDD_csv.zip (or .csv) from ftp.sanmar.com:2200/SanMarPDD/
    */
-  async syncSftpCatalog(): Promise<{ success: boolean; totalVariants: number; message: string }> {
+  async syncSftpCatalog(): Promise<{
+    success: boolean;
+    totalVariants: number;
+    message: string;
+  }> {
     if (!this.sftpUsername || !this.sftpPassword) {
-      this.logger.warn('SFTP Username/Password missing in .env. Skipping download.');
+      this.logger.warn(
+        'SFTP Username/Password missing in .env. Skipping download.',
+      );
       return {
         success: false,
         totalVariants: this.catalogMap.size,
-        message: 'SFTP credentials (SANMAR_SFTP_USERNAME / SANMAR_SFTP_PASSWORD) missing in .env',
+        message:
+          'SFTP credentials (SANMAR_SFTP_USERNAME / SANMAR_SFTP_PASSWORD) missing in .env',
       };
     }
 
-    // Dynamically import ssh2-sftp-client
-    let Client: any;
-    try {
-      Client = require('ssh2-sftp-client');
-    } catch {
-      throw new Error('ssh2-sftp-client package is required for SFTP sync.');
-    }
-
-    const sftp = new Client();
+    const sftp = new SftpClient();
 
     try {
-      this.logger.log(`Connecting to SFTP ${this.sftpHost}:${this.sftpPort} as ${this.sftpUsername}…`);
+      this.logger.log(
+        `Connecting to SFTP ${this.sftpHost}:${this.sftpPort} as ${this.sftpUsername}…`,
+      );
       await sftp.connect({
         host: this.sftpHost,
         port: this.sftpPort,
@@ -107,7 +128,9 @@ export class SanMarSftpService implements OnModuleInit {
       const remoteCsv = '/SanMarPDD/SanMar_EPDD.csv';
 
       try {
-        this.logger.log(`Downloading ${remoteZip} (compressed ~15MB) -> ${this.localZipFile}…`);
+        this.logger.log(
+          `Downloading ${remoteZip} (compressed ~15MB) -> ${this.localZipFile}…`,
+        );
         await sftp.fastGet(remoteZip, this.localZipFile);
         await sftp.end();
 
@@ -117,12 +140,16 @@ export class SanMarSftpService implements OnModuleInit {
           fs.unlinkSync(this.localZipFile);
         }
       } catch (zipErr) {
-        this.logger.warn(`Zip download failed (${zipErr?.message}), falling back to direct CSV download…`);
+        this.logger.warn(
+          `Zip download failed (${zipErr?.message}), falling back to direct CSV download…`,
+        );
         await sftp.fastGet(remoteCsv, this.localCsvFile);
         await sftp.end();
       }
 
-      this.logger.log('SFTP download & extract completed successfully! Parsing CSV data…');
+      this.logger.log(
+        'SFTP download & extract completed successfully! Parsing CSV data…',
+      );
       await this.parseCsvFile(this.localCsvFile);
 
       return {
@@ -191,7 +218,9 @@ export class SanMarSftpService implements OnModuleInit {
         if (newCatalogMap.has(key)) continue;
 
         const piecePrice =
-          parseFloat(row.PIECE_PRICE || row.PIECE_PRICE_NET || row.PRICE || '0') || 0;
+          parseFloat(
+            row.PIECE_PRICE || row.PIECE_PRICE_NET || row.PRICE || '0',
+          ) || 0;
         const casePrice =
           parseFloat(row.CASE_PRICE || row.CASE_PRICE_NET || '0') || piecePrice;
         const salePrice =
@@ -207,7 +236,8 @@ export class SanMarSftpService implements OnModuleInit {
           primaryImageUrl = `https://cdnm.sanmar.com/imglib/mresjpg/${primaryImageUrl}`;
         }
 
-        const colorSquareUrl = row.COLOR_SQUARE_IMAGE || row.COLOR_SWATCH_IMAGE || undefined;
+        const colorSquareUrl =
+          row.COLOR_SQUARE_IMAGE || row.COLOR_SWATCH_IMAGE || undefined;
 
         const imagesSet = new Set<string>();
         if (primaryImageUrl) imagesSet.add(primaryImageUrl);
@@ -230,7 +260,8 @@ export class SanMarSftpService implements OnModuleInit {
           style,
           colorName,
           inventoryKey,
-          colorCode: row.PMS_COLOR || row.COLOR_CODE || row.PMS_CODE || undefined,
+          colorCode:
+            row.PMS_COLOR || row.COLOR_CODE || row.PMS_CODE || undefined,
           productTitle: row.PRODUCT_TITLE || row.PRODUCT_NAME || undefined,
           description: row.PRODUCT_DESCRIPTION || row.DESCRIPTION || undefined,
           brand: row.MILL || row.BRAND_NAME || row.BRAND || undefined,
@@ -271,7 +302,7 @@ export class SanMarSftpService implements OnModuleInit {
 
       this.logger.log(
         `Loaded ${this.catalogMap.size} color variants across ${this.styleIndexMap.size} styles ` +
-        `(${this.inventoryKeyMap.size} with INVENTORY_KEY) from SanMar CSV.`,
+          `(${this.inventoryKeyMap.size} with INVENTORY_KEY) from SanMar CSV.`,
       );
     } catch (err) {
       this.logger.error(`Error parsing SanMar CSV file: ${err?.message}`);
@@ -298,7 +329,11 @@ export class SanMarSftpService implements OnModuleInit {
     if (normSearch) {
       const match = styleVariants.find((v) => {
         const normV = v.colorName.toLowerCase().replace(/[^a-z0-9]/g, '');
-        return normV === normSearch || normV.includes(normSearch) || normSearch.includes(normV);
+        return (
+          normV === normSearch ||
+          normV.includes(normSearch) ||
+          normSearch.includes(normV)
+        );
       });
       if (match) return match;
     }

@@ -1,10 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Param,
-  Query,
-} from '@nestjs/common';
+import { Controller, Get, Post, Param, Query } from '@nestjs/common';
 import {
   ApiTags,
   ApiBearerAuth,
@@ -14,7 +8,10 @@ import {
 } from '@nestjs/swagger';
 import { Public } from '../../common/decorators/public.decorator';
 import { SanMarService } from './sanmar.service';
-import { SanMarProductSearchDto, SanMarAutocompleteDto } from './dto/sanmar.dto';
+import {
+  SanMarProductSearchDto,
+  SanMarAutocompleteDto,
+} from './dto/sanmar.dto';
 
 @ApiTags('SanMar')
 @ApiBearerAuth()
@@ -28,7 +25,11 @@ export class SanMarController {
     summary:
       'SanMar product autocomplete — matches style#, name, brand, color. Same response format as /product/autocomplete.',
   })
-  @ApiQuery({ name: 'search', required: false, description: 'Style / product search term (e.g. 8000, PC61)' })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    description: 'Style / product search term (e.g. 8000, PC61)',
+  })
   async autocomplete(@Query() dto: SanMarAutocompleteDto) {
     const data = await this.sanMarService.autocomplete(dto);
     return {
@@ -40,7 +41,8 @@ export class SanMarController {
   @Public()
   @Post('sync-sftp')
   @ApiOperation({
-    summary: 'Download & Sync SanMar product catalog CSV (SanMar_EPDD.csv) from ftp.sanmar.com:2200.',
+    summary:
+      'Download & Sync SanMar product catalog CSV (SanMar_EPDD.csv) from ftp.sanmar.com:2200.',
   })
   async syncSftp() {
     const result = await this.sanMarService.syncSftpCatalog();
@@ -53,7 +55,8 @@ export class SanMarController {
   @Public()
   @Get('products/raw/:styleNo')
   @ApiOperation({
-    summary: 'Get raw unparsed SOAP response and SFTP match from SanMar for debugging.',
+    summary:
+      'Get raw unparsed SOAP response and SFTP match from SanMar for debugging.',
   })
   @ApiParam({
     name: 'styleNo',
@@ -70,7 +73,8 @@ export class SanMarController {
 
   @Get('products')
   @ApiOperation({
-    summary: 'Search SanMar products — formatted same as /product autocomplete/list.',
+    summary:
+      'Search SanMar products — formatted same as /product autocomplete/list.',
   })
   async searchProducts(@Query() dto: SanMarProductSearchDto) {
     const result = await this.sanMarService.searchProducts(dto);
@@ -106,8 +110,16 @@ export class SanMarController {
     description: 'SanMar style number',
     example: '8000',
   })
-  @ApiQuery({ name: 'color', required: false, description: 'Color name to filter' })
-  @ApiQuery({ name: 'size', required: false, description: 'Size label to filter' })
+  @ApiQuery({
+    name: 'color',
+    required: false,
+    description: 'Color name to filter',
+  })
+  @ApiQuery({
+    name: 'size',
+    required: false,
+    description: 'Size label to filter',
+  })
   async getInventory(
     @Param('styleNo') styleNo: string,
     @Query('color') color?: string,

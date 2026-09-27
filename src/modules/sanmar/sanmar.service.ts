@@ -1,7 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { SanMarSoapService } from './sanmar-soap.service';
 import { SanMarSftpService } from './sanmar-sftp.service';
-import { SanMarAutocompleteDto, SanMarProductSearchDto } from './dto/sanmar.dto';
+import {
+  SanMarAutocompleteDto,
+  SanMarProductSearchDto,
+} from './dto/sanmar.dto';
 
 @Injectable()
 export class SanMarService {
@@ -23,7 +26,9 @@ export class SanMarService {
       const raw = await this.soapService.getProduct(search);
       return this.formatToProductAutocomplete(raw, search);
     } catch (err) {
-      this.logger.warn(`Live SanMar product fetch for "${search}" failed: ${err.message}`);
+      this.logger.warn(
+        `Live SanMar product fetch for "${search}" failed: ${err.message}`,
+      );
       throw err;
     }
   }
@@ -67,7 +72,8 @@ export class SanMarService {
       'Apparel';
 
     const descArray = this.toArray(product.description);
-    const material = csvVariants[0]?.description || descArray.join(', ') || null;
+    const material =
+      csvVariants[0]?.description || descArray.join(', ') || null;
 
     // Parse SOAP product parts
     const partArray = this.toArray(
@@ -76,10 +82,7 @@ export class SanMarService {
     );
 
     const availableSizesSet = new Set<string>();
-    const colorMap = new Map<
-      string,
-      { name: string; pms: string | null }
-    >();
+    const colorMap = new Map<string, { name: string; pms: string | null }>();
 
     for (const part of partArray) {
       const colorObj = part.ColorArray?.Color || part.colorArray?.color;
@@ -87,9 +90,7 @@ export class SanMarService {
       const pms = colorObj?.approximatePms || null;
 
       const sizeName =
-        part.ApparelSize?.labelSize ||
-        part.apparelSize?.labelSize ||
-        null;
+        part.ApparelSize?.labelSize || part.apparelSize?.labelSize || null;
 
       if (sizeName) availableSizesSet.add(sizeName);
 
@@ -111,7 +112,8 @@ export class SanMarService {
 
         const price = csvMatch?.piecePrice || 0;
         const casePrice = csvMatch?.casePrice || price;
-        const images = csvMatch?.images && csvMatch.images.length > 0 ? csvMatch.images : [];
+        const images =
+          csvMatch?.images && csvMatch.images.length > 0 ? csvMatch.images : [];
 
         const labelParts = [
           productName,
@@ -138,7 +140,9 @@ export class SanMarService {
           colorId: null,
           color: colorName,
           colorCode: colorObj.pms || csvMatch?.colorCode || null,
-          availableSizes: csvMatch?.availableSizes?.length ? csvMatch.availableSizes : availableSizes,
+          availableSizes: csvMatch?.availableSizes?.length
+            ? csvMatch.availableSizes
+            : availableSizes,
           material: material,
           images: images,
         });
@@ -146,7 +150,9 @@ export class SanMarService {
     } else {
       const price = csvVariants[0]?.piecePrice || 0;
       const images = csvVariants[0]?.images || [];
-      const labelParts = [productName, brandName, style, itemNo].filter(Boolean);
+      const labelParts = [productName, brandName, style, itemNo].filter(
+        Boolean,
+      );
 
       results.push({
         label: labelParts.join(' - '),
@@ -165,7 +171,9 @@ export class SanMarService {
         colorId: null,
         color: null,
         colorCode: null,
-        availableSizes: csvVariants[0]?.availableSizes?.length ? csvVariants[0].availableSizes : availableSizes,
+        availableSizes: csvVariants[0]?.availableSizes?.length
+          ? csvVariants[0].availableSizes
+          : availableSizes,
         material: material,
         images: images,
       });
