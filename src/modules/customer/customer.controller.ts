@@ -11,7 +11,6 @@ import {
   UploadedFile,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { memoryStorage } from 'multer';
 import {
   ApiTags,
   ApiOperation,
@@ -21,6 +20,7 @@ import {
 import { CustomerService } from './customer.service';
 import { CreateCustomerDto, UpdateCustomerDto } from './dto/customer.dto';
 import { GetCustomersDto } from './dto/get-customers.dto';
+import { createMulterOptions } from '../../common/utils/file-upload.util';
 
 @ApiTags('Customer')
 @ApiBearerAuth()
@@ -31,11 +31,7 @@ export class CustomerController {
   @Post()
   @ApiOperation({ summary: 'Create a new customer' })
   @ApiConsumes('multipart/form-data')
-  @UseInterceptors(
-    FileInterceptor('profileImage', {
-      storage: memoryStorage(),
-    }),
-  )
+  @UseInterceptors(FileInterceptor('profileImage', createMulterOptions(20)))
   create(
     @Body() dto: CreateCustomerDto,
     @UploadedFile() file?: Express.Multer.File,
@@ -58,11 +54,7 @@ export class CustomerController {
   @Patch(':id')
   @ApiOperation({ summary: 'Update a customer by ID' })
   @ApiConsumes('multipart/form-data')
-  @UseInterceptors(
-    FileInterceptor('profileImage', {
-      storage: memoryStorage(),
-    }),
-  )
+  @UseInterceptors(FileInterceptor('profileImage', createMulterOptions(20)))
   update(
     @Param('id') id: string,
     @Body() dto: UpdateCustomerDto,
