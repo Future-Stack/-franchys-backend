@@ -257,34 +257,137 @@ export class UpdateQuoteDto {
   lineItems?: CreateQuoteLineItemDto[];
 }
 
+export class RefreshPricingLineItemDto {
+  @ApiPropertyOptional({
+    description: 'Wholesale blank cost per garment',
+    example: 5.25,
+  })
+  @IsNumber()
+  @IsOptional()
+  baseCost?: number;
+
+  @ApiPropertyOptional({
+    description: 'Dynamic size quantity breakdown',
+    example: { sizeAdultM: 20, sizeAdultL: 10 },
+  })
+  @IsObject()
+  @IsOptional()
+  sizeBreakdown?: Record<string, number>;
+
+  @ApiPropertyOptional({
+    description: 'Price Matrix UUID to calculate print cost & markup',
+    example: 'b1a0571f-4dc7-4abf-9994-8519b8f9e922',
+  })
+  @IsString()
+  @IsOptional()
+  matrixId?: string;
+
+  @ApiPropertyOptional({
+    description: 'Selected column name from the matrix (e.g. "2 Colors")',
+    example: '2 Colors',
+  })
+  @IsString()
+  @IsOptional()
+  matrixColumn?: string;
+
+  @ApiPropertyOptional({
+    description: 'Optional group name if organizing garments by group',
+    example: 'Group 1',
+  })
+  @IsString()
+  @IsOptional()
+  groupName?: string;
+
+  @ApiPropertyOptional({
+    description: 'Whether this line item is subject to sales tax',
+    example: false,
+  })
+  @IsBoolean()
+  @IsOptional()
+  isTaxed?: boolean;
+
+  @ApiPropertyOptional({
+    description:
+      'Multiple imprints on the same garment (e.g. Imprint 1: Front, Imprint 2: Back)',
+    example: [
+      {
+        matrixId: 'c20a144b-2453-4685-960f-9623a4864e1d',
+        matrixColumn: '3 color',
+      },
+      {
+        matrixId: '099694c6-3132-44c4-ba7f-c4dd5f54ea8f',
+        matrixColumn: 'Flyer 1/2 (5.5x8.5) (5x7) (6x4)',
+      },
+    ],
+  })
+  @IsArray()
+  @IsOptional()
+  imprints?: Array<{
+    matrixId?: string;
+    matrixColumn?: string;
+    printCost?: number;
+    description?: string;
+  }>;
+
+  @IsNumber()
+  @IsOptional()
+  markupPrice?: number;
+
+  @IsNumber()
+  @IsOptional()
+  printCost?: number;
+
+  @IsNumber()
+  @IsOptional()
+  unitPrice?: number;
+
+  @IsNumber()
+  @IsOptional()
+  total?: number;
+}
+
 export class CalculateQuoteDto {
-  @ApiPropertyOptional({ example: 5 })
+  @ApiPropertyOptional({
+    type: [RefreshPricingLineItemDto],
+    description: 'List of line items with blanks, sizes, and pricing matrix',
+    example: [
+      {
+        baseCost: 5.25,
+        sizeBreakdown: { sizeAdultM: 20, sizeAdultL: 10 },
+        matrixId: 'b1a0571f-4dc7-4abf-9994-8519b8f9e922',
+        matrixColumn: '2 Colors',
+      },
+    ],
+  })
+  @IsArray()
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => RefreshPricingLineItemDto)
+  lineItems?: RefreshPricingLineItemDto[];
+
+  @ApiPropertyOptional({
+    description: 'Optional discount amount in dollars',
+    example: 0,
+  })
   @IsNumber()
   @IsOptional()
   discount?: number;
 
-  @ApiPropertyOptional({ example: 7 })
+  @ApiPropertyOptional({
+    description: 'Optional tax rate percentage',
+    example: 7.0,
+  })
   @IsNumber()
   @IsOptional()
   taxRate?: number;
 
-  @ApiPropertyOptional({ example: 950.0 })
+  @IsArray()
+  @IsOptional()
+  groups?: any[];
+
   @IsNumber()
   @IsOptional()
   total?: number;
-
-  @ApiPropertyOptional({ type: [QuoteGroupDto] })
-  @IsArray()
-  @IsOptional()
-  @ValidateNested({ each: true })
-  @Type(() => QuoteGroupDto)
-  groups?: QuoteGroupDto[];
-
-  @IsArray()
-  @IsOptional()
-  @ValidateNested({ each: true })
-  @Type(() => CreateQuoteLineItemDto)
-  lineItems?: CreateQuoteLineItemDto[];
 }
 
 export class PublicQuoteRevisionDto {

@@ -10,6 +10,8 @@ import {
   UseInterceptors,
   UploadedFiles,
   BadRequestException,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import {
@@ -18,6 +20,7 @@ import {
   ApiBearerAuth,
   ApiConsumes,
   ApiBody,
+  ApiResponse,
 } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import { QuoteService } from './quote.service';
@@ -75,9 +78,34 @@ export class QuoteController {
 
   @ApiBearerAuth()
   @Post('refresh-pricing/new')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary:
       'Triggered by "Refresh Pricing" button for NEW unsaved quotes (preview calculation)',
+    description:
+      'Takes garment blank costs, size quantities, and price matrix to calculate pooled tier discounts, print costs, unit prices, subtotal, and tax in real time.',
+  })
+  @ApiBody({
+    type: CalculateQuoteDto,
+    examples: {
+      default: {
+        summary: 'Standard line items calculation',
+        value: {
+          lineItems: [
+            {
+              baseCost: 5.25,
+              sizeBreakdown: { sizeAdultM: 20, sizeAdultL: 10 },
+              matrixId: 'b1a0571f-4dc7-4abf-9994-8519b8f9e922',
+              matrixColumn: '2 Colors',
+            },
+          ],
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Pricing preview calculated successfully',
   })
   refreshPricingNew(@Body() dto: CalculateQuoteDto) {
     return this.quoteService.calculatePreview(dto);
@@ -85,13 +113,30 @@ export class QuoteController {
 
   @ApiBearerAuth()
   @Post(':id/refresh-pricing/existing')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary:
       'Triggered by "Refresh Pricing" button for EXISTING saved quotes (recalculates and updates DB)',
+    description:
+      'Pass empty body {} to recalculate saved DB line items, or pass updated groups/lineItems to overwrite and recalculate.',
+  })
+  @ApiBody({
+    required: false,
+    type: CalculateQuoteDto,
+    examples: {
+      empty: {
+        summary: 'Recalculate saved quote from existing DB items',
+        value: {},
+      },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Pricing refreshed and saved successfully',
   })
   refreshPricingExisting(
     @Param('id') id: string,
-    @Body() dto?: UpdateQuoteDto,
+    @Body() dto?: CalculateQuoteDto,
   ) {
     return this.quoteService.refreshPricingExisting(id, dto);
   }

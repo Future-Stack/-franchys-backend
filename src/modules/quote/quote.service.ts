@@ -9,7 +9,6 @@ import {
   CreateQuoteDto,
   UpdateQuoteDto,
   CalculateQuoteDto,
-  CreateQuoteLineItemDto,
 } from './dto/quote.dto';
 import { JobService } from '../job/job.service';
 import { MailService } from '../mail/mail.service';
@@ -32,6 +31,7 @@ interface CalcLineItemInput {
   isTaxed?: boolean;
   total?: any;
   imprintType?: string | null;
+  imprints?: any[] | null;
   mockups?: string[];
 }
 
@@ -52,6 +52,7 @@ interface CalcLineItemOutput {
   isTaxed: boolean;
   total: number;
   imprintType: string | null;
+  imprints?: any[] | null;
   mockups: string[];
 }
 
@@ -85,8 +86,8 @@ export class QuoteService {
   }
 
   private normalizeLineItems(dto: {
-    groups?: { name: string; lineItems: CreateQuoteLineItemDto[] }[];
-    lineItems?: CreateQuoteLineItemDto[];
+    groups?: { name: string; lineItems: any[] }[];
+    lineItems?: any[];
   }): CalcLineItemInput[] {
     const normalized: CalcLineItemInput[] = [];
 
@@ -176,6 +177,18 @@ export class QuoteService {
         poolQtyMap.set(poolKey, currentQty + itemsCount);
       }
 
+      if (item.imprints && Array.isArray(item.imprints)) {
+        for (const imp of item.imprints) {
+          if (imp.matrixId && itemsCount > 0) {
+            const impMatId = imp.matrixId.trim();
+            uniqueMatrixIds.add(impMatId);
+            const impPoolKey = `${groupName.toLowerCase()}:::${impMatId}`;
+            const currentQty = poolQtyMap.get(impPoolKey) || 0;
+            poolQtyMap.set(impPoolKey, currentQty + itemsCount);
+          }
+        }
+      }
+
       preparedItems.push({
         raw: item,
         groupName,
@@ -203,26 +216,20 @@ export class QuoteService {
     // Step 3: Determine winning tier per pool based on pooled total quantity
     const poolWinningTierMap = new Map<string, any>();
 
-    for (const item of preparedItems) {
-      if (
-        !item.matrixId ||
-        item.itemsCount <= 0 ||
-        poolWinningTierMap.has(item.poolKey)
-      ) {
-        continue;
-      }
+    for (const [poolKey, pooledQty] of poolQtyMap.entries()) {
+      const parts = poolKey.split(':::');
+      const matId = parts[1];
+      if (!matId) continue;
 
-      const matrix = matricesMap.get(item.matrixId);
+      const matrix = matricesMap.get(matId);
       if (!matrix || !matrix.priceTiers || matrix.priceTiers.length === 0) {
         continue;
       }
 
-      const pooledQty = poolQtyMap.get(item.poolKey) || item.itemsCount;
       const sortedTiers = [...matrix.priceTiers].sort(
         (a, b) => a.quantity - b.quantity,
       );
 
-      // Find highest tier where pooledQty >= tier.quantity
       let matchingTier = sortedTiers[0];
       for (const tier of sortedTiers) {
         if (pooledQty >= tier.quantity) {
@@ -232,7 +239,7 @@ export class QuoteService {
         }
       }
 
-      poolWinningTierMap.set(item.poolKey, matchingTier);
+      poolWinningTierMap.set(poolKey, matchingTier);
     }
 
     // Step 4: Pass 2 - Calculate each line item's unit price and line total
@@ -246,56 +253,109 @@ export class QuoteService {
       const matrixId = prep.matrixId;
       const matrixColumn = prep.matrixColumn;
 
-      let printCost =
-        item.printCost !== undefined && item.printCost !== null
-          ? Number(item.printCost)
-          : undefined;
-      let markupPrice =
-        item.markupPrice !== undefined && item.markupPrice !== null
-          ? Number(item.markupPrice)
-          : undefined;
+      // Helper function to resolve printCost & markup from a matrix and column
+      const resolveTierPricing = (
+        matId: string,
+        colName?: string | null,
+      ): { cost: number; markup?: number } => {
+        const poolKey = `${prep.groupName.toLowerCase()}:::${matId}`;
+        const winningTier = poolWinningTierMap.get(poolKey);
+        if (!winningTier) return { cost: 0 };
 
-      // Matrix lookup applies only when not explicitly provided (preserves intentional 0 values)
-      if (matrixId && itemsCount > 0) {
-        const winningTier = poolWinningTierMap.get(prep.poolKey);
-        if (winningTier) {
-          if (markupPrice === undefined || isNaN(markupPrice)) {
-            markupPrice = Number(winningTier.markup) || 0;
-          }
-
-          if (printCost === undefined || isNaN(printCost)) {
-            let resolvedPrintCost: number | null = null;
+        let cost = 0;
+        if (
+          colName &&
+          winningTier.columnPrices &&
+          typeof winningTier.columnPrices === 'object'
+        ) {
+          const colPrices = winningTier.columnPrices as Record<string, any>;
+          const targetCol = colName.toLowerCase().replace(/\s+/g, ' ').trim();
+          for (const [colKey, colVal] of Object.entries(colPrices)) {
+            const normalizedColKey = colKey
+              .toLowerCase()
+              .replace(/\s+/g, ' ')
+              .trim();
             if (
-              matrixColumn &&
-              winningTier.columnPrices &&
-              typeof winningTier.columnPrices === 'object'
+              normalizedColKey === targetCol ||
+              targetCol.startsWith(normalizedColKey) ||
+              normalizedColKey.startsWith(targetCol)
             ) {
-              const colPrices = winningTier.columnPrices as Record<string, any>;
-              const targetCol = matrixColumn.toLowerCase();
-              for (const [colKey, colVal] of Object.entries(colPrices)) {
-                if (colKey.trim().toLowerCase() === targetCol) {
-                  const parsed = Number(colVal);
-                  if (Number.isFinite(parsed)) {
-                    resolvedPrintCost = parsed;
-                    break;
-                  }
-                }
+              const parsed = Number(colVal);
+              if (Number.isFinite(parsed)) {
+                cost = parsed;
+                break;
               }
             }
+          }
+        }
 
+        if (cost === 0 && winningTier.basePrice) {
+          cost = Number(winningTier.basePrice) || 0;
+        }
+
+        const tierMarkup = Number(winningTier.markup);
+        return {
+          cost,
+          markup: Number.isFinite(tierMarkup) ? tierMarkup : undefined,
+        };
+      };
+
+      let resolvedMarkupFromMatrix: number | undefined = undefined;
+      let totalPrintCost = 0;
+
+      // 1. Resolve primary matrix if present
+      if (matrixId && itemsCount > 0) {
+        const res = resolveTierPricing(matrixId, matrixColumn);
+        totalPrintCost += res.cost;
+        if (
+          resolvedMarkupFromMatrix === undefined &&
+          res.markup !== undefined
+        ) {
+          resolvedMarkupFromMatrix = res.markup;
+        }
+      }
+
+      // 2. Resolve multiple imprints if present
+      if (item.imprints && Array.isArray(item.imprints)) {
+        for (const imp of item.imprints) {
+          if (
+            imp.printCost !== undefined &&
+            imp.printCost !== null &&
+            !isNaN(Number(imp.printCost))
+          ) {
+            totalPrintCost += Number(imp.printCost);
+          } else if (imp.matrixId) {
+            const res = resolveTierPricing(
+              imp.matrixId.trim(),
+              imp.matrixColumn,
+            );
+            totalPrintCost += res.cost;
             if (
-              resolvedPrintCost === null ||
-              !Number.isFinite(resolvedPrintCost)
+              resolvedMarkupFromMatrix === undefined &&
+              res.markup !== undefined
             ) {
-              resolvedPrintCost = Number(winningTier.basePrice) || 0;
+              resolvedMarkupFromMatrix = res.markup;
             }
-            printCost = resolvedPrintCost;
           }
         }
       }
 
-      if (printCost === undefined || isNaN(printCost)) printCost = 0;
-      if (markupPrice === undefined || isNaN(markupPrice)) markupPrice = 0;
+      let printCost = totalPrintCost;
+      if (
+        item.printCost !== undefined &&
+        item.printCost !== null &&
+        !isNaN(Number(item.printCost)) &&
+        (!item.imprints || item.imprints.length === 0)
+      ) {
+        printCost = Number(item.printCost);
+      }
+
+      const markupPrice =
+        item.markupPrice !== undefined && item.markupPrice !== null
+          ? Number(item.markupPrice)
+          : resolvedMarkupFromMatrix !== undefined
+            ? resolvedMarkupFromMatrix
+            : 0;
 
       let finalUnitPrice = 0;
       let total = 0;
@@ -308,26 +368,41 @@ export class QuoteService {
       ) {
         total = Number(item.total);
         finalUnitPrice = itemsCount > 0 ? total / itemsCount : total;
-      } else if (
-        item.baseCost !== undefined &&
-        item.baseCost !== null &&
-        Number(item.baseCost) > 0
-      ) {
-        const garmentMarkup = 1 + markupPrice / 100;
-        finalUnitPrice = baseCost * garmentMarkup + printCost;
-        total = finalUnitPrice * itemsCount;
-      } else if (
-        item.unitPrice !== undefined &&
-        item.unitPrice !== null &&
-        Number(item.unitPrice) > 0
-      ) {
-        const garmentMarkup = 1 + markupPrice / 100;
-        finalUnitPrice = Number(item.unitPrice) * garmentMarkup + printCost;
-        total = finalUnitPrice * itemsCount;
       } else {
-        const garmentMarkup = 1 + markupPrice / 100;
-        finalUnitPrice = baseCost * garmentMarkup + printCost;
-        total = finalUnitPrice * itemsCount;
+        const markupMultiplier =
+          markupPrice >= 100
+            ? markupPrice / 100
+            : markupPrice > 0
+              ? 1 + markupPrice / 100
+              : 1;
+
+        if (
+          item.baseCost !== undefined &&
+          item.baseCost !== null &&
+          Number(item.baseCost) > 0
+        ) {
+          const markedUpProduct =
+            Math.round(baseCost * markupMultiplier * 100) / 100;
+          finalUnitPrice =
+            Math.round((markedUpProduct + printCost) * 100) / 100;
+          total = Math.round(finalUnitPrice * itemsCount * 100) / 100;
+        } else if (
+          item.unitPrice !== undefined &&
+          item.unitPrice !== null &&
+          Number(item.unitPrice) > 0
+        ) {
+          const markedUpProduct =
+            Math.round(Number(item.unitPrice) * markupMultiplier * 100) / 100;
+          finalUnitPrice =
+            Math.round((markedUpProduct + printCost) * 100) / 100;
+          total = Math.round(finalUnitPrice * itemsCount * 100) / 100;
+        } else {
+          const markedUpProduct =
+            Math.round(baseCost * markupMultiplier * 100) / 100;
+          finalUnitPrice =
+            Math.round((markedUpProduct + printCost) * 100) / 100;
+          total = Math.round(finalUnitPrice * itemsCount * 100) / 100;
+        }
       }
 
       subtotal += total;
@@ -353,8 +428,11 @@ export class QuoteService {
       });
     }
 
-    const taxAmount = (subtotal - discountVal) * (taxRateVal / 100);
-    const calculatedTotal = subtotal - discountVal + taxAmount;
+    subtotal = Math.round(subtotal * 100) / 100;
+    const taxAmount =
+      Math.round((subtotal - discountVal) * (taxRateVal / 100) * 100) / 100;
+    const calculatedTotal =
+      Math.round((subtotal - discountVal + taxAmount) * 100) / 100;
     // Gap A: Respect 0.00 quote total override
     const total =
       quoteTotalOverride !== undefined &&
@@ -399,13 +477,17 @@ export class QuoteService {
 
   async calculatePreview(dto: CalculateQuoteDto) {
     const lineItems = this.normalizeLineItems(dto);
+    const discount =
+      dto.discount !== undefined && dto.discount !== null
+        ? Number(dto.discount)
+        : 0;
+    const taxRate =
+      dto.taxRate !== undefined && dto.taxRate !== null
+        ? Number(dto.taxRate)
+        : 7.0;
+
     const { subtotal, taxAmount, total, processedItems } =
-      await this.calculateTotals(
-        lineItems,
-        dto.discount || 0,
-        dto.taxRate || 7.0,
-        dto.total,
-      );
+      await this.calculateTotals(lineItems, discount, taxRate, dto.total);
 
     const groupsMap = new Map<string, any[]>();
     for (const item of processedItems) {
@@ -423,15 +505,15 @@ export class QuoteService {
 
     return {
       subtotal,
-      discount: dto.discount || 0,
-      taxRate: dto.taxRate || 7.0,
+      discount,
+      taxRate,
       taxAmount,
       total,
       groups,
     };
   }
 
-  async refreshPricingExisting(id: string, dto?: UpdateQuoteDto) {
+  async refreshPricingExisting(id: string, dto?: CalculateQuoteDto) {
     const existing = await this.findOne(id);
     let lineItems = dto ? this.normalizeLineItems(dto) : [];
 
