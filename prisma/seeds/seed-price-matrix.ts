@@ -20,329 +20,385 @@ interface MatrixDefinition {
 }
 
 const matricesToSeed: MatrixDefinition[] = [
-  // 1. Existing DTF Matrix
+  // 1. Apparel_Screen Printing (Rhody)
   {
-    name: 'Apparel_DTF - Full (11x11)',
-    priceType: 'percentage',
-    columns: ['11x11'],
+    name: 'Apparel_Screen Printing (Rhody)',
+    priceType: 'individual',
+    columns: ['1 color', '2 color', '3 color', '4 color', '5 color', '6 color'],
     priceTiers: [
-      { quantity: 4, basePrice: 0, markup: 250, columnPrices: { '11x11': 9 } },
-      { quantity: 14, basePrice: 0, markup: 225, columnPrices: { '11x11': 7 } },
-      { quantity: 16, basePrice: 0, markup: 225, columnPrices: { '11x11': 7 } },
-      { quantity: 20, basePrice: 0, markup: 225, columnPrices: { '11x11': 7 } },
-      { quantity: 30, basePrice: 0, markup: 200, columnPrices: { '11x11': 7 } },
-      { quantity: 40, basePrice: 0, markup: 200, columnPrices: { '11x11': 6 } },
+      {
+        quantity: 50,
+        basePrice: 3.68,
+        markup: 180.0,
+        columnPrices: {
+          '1 color': 3.68,
+          '2 color': 5.33,
+          '3 color': 6.98,
+          '4 color': 8.63,
+          '5 color': 10.05,
+          '6 color': 11.63,
+        },
+      },
+      {
+        quantity: 100,
+        basePrice: 2.93,
+        markup: 180.0,
+        columnPrices: {
+          '1 color': 2.93,
+          '2 color': 4.13,
+          '3 color': 5.18,
+          '4 color': 6.68,
+          '5 color': 7.35,
+          '6 color': 8.33,
+        },
+      },
+      {
+        quantity: 300,
+        basePrice: 2.53,
+        markup: 180.0,
+        columnPrices: {
+          '1 color': 2.53,
+          '2 color': 3.18,
+          '3 color': 3.9,
+          '4 color': 4.63,
+          '5 color': 5.35,
+          '6 color': 6.23,
+        },
+      },
+      {
+        quantity: 700,
+        basePrice: 2.3,
+        markup: 180.0,
+        columnPrices: {
+          '1 color': 2.3,
+          '2 color': 2.88,
+          '3 color': 3.54,
+          '4 color': 4.26,
+          '5 color': 4.84,
+          '6 color': 5.57,
+        },
+      },
+      {
+        quantity: 1000,
+        basePrice: 2.21,
+        markup: 180.0,
+        columnPrices: {
+          '1 color': 2.21,
+          '2 color': 2.7,
+          '3 color': 3.04,
+          '4 color': 3.45,
+          '5 color': 3.86,
+          '6 color': 4.43,
+        },
+      },
+      {
+        quantity: 2500,
+        basePrice: 2.12,
+        markup: 180.0,
+        columnPrices: {
+          '1 color': 2.12,
+          '2 color': 2.51,
+          '3 color': 2.82,
+          '4 color': 3.21,
+          '5 color': 3.6,
+          '6 color': 4.14,
+        },
+      },
     ],
   },
 
-  // 2. Apparel Screen Printing - Individual Pricing (1 to 8 Colors)
+  // 2. Apparel_Stiches Count
   {
-    name: 'Apparel Screen Printing (Individual Pricing)',
-    priceType: 'individual',
-    columns: [
-      '1 Color',
-      '2 Colors',
-      '3 Colors',
-      '4 Colors',
-      '5 Colors',
-      '6 Colors',
-      '7 Colors',
-      '8 Colors',
-    ],
+    name: 'Apparel_Stiches Count',
+    priceType: 'percentage',
+    columns: ['Pricex1000'],
     priceTiers: [
       {
         quantity: 1,
-        basePrice: 0,
-        markup: 200,
+        basePrice: 1.5,
+        markup: 250.0,
         columnPrices: {
-          '1 Color': 5.5,
-          '2 Colors': 7.0,
-          '3 Colors': 8.5,
-          '4 Colors': 10.0,
-          '5 Colors': 11.5,
-          '6 Colors': 13.0,
-          '7 Colors': 14.5,
-          '8 Colors': 16.0,
+          Pricex1000: 1.5,
         },
       },
       {
         quantity: 12,
-        basePrice: 0,
-        markup: 190,
+        basePrice: 1.25,
+        markup: 225.0,
         columnPrices: {
-          '1 Color': 3.25,
-          '2 Colors': 4.5,
-          '3 Colors': 5.75,
-          '4 Colors': 7.0,
-          '5 Colors': 8.25,
-          '6 Colors': 9.5,
-          '7 Colors': 10.75,
-          '8 Colors': 12.0,
-        },
-      },
-      {
-        quantity: 24,
-        basePrice: 0,
-        markup: 185,
-        columnPrices: {
-          '1 Color': 2.5,
-          '2 Colors': 3.5,
-          '3 Colors': 4.5,
-          '4 Colors': 5.5,
-          '5 Colors': 6.5,
-          '6 Colors': 7.5,
-          '7 Colors': 8.5,
-          '8 Colors': 9.5,
+          Pricex1000: 1.25,
         },
       },
       {
         quantity: 36,
-        basePrice: 0,
-        markup: 180,
+        basePrice: 0.8,
+        markup: 200.0,
         columnPrices: {
-          '1 Color': 2.0,
-          '2 Colors': 2.75,
-          '3 Colors': 3.5,
-          '4 Colors': 4.25,
-          '5 Colors': 5.0,
-          '6 Colors': 5.75,
-          '7 Colors': 6.5,
-          '8 Colors': 7.25,
+          Pricex1000: 0.8,
         },
       },
       {
-        quantity: 72,
-        basePrice: 0,
-        markup: 175,
+        quantity: 100,
+        basePrice: 0.7,
+        markup: 180.0,
         columnPrices: {
-          '1 Color': 1.6,
-          '2 Colors': 2.2,
-          '3 Colors': 2.8,
-          '4 Colors': 3.4,
-          '5 Colors': 4.0,
-          '6 Colors': 4.6,
-          '7 Colors': 5.2,
-          '8 Colors': 5.8,
+          Pricex1000: 0.7,
         },
       },
       {
-        quantity: 144,
-        basePrice: 0,
-        markup: 170,
+        quantity: 499,
+        basePrice: 0.55,
+        markup: 150.0,
         columnPrices: {
-          '1 Color': 1.35,
-          '2 Colors': 1.85,
-          '3 Colors': 2.35,
-          '4 Colors': 2.85,
-          '5 Colors': 3.35,
-          '6 Colors': 3.85,
-          '7 Colors': 4.35,
-          '8 Colors': 4.85,
+          Pricex1000: 0.55,
         },
       },
       {
-        quantity: 576,
-        basePrice: 0,
-        markup: 160,
+        quantity: 500,
+        basePrice: 0.5,
+        markup: 125.0,
         columnPrices: {
-          '1 Color': 1.1,
-          '2 Colors': 1.5,
-          '3 Colors': 1.9,
-          '4 Colors': 2.3,
-          '5 Colors': 2.7,
-          '6 Colors': 3.1,
-          '7 Colors': 3.5,
-          '8 Colors': 3.9,
-        },
-      },
-      {
-        quantity: 1200,
-        basePrice: 0,
-        markup: 150,
-        columnPrices: {
-          '1 Color': 0.95,
-          '2 Colors': 1.25,
-          '3 Colors': 1.55,
-          '4 Colors': 1.85,
-          '5 Colors': 2.15,
-          '6 Colors': 2.45,
-          '7 Colors': 2.75,
-          '8 Colors': 3.05,
+          Pricex1000: 0.5,
         },
       },
     ],
   },
 
-  // 3. Apparel Screen Printing - Dozen Pricing
+  // 3. Paper_20LB text
   {
-    name: 'Apparel Screen Printing (Dozen Pricing)',
-    priceType: 'dozen',
+    name: 'Paper_20LB text',
+    priceType: 'individual',
     columns: [
-      '1 Color',
-      '2 Colors',
-      '3 Colors',
-      '4 Colors',
-      '5 Colors',
-      '6 Colors',
+      'Flyer 1/4 (5.5x4.25) (8)',
+      'Flyer 1/2 (5.5x8.5) (5x7) (6x4)',
+      'Flyer Letter (8.5x11)(2)',
+      'Flyer Tabloid (11x17)(1)',
     ],
     priceTiers: [
       {
-        quantity: 12,
-        basePrice: 0,
-        markup: 180,
+        quantity: 100,
+        basePrice: 1.43,
+        markup: 100.0,
         columnPrices: {
-          '1 Color': 3.0,
-          '2 Colors': 4.25,
-          '3 Colors': 5.5,
-          '4 Colors': 6.75,
-          '5 Colors': 8.0,
-          '6 Colors': 9.25,
+          'Flyer 1/4 (5.5x4.25) (8)': 1.43,
+          'Flyer 1/2 (5.5x8.5) (5x7) (6x4)': 1.48,
+          'Flyer Letter (8.5x11)(2)': 1.5,
+          'Flyer Tabloid (11x17)(1)': 1.6,
         },
       },
       {
-        quantity: 36,
-        basePrice: 0,
-        markup: 170,
+        quantity: 250,
+        basePrice: 0.59,
+        markup: 100.0,
         columnPrices: {
-          '1 Color': 2.2,
-          '2 Colors': 3.1,
-          '3 Colors': 4.0,
-          '4 Colors': 4.9,
-          '5 Colors': 5.8,
-          '6 Colors': 6.7,
+          'Flyer 1/4 (5.5x4.25) (8)': 0.59,
+          'Flyer 1/2 (5.5x8.5) (5x7) (6x4)': 0.61,
+          'Flyer Letter (8.5x11)(2)': 0.66,
+          'Flyer Tabloid (11x17)(1)': 0.76,
         },
       },
       {
-        quantity: 72,
-        basePrice: 0,
-        markup: 160,
+        quantity: 500,
+        basePrice: 0.31,
+        markup: 100.0,
         columnPrices: {
-          '1 Color': 1.75,
-          '2 Colors': 2.45,
-          '3 Colors': 3.15,
-          '4 Colors': 3.85,
-          '5 Colors': 4.55,
-          '6 Colors': 5.25,
+          'Flyer 1/4 (5.5x4.25) (8)': 0.31,
+          'Flyer 1/2 (5.5x8.5) (5x7) (6x4)': 0.33,
+          'Flyer Letter (8.5x11)(2)': 0.39,
+          'Flyer Tabloid (11x17)(1)': 0.5,
         },
       },
       {
-        quantity: 144,
-        basePrice: 0,
-        markup: 150,
+        quantity: 1000,
+        basePrice: 0.17,
+        markup: 100.0,
         columnPrices: {
-          '1 Color': 1.4,
-          '2 Colors': 1.95,
-          '3 Colors': 2.5,
-          '4 Colors': 3.05,
-          '5 Colors': 3.6,
-          '6 Colors': 4.15,
+          'Flyer 1/4 (5.5x4.25) (8)': 0.17,
+          'Flyer 1/2 (5.5x8.5) (5x7) (6x4)': 0.2,
+          'Flyer Letter (8.5x11)(2)': 0.26,
+          'Flyer Tabloid (11x17)(1)': 0.36,
         },
       },
       {
-        quantity: 288,
-        basePrice: 0,
-        markup: 140,
+        quantity: 2500,
+        basePrice: 0.08,
+        markup: 100.0,
         columnPrices: {
-          '1 Color': 1.15,
-          '2 Colors': 1.6,
-          '3 Colors': 2.05,
-          '4 Colors': 2.5,
-          '5 Colors': 2.95,
-          '6 Colors': 3.4,
+          'Flyer 1/4 (5.5x4.25) (8)': 0.08,
+          'Flyer 1/2 (5.5x8.5) (5x7) (6x4)': 0.11,
+          'Flyer Letter (8.5x11)(2)': 0.17,
+          'Flyer Tabloid (11x17)(1)': 0.28,
         },
       },
       {
-        quantity: 576,
-        basePrice: 0,
-        markup: 130,
+        quantity: 5000,
+        basePrice: 0.06,
+        markup: 100.0,
         columnPrices: {
-          '1 Color': 0.95,
-          '2 Colors': 1.3,
-          '3 Colors': 1.65,
-          '4 Colors': 2.0,
-          '5 Colors': 2.35,
-          '6 Colors': 2.7,
+          'Flyer 1/4 (5.5x4.25) (8)': 0.06,
+          'Flyer 1/2 (5.5x8.5) (5x7) (6x4)': 0.09,
+          'Flyer Letter (8.5x11)(2)': 0.14,
+          'Flyer Tabloid (11x17)(1)': 0.25,
         },
       },
     ],
   },
 
-  // 4. Apparel Screen Printing - Case Pricing
+  // 4. Paper_16PT Cover
   {
-    name: 'Apparel Screen Printing (Case Pricing)',
-    priceType: 'case',
+    name: 'Paper_16PT Cover',
+    priceType: 'individual',
     columns: [
-      '1 Color',
-      '2 Colors',
-      '3 Colors',
-      '4 Colors',
-      '5 Colors',
-      '6 Colors',
+      'Flyer 1/4 (5.5x4.25) (8)',
+      'Flyer 1/2 (5.5x8.5) (5x7) (6x4)',
+      'Flyer Letter (8.5x11)(2)',
+      'Flyer Tabloid (11x17)(1)',
     ],
     priceTiers: [
       {
-        quantity: 72,
-        basePrice: 0,
-        markup: 160,
+        quantity: 100,
+        basePrice: 1.65,
+        markup: 100.0,
         columnPrices: {
-          '1 Color': 1.5,
-          '2 Colors': 2.1,
-          '3 Colors': 2.7,
-          '4 Colors': 3.3,
-          '5 Colors': 3.9,
-          '6 Colors': 4.5,
+          'Flyer 1/4 (5.5x4.25) (8)': 1.65,
+          'Flyer 1/2 (5.5x8.5) (5x7) (6x4)': 1.7,
+          'Flyer Letter (8.5x11)(2)': 1.8,
+          'Flyer Tabloid (11x17)(1)': 2.25,
         },
       },
       {
-        quantity: 144,
-        basePrice: 0,
-        markup: 150,
+        quantity: 250,
+        basePrice: 0.7,
+        markup: 100.0,
         columnPrices: {
-          '1 Color': 1.25,
-          '2 Colors': 1.75,
-          '3 Colors': 2.25,
-          '4 Colors': 2.75,
-          '5 Colors': 3.25,
-          '6 Colors': 3.75,
+          'Flyer 1/4 (5.5x4.25) (8)': 0.7,
+          'Flyer 1/2 (5.5x8.5) (5x7) (6x4)': 0.76,
+          'Flyer Letter (8.5x11)(2)': 0.96,
+          'Flyer Tabloid (11x17)(1)': 1.36,
         },
       },
       {
-        quantity: 288,
-        basePrice: 0,
-        markup: 140,
+        quantity: 500,
+        basePrice: 0.39,
+        markup: 100.0,
         columnPrices: {
-          '1 Color': 1.05,
-          '2 Colors': 1.45,
-          '3 Colors': 1.85,
-          '4 Colors': 2.25,
-          '5 Colors': 2.65,
-          '6 Colors': 3.05,
+          'Flyer 1/4 (5.5x4.25) (8)': 0.39,
+          'Flyer 1/2 (5.5x8.5) (5x7) (6x4)': 0.48,
+          'Flyer Letter (8.5x11)(2)': 0.68,
+          'Flyer Tabloid (11x17)(1)': 1.08,
         },
       },
       {
-        quantity: 576,
-        basePrice: 0,
-        markup: 130,
+        quantity: 1000,
+        basePrice: 0.24,
+        markup: 100.0,
         columnPrices: {
-          '1 Color': 0.85,
-          '2 Colors': 1.15,
-          '3 Colors': 1.45,
-          '4 Colors': 1.75,
-          '5 Colors': 2.05,
-          '6 Colors': 2.35,
+          'Flyer 1/4 (5.5x4.25) (8)': 0.24,
+          'Flyer 1/2 (5.5x8.5) (5x7) (6x4)': 0.34,
+          'Flyer Letter (8.5x11)(2)': 0.54,
+          'Flyer Tabloid (11x17)(1)': 0.94,
         },
       },
       {
-        quantity: 1200,
-        basePrice: 0,
-        markup: 120,
+        quantity: 2500,
+        basePrice: 0.16,
+        markup: 100.0,
         columnPrices: {
-          '1 Color': 0.75,
-          '2 Colors': 0.98,
-          '3 Colors': 1.22,
-          '4 Colors': 1.45,
-          '5 Colors': 1.68,
-          '6 Colors': 1.92,
+          'Flyer 1/4 (5.5x4.25) (8)': 0.16,
+          'Flyer 1/2 (5.5x8.5) (5x7) (6x4)': 0.26,
+          'Flyer Letter (8.5x11)(2)': 0.46,
+          'Flyer Tabloid (11x17)(1)': 0.85,
+        },
+      },
+      {
+        quantity: 5000,
+        basePrice: 0.13,
+        markup: 100.0,
+        columnPrices: {
+          'Flyer 1/4 (5.5x4.25) (8)': 0.13,
+          'Flyer 1/2 (5.5x8.5) (5x7) (6x4)': 0.23,
+          'Flyer Letter (8.5x11)(2)': 0.43,
+          'Flyer Tabloid (11x17)(1)': 0.69,
+        },
+      },
+    ],
+  },
+
+  // 5. Paper_100LB TextGlossy
+  {
+    name: 'Paper_100LB TextGlossy',
+    priceType: 'individual',
+    columns: [
+      'Flyer 1/4 (5.5x4.25) (8)',
+      'Flyer 1/2 (5.5x8.5) (5x7) (6x4)',
+      'Flyer Letter (8.5x11)(2)',
+      'Flyer Tabloid (11x17)(1)',
+    ],
+    priceTiers: [
+      {
+        quantity: 100,
+        basePrice: 1.55,
+        markup: 100.0,
+        columnPrices: {
+          'Flyer 1/4 (5.5x4.25) (8)': 1.55,
+          'Flyer 1/2 (5.5x8.5) (5x7) (6x4)': 1.6,
+          'Flyer Letter (8.5x11)(2)': 1.65,
+          'Flyer Tabloid (11x17)(1)': 1.75,
+        },
+      },
+      {
+        quantity: 250,
+        basePrice: 0.68,
+        markup: 100.0,
+        columnPrices: {
+          'Flyer 1/4 (5.5x4.25) (8)': 0.68,
+          'Flyer 1/2 (5.5x8.5) (5x7) (6x4)': 0.7,
+          'Flyer Letter (8.5x11)(2)': 0.72,
+          'Flyer Tabloid (11x17)(1)': 0.9,
+        },
+      },
+      {
+        quantity: 500,
+        basePrice: 0.35,
+        markup: 100.0,
+        columnPrices: {
+          'Flyer 1/4 (5.5x4.25) (8)': 0.35,
+          'Flyer 1/2 (5.5x8.5) (5x7) (6x4)': 0.37,
+          'Flyer Letter (8.5x11)(2)': 0.45,
+          'Flyer Tabloid (11x17)(1)': 0.6,
+        },
+      },
+      {
+        quantity: 1000,
+        basePrice: 0.19,
+        markup: 100.0,
+        columnPrices: {
+          'Flyer 1/4 (5.5x4.25) (8)': 0.19,
+          'Flyer 1/2 (5.5x8.5) (5x7) (6x4)': 0.23,
+          'Flyer Letter (8.5x11)(2)': 0.3,
+          'Flyer Tabloid (11x17)(1)': 0.45,
+        },
+      },
+      {
+        quantity: 2500,
+        basePrice: 0.09,
+        markup: 100.0,
+        columnPrices: {
+          'Flyer 1/4 (5.5x4.25) (8)': 0.09,
+          'Flyer 1/2 (5.5x8.5) (5x7) (6x4)': 0.14,
+          'Flyer Letter (8.5x11)(2)': 0.21,
+          'Flyer Tabloid (11x17)(1)': 0.37,
+        },
+      },
+      {
+        quantity: 5000,
+        basePrice: 0.07,
+        markup: 100.0,
+        columnPrices: {
+          'Flyer 1/4 (5.5x4.25) (8)': 0.07,
+          'Flyer 1/2 (5.5x8.5) (5x7) (6x4)': 0.11,
+          'Flyer Letter (8.5x11)(2)': 0.18,
+          'Flyer Tabloid (11x17)(1)': 0.34,
         },
       },
     ],
@@ -350,54 +406,27 @@ const matricesToSeed: MatrixDefinition[] = [
 ];
 
 async function seedAllPriceMatrices() {
-  console.log('🌱 Seeding Price Matrices dummy data...\n');
+  console.log('🗑️  Clearing all existing Price Matrices and Price Tiers...\n');
+  await prisma.priceTier.deleteMany({});
+  await prisma.priceMatrix.deleteMany({});
+
+  console.log('🌱 Seeding new Price Matrices data...\n');
 
   for (const item of matricesToSeed) {
-    let matrix = await prisma.priceMatrix.findFirst({
-      where: { name: item.name },
+    const matrix = await prisma.priceMatrix.create({
+      data: {
+        name: item.name,
+        priceType: item.priceType,
+        columns: item.columns,
+        priceTiers: {
+          create: item.priceTiers,
+        },
+      },
     });
 
-    if (matrix) {
-      const existingId = matrix.priceMatrixId;
-      console.log(
-        `ℹ️ Updating existing matrix: "${item.name}" (ID: ${existingId})`,
-      );
-
-      // Update matrix properties
-      await prisma.priceMatrix.update({
-        where: { priceMatrixId: existingId },
-        data: {
-          priceType: item.priceType,
-          columns: item.columns,
-        },
-      });
-
-      // Clear & re-seed tiers
-      await prisma.priceTier.deleteMany({
-        where: { priceMatrixId: existingId },
-      });
-
-      await prisma.priceTier.createMany({
-        data: item.priceTiers.map((tier) => ({
-          ...tier,
-          priceMatrixId: existingId,
-        })),
-      });
-    } else {
-      matrix = await prisma.priceMatrix.create({
-        data: {
-          name: item.name,
-          priceType: item.priceType,
-          columns: item.columns,
-          priceTiers: {
-            create: item.priceTiers,
-          },
-        },
-      });
-      console.log(
-        `✅ Created matrix: "${item.name}" (ID: ${matrix.priceMatrixId})`,
-      );
-    }
+    console.log(
+      `✅ Created matrix: "${item.name}" (ID: ${matrix.priceMatrixId}) with ${item.priceTiers.length} tiers`,
+    );
   }
 
   const allMatrices = await prisma.priceMatrix.findMany({
