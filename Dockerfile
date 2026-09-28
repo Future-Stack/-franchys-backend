@@ -53,4 +53,4 @@ COPY --from=builder /usr/src/app/prisma.config.ts ./
 EXPOSE 3000
 
 # Execute database schema sync, run seed script, and start the NestJS application
-CMD ["sh", "-c", "npx prisma db push --accept-data-loss && (node dist/prisma/seeds/index.js || true) && node dist/src/main.js"]
+CMD ["sh", "-c", "npx prisma db push --accept-data-loss && (node dist/prisma/seeds/index.js || true) && ([ -f dist/main.js ] && node dist/main.js || node dist/src/main.js)"]
