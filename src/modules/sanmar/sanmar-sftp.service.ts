@@ -1,4 +1,5 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Cron } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -46,6 +47,9 @@ export class SanMarSftpService implements OnModuleInit {
     'SanMar_EPDD_csv.zip',
   );
 
+  // Sync mutex to avoid concurrent duplicate SFTP downloads or file corruption
+  private isSyncing = false;
+
   // Fast In-Memory Map: "STYLE_COLOR" => SanMarCsvVariant (one entry per unique color variant)
   private catalogMap = new Map<string, SanMarCsvVariant>();
   // Fast Style Index: "STYLE" => SanMarCsvVariant[] (all color variants for a style)
@@ -78,9 +82,26 @@ export class SanMarSftpService implements OnModuleInit {
       await this.parseCsvFile(this.localCsvFile);
     } else {
       this.logger.log(
-        'No local SanMar CSV file found yet. Call POST /api/v1/sanmar/sync-sftp to download.',
+        'No local SanMar CSV file found on startup. Triggering automatic background SFTP sync…',
       );
+      // Run background sync so NestJS bootstrap and HTTP port binding are not delayed
+      setImmediate(() => {
+        this.syncSftpCatalog().catch((err) => {
+          this.logger.error(
+            `Startup SanMar SFTP auto-sync failed: ${err?.message}`,
+          );
+        });
+      });
     }
+  }
+
+  /**
+   * Daily scheduled sync at 3:00 AM to automatically keep SanMar catalog up-to-date
+   */
+  @Cron('0 3 * * *')
+  async handleDailyCatalogSync() {
+    this.logger.log('⏰ Triggering daily scheduled SanMar catalog sync…');
+    await this.syncSftpCatalog();
   }
 
   /**
@@ -91,6 +112,17 @@ export class SanMarSftpService implements OnModuleInit {
     totalVariants: number;
     message: string;
   }> {
+    if (this.isSyncing) {
+      this.logger.warn(
+        'SanMar SFTP sync is already in progress. Ignoring duplicate request.',
+      );
+      return {
+        success: false,
+        totalVariants: this.catalogMap.size,
+        message: 'SanMar SFTP sync is already in progress.',
+      };
+    }
+
     if (!this.sftpUsername || !this.sftpPassword) {
       this.logger.warn(
         'SFTP Username/Password missing in .env. Skipping download.',
@@ -103,6 +135,7 @@ export class SanMarSftpService implements OnModuleInit {
       };
     }
 
+    this.isSyncing = true;
     const sftp = new SftpClient();
 
     try {
@@ -127,28 +160,41 @@ export class SanMarSftpService implements OnModuleInit {
       const remoteZip = '/SanMarPDD/SanMar_EPDD_csv.zip';
       const remoteCsv = '/SanMarPDD/SanMar_EPDD.csv';
 
+      let extractedSuccessfully = false;
+
       try {
         this.logger.log(
           `Downloading ${remoteZip} (compressed ~15MB) -> ${this.localZipFile}…`,
         );
         await sftp.fastGet(remoteZip, this.localZipFile);
-        await sftp.end();
 
         this.logger.log(`Extracting ${this.localZipFile}…`);
         execSync(`unzip -o "${this.localZipFile}" -d "${this.localDataDir}"`);
-        if (fs.existsSync(this.localZipFile)) {
-          fs.unlinkSync(this.localZipFile);
-        }
-      } catch (zipErr) {
+        extractedSuccessfully = true;
+      } catch (zipErr: any) {
         this.logger.warn(
-          `Zip download failed (${zipErr?.message}), falling back to direct CSV download…`,
+          `Zip download/extract failed (${zipErr?.message}), falling back to direct CSV download…`,
         );
-        await sftp.fastGet(remoteCsv, this.localCsvFile);
-        await sftp.end();
+      } finally {
+        if (fs.existsSync(this.localZipFile)) {
+          try {
+            fs.unlinkSync(this.localZipFile);
+          } catch {}
+        }
       }
 
+      // Fallback to direct CSV download if zip download/extract failed
+      if (!extractedSuccessfully) {
+        this.logger.log(
+          `Downloading ${remoteCsv} directly -> ${this.localCsvFile}…`,
+        );
+        await sftp.fastGet(remoteCsv, this.localCsvFile);
+      }
+
+      await sftp.end().catch(() => {});
+
       this.logger.log(
-        'SFTP download & extract completed successfully! Parsing CSV data…',
+        'SFTP download completed successfully! Parsing CSV data…',
       );
       await this.parseCsvFile(this.localCsvFile);
 
@@ -157,7 +203,7 @@ export class SanMarSftpService implements OnModuleInit {
         totalVariants: this.catalogMap.size,
         message: `Successfully downloaded and loaded ${this.catalogMap.size} product variants from SanMar SFTP!`,
       };
-    } catch (err) {
+    } catch (err: any) {
       this.logger.error(`SFTP sync failed: ${err?.message}`);
       await sftp.end().catch(() => {});
       return {
@@ -165,6 +211,8 @@ export class SanMarSftpService implements OnModuleInit {
         totalVariants: this.catalogMap.size,
         message: `SFTP sync error: ${err?.message}`,
       };
+    } finally {
+      this.isSyncing = false;
     }
   }
 
@@ -173,6 +221,19 @@ export class SanMarSftpService implements OnModuleInit {
    */
   public async parseCsvFile(filePath: string): Promise<void> {
     try {
+      if (!fs.existsSync(filePath)) {
+        this.logger.error(`CSV file not found at ${filePath}`);
+        return;
+      }
+
+      const fileStats = fs.statSync(filePath);
+      if (fileStats.size === 0) {
+        this.logger.error(
+          `CSV file at ${filePath} is empty (0 bytes). Aborting parse.`,
+        );
+        return;
+      }
+
       const fileStream = fs.createReadStream(filePath);
       const parser = fileStream.pipe(
         parse({
@@ -288,6 +349,13 @@ export class SanMarSftpService implements OnModuleInit {
         }
       }
 
+      if (newCatalogMap.size === 0) {
+        this.logger.error(
+          'SanMar CSV parsing produced 0 valid variants. Retaining existing in-memory catalog.',
+        );
+        return;
+      }
+
       // Back-fill availableSizes on each variant now that all rows have been processed
       for (const [key, variant] of newCatalogMap.entries()) {
         const sizes = sizeAccumulator.get(key);
@@ -295,6 +363,7 @@ export class SanMarSftpService implements OnModuleInit {
           variant.availableSizes = Array.from(sizes);
         }
       }
+      sizeAccumulator.clear();
 
       this.catalogMap = newCatalogMap;
       this.styleIndexMap = newStyleIndexMap;
