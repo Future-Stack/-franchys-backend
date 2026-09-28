@@ -22,7 +22,8 @@ RUN npx prisma generate
 # Copy the rest of the application source code
 COPY . .
 
-# Build the NestJS application to /dist
+# Build the NestJS application to /dist (with 4GB heap space for cross-platform builds)
+ENV NODE_OPTIONS="--max-old-space-size=4096"
 RUN npm run build
 
 # Compile database seed script to JS
@@ -34,8 +35,8 @@ RUN npm prune --production --legacy-peer-deps && npm cache clean --force
 # ── Stage 2: Runtime ─────────────────────────────────────────────────
 FROM node:22-alpine AS runner
 
-# Install openssl for prisma runtime
-RUN apk add --no-cache openssl
+# Install openssl for prisma runtime and unzip for SanMar zip archive extraction
+RUN apk add --no-cache openssl unzip
 
 WORKDIR /usr/src/app
 
