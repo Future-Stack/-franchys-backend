@@ -16,6 +16,8 @@ services:
     #  depends_on:
     #   postgres:
     #     condition: service_healthy
+    volumes:
+      - sanmar_data:/usr/src/app/data
     networks:
       - francys_network
     logging:
@@ -73,6 +75,8 @@ services:
         max-file: "3"
 
 volumes:
+  sanmar_data:
+    name: francys_sanmar_data
   postgres_data:
     name: francys_postgres_data
   pgadmin_data:

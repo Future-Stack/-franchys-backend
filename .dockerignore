@@ -10,7 +10,15 @@ coverage
 .nyc_output
 uploads
 uploads-file
+data
+scratch
+docs
 *.md
+*.pdf
+*.csv
+*.zip
+*.tar.gz
+*.exp
 .eslintrc*
 .prettierrc*
 ._*
