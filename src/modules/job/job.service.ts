@@ -59,12 +59,23 @@ export class JobService {
     let limit = 10;
     let search: string | undefined;
     let status: any;
+    let date: string | undefined;
+    let amount: string | number | undefined;
+    let sortBy: string | undefined;
+    let sortOrder: 'asc' | 'desc' = 'desc';
 
     if (typeof queryOrStatus === 'object' && queryOrStatus !== null) {
       page = queryOrStatus.page || 1;
       limit = queryOrStatus.limit || 10;
       search = queryOrStatus.search;
       status = queryOrStatus.status;
+      date = queryOrStatus.date;
+      amount = queryOrStatus.amount;
+      sortBy = queryOrStatus.sortBy;
+      if (queryOrStatus.sortOrder) {
+        const so = String(queryOrStatus.sortOrder).toLowerCase();
+        if (so === 'asc' || so === 'desc') sortOrder = so;
+      }
     } else {
       status = queryOrStatus;
       search = legacySearch;
@@ -79,11 +90,64 @@ export class JobService {
     }
 
     if (search) {
-      whereClause.OR = [
+      const orConditions: Prisma.JobWhereInput[] = [
         { jobId: { contains: search, mode: 'insensitive' } },
         { clientName: { contains: search, mode: 'insensitive' } },
         { description: { contains: search, mode: 'insensitive' } },
       ];
+      const searchNum = Number(search);
+      if (!isNaN(searchNum) && search.trim() !== '') {
+        orConditions.push({ amount: searchNum });
+      }
+      whereClause.OR = orConditions;
+    }
+
+    // Determine sorting & filtering for date & amount
+    let orderBy: Prisma.JobOrderByWithRelationInput = { createdAt: 'desc' };
+
+    // 1. Check if date is sort direction ('asc' | 'desc') or a date filter
+    if (date) {
+      const dateStr = String(date).trim().toLowerCase();
+      if (dateStr === 'asc' || dateStr === 'desc') {
+        orderBy = { dueDate: dateStr };
+      } else {
+        const parsedDate = new Date(date);
+        if (!isNaN(parsedDate.getTime())) {
+          const startOfDay = new Date(parsedDate);
+          startOfDay.setUTCHours(0, 0, 0, 0);
+          const endOfDay = new Date(parsedDate);
+          endOfDay.setUTCHours(23, 59, 59, 999);
+          whereClause.dueDate = {
+            gte: startOfDay,
+            lte: endOfDay,
+          };
+        }
+      }
+    }
+
+    // 2. Check if amount is sort direction ('asc' | 'desc') or an amount filter
+    if (amount !== undefined && amount !== null && amount !== '') {
+      const amountStr = String(amount).trim().toLowerCase();
+      if (amountStr === 'asc' || amountStr === 'desc') {
+        orderBy = { amount: amountStr };
+      } else {
+        const parsedAmount = Number(amount);
+        if (!isNaN(parsedAmount)) {
+          whereClause.amount = parsedAmount;
+        }
+      }
+    }
+
+    // 3. Explicit sortBy overrides
+    if (sortBy) {
+      const sb = String(sortBy).trim().toLowerCase();
+      if (sb === 'date' || sb === 'duedate') {
+        orderBy = { dueDate: sortOrder };
+      } else if (sb === 'amount') {
+        orderBy = { amount: sortOrder };
+      } else if (sb === 'createdat') {
+        orderBy = { createdAt: sortOrder };
+      }
     }
 
     const [data, total] = await Promise.all([
@@ -94,7 +158,7 @@ export class JobService {
         include: {
           quote: true,
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy,
       }),
       this.prisma.job.count({ where: whereClause }),
     ]);
