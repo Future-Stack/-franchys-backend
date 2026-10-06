@@ -26,15 +26,22 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       return true;
     }
 
+    const request = context.switchToHttp().getRequest();
+    const authHeader = request.headers?.authorization;
+
+    // If client supplied a Bearer token, validate the actual token
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      return super.canActivate(context);
+    }
+
     // Local Development Authentication Bypass:
     // When SKIP_AUTH=true and NOT in production, bypass auth and inject superadmin mock user
     const isDev =
       this.configService.get<string>('app.nodeEnv') !== 'production';
     const skipAuth = this.configService.get<boolean>('app.skipAuth');
     if (isDev && skipAuth) {
-      const request = context.switchToHttp().getRequest();
       request.user = {
-        userId: 'dev-super-admin-id',
+        userId: '988867be-8440-4d36-995c-cf61bee1a766',
         email:
           this.configService.get<string>('SUPER_ADMIN_EMAIL') ||
           'superadmin@example.com',

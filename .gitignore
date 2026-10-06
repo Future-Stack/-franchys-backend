@@ -10,6 +10,7 @@ build/
 # Environment
 .env
 .env.production
+.env.test
 .env.local
 .env.*.local
 
@@ -45,10 +46,9 @@ scratch/
 
 # Prisma
 prisma/migrations/*.sql.bak
-franchys __ Innosight __ FO8228FDA7F82
-plans
-message (2).txt
-api-requests
+
+# Local scripts & credentials
+*.exp
 connect-server.bat
 *.bat
 plink.exe
