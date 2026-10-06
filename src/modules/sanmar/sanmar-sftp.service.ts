@@ -179,7 +179,9 @@ export class SanMarSftpService implements OnModuleInit {
         if (fs.existsSync(this.localZipFile)) {
           try {
             fs.unlinkSync(this.localZipFile);
-          } catch {}
+          } catch {
+            // Ignore error cleaning up temporary zip file
+          }
         }
       }
 

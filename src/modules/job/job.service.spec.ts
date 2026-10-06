@@ -160,7 +160,16 @@ describe('JobService', () => {
       mockPrisma.job.findUnique.mockResolvedValue(job);
 
       const result = await service.findOne('job-1');
-      expect(result).toEqual(job);
+      expect(result).toMatchObject({
+        id: job.id,
+        jobId: job.jobId,
+        clientName: job.clientName,
+      });
+      expect(result).toHaveProperty('productionItems');
+      expect(result).toHaveProperty('mockups');
+      expect(result).toHaveProperty('specifications');
+      expect(result).toHaveProperty('qcChecklist');
+      expect(result).toHaveProperty('totalUnits');
     });
 
     it('should throw NotFoundException when job not found', async () => {
@@ -169,6 +178,38 @@ describe('JobService', () => {
       await expect(service.findOne('missing-id')).rejects.toThrow(
         NotFoundException,
       );
+    });
+  });
+
+  // ─── updateChecklist ──────────────────────────────────────────────────────
+
+  describe('updateChecklist', () => {
+    it('should update completedItemIds and qcChecklist', async () => {
+      const existingJob = buildJob();
+      mockPrisma.job.findUnique.mockResolvedValue(existingJob);
+      const updatedJob = buildJob({
+        completedItemIds: ['item-1'],
+        qcChecklist: ['specifications'],
+      });
+      mockPrisma.job.update.mockResolvedValue(updatedJob);
+
+      const result = await service.updateChecklist('job-1', {
+        completedItemIds: ['item-1'],
+        qcChecklist: ['specifications'],
+      });
+
+      expect(mockPrisma.job.update).toHaveBeenCalledWith({
+        where: { id: 'job-1' },
+        data: {
+          completedItemIds: ['item-1'],
+          qcChecklist: ['specifications'],
+        },
+      });
+      expect(result).toMatchObject({
+        id: 'job-1',
+        clientName: 'Acme Corp',
+      });
+      expect(result).toHaveProperty('productionItems');
     });
   });
 

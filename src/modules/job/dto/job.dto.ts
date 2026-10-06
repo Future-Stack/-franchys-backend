@@ -6,6 +6,7 @@ import {
   IsEnum,
   IsDateString,
   IsNumber,
+  IsArray,
 } from 'class-validator';
 
 export enum JobStatus {
@@ -107,4 +108,26 @@ export class UpdateJobStatusDto {
   @IsString()
   @IsNotEmpty()
   note: string;
+}
+
+export class UpdateJobChecklistDto {
+  @ApiPropertyOptional({
+    description: 'Array of item IDs that have been marked as done',
+    example: ['item-0-M', 'item-0-L'],
+    type: [String],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  completedItemIds?: string[];
+
+  @ApiPropertyOptional({
+    description: 'Array of completed QC checklist keys',
+    example: ['specifications', 'artwork_placement', 'color_matching'],
+    type: [String],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  qcChecklist?: string[];
 }

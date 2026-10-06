@@ -11,7 +11,12 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { JobService } from './job.service';
-import { CreateJobDto, UpdateJobDto, UpdateJobStatusDto } from './dto/job.dto';
+import {
+  CreateJobDto,
+  UpdateJobDto,
+  UpdateJobStatusDto,
+  UpdateJobChecklistDto,
+} from './dto/job.dto';
 import { GetJobsDto } from './dto/get-jobs.dto';
 
 @ApiTags('Job')
@@ -54,6 +59,14 @@ export class JobController {
     @Req() req: any,
   ) {
     return this.jobService.updateStatus(id, dto, req.user);
+  }
+
+  @Patch(':id/checklist')
+  @ApiOperation({
+    summary: 'Update job production items progress and QC checklist',
+  })
+  updateChecklist(@Param('id') id: string, @Body() dto: UpdateJobChecklistDto) {
+    return this.jobService.updateChecklist(id, dto);
   }
 
   @Delete(':id')

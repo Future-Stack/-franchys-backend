@@ -5,8 +5,36 @@ import {
   CreateJobDto,
   UpdateJobDto,
   UpdateJobStatusDto,
+  UpdateJobChecklistDto,
   JobStatus,
 } from './dto/job.dto';
+
+function formatSizeLabel(key: string): string {
+  if (!key) return '—';
+  if (key.startsWith('sizeAdult')) return key.replace('sizeAdult', '');
+  if (key.startsWith('sizeYouth'))
+    return 'Youth ' + key.replace('sizeYouth', '');
+  if (key.startsWith('sizeToddler'))
+    return 'Toddler ' + key.replace('sizeToddler', '');
+  if (key.startsWith('sizeInfant'))
+    return 'Infant ' + key.replace('sizeInfant', '');
+  if (key.startsWith('size')) return key.replace('size', '');
+  return key;
+}
+
+const DEFAULT_QC_ITEMS = [
+  {
+    id: 'specifications',
+    label: 'All items produced according to specifications',
+  },
+  {
+    id: 'artwork_placement',
+    label: 'Artwork placement and alignment verified',
+  },
+  { id: 'color_matching', label: 'Color matching approved' },
+  { id: 'size_breakdown', label: 'Size breakdown confirmed' },
+  { id: 'final_inspection', label: 'Final inspection completed' },
+];
 
 @Injectable()
 export class JobService {
@@ -86,7 +114,12 @@ export class JobService {
     const job = await this.prisma.job.findUnique({
       where: { id },
       include: {
-        quote: true,
+        quote: {
+          include: {
+            customer: true,
+            lineItems: true,
+          },
+        },
         history: {
           orderBy: { createdAt: 'desc' },
         },
@@ -95,7 +128,138 @@ export class JobService {
     if (!job) {
       throw new NotFoundException(`Job card with ID ${id} not found`);
     }
-    return job;
+
+    // Fallback: If quoteId was null, try linking via quoteNumber = job.jobId
+    let quote = job.quote;
+    if (!quote && job.jobId) {
+      quote = await this.prisma.quote.findUnique({
+        where: { quoteNumber: job.jobId },
+        include: {
+          customer: true,
+          lineItems: true,
+        },
+      });
+    }
+
+    const completedItemIds: string[] = Array.isArray(job.completedItemIds)
+      ? (job.completedItemIds as string[])
+      : [];
+
+    const savedQcList: string[] = Array.isArray(job.qcChecklist)
+      ? (job.qcChecklist as string[])
+      : [];
+
+    // Calculate total units
+    const totalUnits =
+      quote?.lineItems?.reduce(
+        (sum, item) => sum + (Number(item.itemsCount) || 0),
+        0,
+      ) || 0;
+
+    // Aggregate mockups
+    const mockups: string[] = Array.from(
+      new Set(quote?.lineItems?.flatMap((item) => item.mockups || []) || []),
+    );
+
+    // Build production items
+    const productionItems: Array<{
+      id: string;
+      lineItemId: string;
+      description: string;
+      color: string;
+      size: string;
+      quantity: number;
+      imprintType: string;
+      isDone: boolean;
+    }> = [];
+
+    if (quote?.lineItems && quote.lineItems.length > 0) {
+      for (const lineItem of quote.lineItems) {
+        const sizeBreakdown = (lineItem.sizeBreakdown || {}) as Record<
+          string,
+          any
+        >;
+        const sizeEntries = Object.entries(sizeBreakdown).filter(
+          ([, qty]) => Number(qty) > 0,
+        );
+
+        if (sizeEntries.length > 0) {
+          for (const [sizeKey, qty] of sizeEntries) {
+            const rowId = `${lineItem.id}-${sizeKey}`;
+            productionItems.push({
+              id: rowId,
+              lineItemId: lineItem.id,
+              description: `${lineItem.description || 'Apparel Item'}${lineItem.color ? ` - ${lineItem.color}` : ''}`,
+              color: lineItem.color || '—',
+              size: formatSizeLabel(sizeKey),
+              quantity: Number(qty),
+              imprintType: lineItem.imprintType || 'Custom Printing',
+              isDone: completedItemIds.includes(rowId),
+            });
+          }
+        } else {
+          // Line item without breakdown (e.g., setup fee, flat service)
+          productionItems.push({
+            id: lineItem.id,
+            lineItemId: lineItem.id,
+            description: lineItem.description || 'Custom Item',
+            color: lineItem.color || '—',
+            size: '—',
+            quantity: Number(lineItem.itemsCount) || 1,
+            imprintType: lineItem.imprintType || 'Custom Service',
+            isDone: completedItemIds.includes(lineItem.id),
+          });
+        }
+      }
+    }
+
+    // Build QC checklist
+    const qcChecklist = DEFAULT_QC_ITEMS.map((qc) => ({
+      ...qc,
+      checked: savedQcList.includes(qc.id) || savedQcList.includes(qc.label),
+    }));
+
+    // Build specifications
+    const specifications =
+      quote?.lineItems?.map((item) => ({
+        groupName: item.groupName,
+        imprintType: item.imprintType || 'Custom Printing',
+        category: item.category || 'General',
+        description: item.description,
+        color: item.color,
+      })) || [];
+
+    const notes = quote?.notes || job.description || '';
+
+    return {
+      ...job,
+      quote,
+      totalUnits,
+      productionItems,
+      mockups,
+      specifications,
+      qcChecklist,
+      notes,
+    };
+  }
+
+  async updateChecklist(id: string, dto: UpdateJobChecklistDto) {
+    await this.findOne(id);
+
+    const updateData: Prisma.JobUpdateInput = {};
+    if (dto.completedItemIds !== undefined) {
+      updateData.completedItemIds = dto.completedItemIds;
+    }
+    if (dto.qcChecklist !== undefined) {
+      updateData.qcChecklist = dto.qcChecklist;
+    }
+
+    await this.prisma.job.update({
+      where: { id },
+      data: updateData,
+    });
+
+    return this.findOne(id);
   }
 
   async update(id: string, dto: UpdateJobDto) {

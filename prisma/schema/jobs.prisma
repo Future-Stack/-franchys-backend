@@ -22,6 +22,9 @@ model Job {
   quote       Quote?             @relation(fields: [quoteId], references: [id])
   history     JobStatusHistory[]
 
+  completedItemIds Json? @default("[]")
+  qcChecklist      Json? @default("[]")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
