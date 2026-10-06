@@ -150,6 +150,78 @@ describe('JobService', () => {
         }),
       );
     });
+
+    it('should apply date filter when date is provided', async () => {
+      mockPrisma.job.findMany.mockResolvedValue([]);
+      mockPrisma.job.count.mockResolvedValue(0);
+
+      await service.findAll({ date: '2026-09-01' });
+
+      expect(mockPrisma.job.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            dueDate: expect.objectContaining({
+              gte: expect.any(Date),
+              lte: expect.any(Date),
+            }),
+          }),
+        }),
+      );
+    });
+
+    it('should sort by dueDate when date is "asc"', async () => {
+      mockPrisma.job.findMany.mockResolvedValue([]);
+      mockPrisma.job.count.mockResolvedValue(0);
+
+      await service.findAll({ date: 'asc' });
+
+      expect(mockPrisma.job.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orderBy: { dueDate: 'asc' },
+        }),
+      );
+    });
+
+    it('should apply amount filter when numeric amount is provided', async () => {
+      mockPrisma.job.findMany.mockResolvedValue([]);
+      mockPrisma.job.count.mockResolvedValue(0);
+
+      await service.findAll({ amount: '500' });
+
+      expect(mockPrisma.job.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            amount: 500,
+          }),
+        }),
+      );
+    });
+
+    it('should sort by amount when amount is "desc"', async () => {
+      mockPrisma.job.findMany.mockResolvedValue([]);
+      mockPrisma.job.count.mockResolvedValue(0);
+
+      await service.findAll({ amount: 'desc' });
+
+      expect(mockPrisma.job.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orderBy: { amount: 'desc' },
+        }),
+      );
+    });
+
+    it('should sort using sortBy and sortOrder', async () => {
+      mockPrisma.job.findMany.mockResolvedValue([]);
+      mockPrisma.job.count.mockResolvedValue(0);
+
+      await service.findAll({ sortBy: 'amount', sortOrder: 'asc' });
+
+      expect(mockPrisma.job.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orderBy: { amount: 'asc' },
+        }),
+      );
+    });
   });
 
   // ─── findOne ──────────────────────────────────────────────────────────────

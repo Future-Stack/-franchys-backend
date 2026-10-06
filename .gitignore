@@ -8,10 +8,6 @@ dist/
 build/
 
 # Environment
-.env
-.env.production
-.env.test
-.env.local
 .env.*.local
 
 # Logs
@@ -25,7 +21,6 @@ pnpm-debug.log*
 Thumbs.db
 
 # IDE
-.vscode/
 .idea/
 *.swp
 *.swo
@@ -53,3 +48,4 @@ connect-server.bat
 *.bat
 plink.exe
 /docs
+config.bat
