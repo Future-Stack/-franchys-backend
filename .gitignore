@@ -52,3 +52,4 @@ api-requests
 connect-server.bat
 *.bat
 plink.exe
+/docs
