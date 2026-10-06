@@ -21,10 +21,10 @@ export class CreateCustomerDto {
   @IsNotEmpty()
   firstName: string;
 
-  @ApiProperty({ example: 'Doe' })
+  @ApiPropertyOptional({ example: 'Doe' })
   @IsString()
-  @IsNotEmpty()
-  lastName: string;
+  @IsOptional()
+  lastName?: string;
 
   @ApiProperty({ example: 'john.doe@example.com' })
   @IsEmail()
