@@ -3,6 +3,7 @@ import { NotFoundException, ConflictException } from '@nestjs/common';
 import { CustomerService } from './customer.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CustomerType } from './dto/customer.dto';
+import { CustomerSortBy, SortOrder } from './dto/get-customers.dto';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
 
 const mockPrisma = {
@@ -110,6 +111,34 @@ describe('CustomerService (unit)', () => {
       await expect(service.create(dto)).rejects.toThrow(ConflictException);
       expect(mockPrisma.customer.create).not.toHaveBeenCalled();
     });
+
+    it('should create a customer successfully without lastName', async () => {
+      const dtoWithoutLastName = {
+        firstName: 'Jane',
+        email: 'jane-no-last@example.com',
+        phone: '1234567890',
+        customerType: CustomerType.PERSONAL,
+      };
+      mockPrisma.customer.findUnique.mockResolvedValue(null);
+      mockPrisma.customer.create.mockResolvedValue({
+        id: 'cust-2',
+        ...dtoWithoutLastName,
+        lastName: null,
+      });
+
+      const result = await service.create(dtoWithoutLastName);
+      expect(result.id).toBe('cust-2');
+      expect(mockPrisma.customer.create).toHaveBeenCalledWith({
+        data: {
+          firstName: 'Jane',
+          email: 'jane-no-last@example.com',
+          phone: '1234567890',
+          customerType: CustomerType.PERSONAL,
+          profileImage: undefined,
+          eventDate: undefined,
+        },
+      });
+    });
   });
 
   describe('findAll', () => {
@@ -143,6 +172,108 @@ describe('CustomerService (unit)', () => {
         { id: '1', firstName: 'A', orders: 0, totalSpent: 0 },
         { id: '2', firstName: 'B', orders: 0, totalSpent: 0 },
       ]);
+    });
+
+    it('should sort customers by orders desc (count up to down)', async () => {
+      const mockCustomers = [
+        { id: '1', firstName: 'Low', quotes: [{ total: 10 }], payments: [] },
+        {
+          id: '2',
+          firstName: 'High',
+          quotes: [{ total: 10 }, { total: 20 }],
+          payments: [],
+        },
+      ];
+      mockPrisma.customer.findMany.mockResolvedValue(mockCustomers);
+
+      const result = await service.findAll({
+        sortBy: CustomerSortBy.ORDERS,
+        sortOrder: SortOrder.DESC,
+      });
+
+      expect(result.data[0].id).toBe('2');
+      expect(result.data[0].orders).toBe(2);
+      expect(result.data[1].id).toBe('1');
+      expect(result.data[1].orders).toBe(1);
+    });
+
+    it('should sort customers by orders asc (count down to up)', async () => {
+      const mockCustomers = [
+        {
+          id: '2',
+          firstName: 'High',
+          quotes: [{ total: 10 }, { total: 20 }],
+          payments: [],
+        },
+        { id: '1', firstName: 'Low', quotes: [{ total: 10 }], payments: [] },
+      ];
+      mockPrisma.customer.findMany.mockResolvedValue(mockCustomers);
+
+      const result = await service.findAll({
+        sortBy: CustomerSortBy.ORDERS,
+        sortOrder: SortOrder.ASC,
+      });
+
+      expect(result.data[0].id).toBe('1');
+      expect(result.data[0].orders).toBe(1);
+      expect(result.data[1].id).toBe('2');
+      expect(result.data[1].orders).toBe(2);
+    });
+
+    it('should sort customers by totalSpent desc (count up to down)', async () => {
+      const mockCustomers = [
+        { id: '1', firstName: 'Low', quotes: [], payments: [{ amount: 50 }] },
+        { id: '2', firstName: 'High', quotes: [], payments: [{ amount: 500 }] },
+      ];
+      mockPrisma.customer.findMany.mockResolvedValue(mockCustomers);
+
+      const result = await service.findAll({
+        sortBy: CustomerSortBy.TOTAL_SPENT,
+        sortOrder: SortOrder.DESC,
+      });
+
+      expect(result.data[0].id).toBe('2');
+      expect(result.data[0].totalSpent).toBe(500);
+      expect(result.data[1].id).toBe('1');
+      expect(result.data[1].totalSpent).toBe(50);
+    });
+
+    it('should sort customers by totalSpent asc (count down to up)', async () => {
+      const mockCustomers = [
+        { id: '2', firstName: 'High', quotes: [], payments: [{ amount: 500 }] },
+        { id: '1', firstName: 'Low', quotes: [], payments: [{ amount: 50 }] },
+      ];
+      mockPrisma.customer.findMany.mockResolvedValue(mockCustomers);
+
+      const result = await service.findAll({
+        sortBy: CustomerSortBy.TOTAL_SPENT,
+        sortOrder: SortOrder.ASC,
+      });
+
+      expect(result.data[0].id).toBe('1');
+      expect(result.data[0].totalSpent).toBe(50);
+      expect(result.data[1].id).toBe('2');
+      expect(result.data[1].totalSpent).toBe(500);
+    });
+
+    it('should default to desc (count up to down) when sortOrder is omitted with sortBy', async () => {
+      const mockCustomers = [
+        { id: '1', firstName: 'Low', quotes: [{ total: 10 }], payments: [] },
+        {
+          id: '2',
+          firstName: 'High',
+          quotes: [{ total: 10 }, { total: 20 }],
+          payments: [],
+        },
+      ];
+      mockPrisma.customer.findMany.mockResolvedValue(mockCustomers);
+
+      const result = await service.findAll({ sortBy: CustomerSortBy.ORDERS });
+
+      expect(result.data[0].id).toBe('2');
+      expect(result.data[0].orders).toBe(2);
+      expect(result.data[1].id).toBe('1');
+      expect(result.data[1].orders).toBe(1);
     });
   });
 
