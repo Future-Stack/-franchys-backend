@@ -5,7 +5,11 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateCustomerDto, UpdateCustomerDto } from './dto/customer.dto';
-import { GetCustomersDto } from './dto/get-customers.dto';
+import {
+  GetCustomersDto,
+  CustomerSortBy,
+  SortOrder,
+} from './dto/get-customers.dto';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
 
 @Injectable()
@@ -64,31 +68,97 @@ export class CustomerService {
       ];
     }
 
-    const [data, total] = await Promise.all([
-      this.prisma.customer.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-        include: {
-          quotes: {
-            where: { status: { in: ['APPROVED', 'SENT'] } },
-            select: { total: true },
-          },
-          payments: {
-            where: { status: 'succeeded' },
-            select: { amount: true },
-          },
-        },
-      }),
-      this.prisma.customer.count({ where }),
-    ]);
+    // Determine if sorting by orders or totalSpent is requested via sortBy & sortOrder
+    const sortBy = query?.sortBy;
+    const sortOrder = query?.sortOrder;
 
-    const formattedData = data.map((customer) => {
+    let sortField: 'orders' | 'totalSpent' | null = null;
+    let sortDirection: 'asc' | 'desc' = 'desc';
+
+    if (sortBy === CustomerSortBy.ORDERS) {
+      sortField = 'orders';
+    } else if (sortBy === CustomerSortBy.TOTAL_SPENT) {
+      sortField = 'totalSpent';
+    }
+
+    if (sortField) {
+      sortDirection = sortOrder === SortOrder.ASC ? 'asc' : 'desc';
+    }
+
+    // If sorting by orders or totalSpent is not requested, preserve default initial behavior
+    if (!sortField) {
+      const [data, total] = await Promise.all([
+        this.prisma.customer.findMany({
+          where,
+          skip,
+          take: limit,
+          orderBy: { createdAt: 'desc' },
+          include: {
+            quotes: {
+              where: { status: { in: ['APPROVED', 'SENT'] } },
+              select: { total: true },
+            },
+            payments: {
+              where: { status: 'succeeded' },
+              select: { amount: true },
+            },
+          },
+        }),
+        this.prisma.customer.count({ where }),
+      ]);
+
+      const formattedData = data.map((customer) => {
+        const quotes = (customer as any).quotes || [];
+        const payments = (customer as any).payments || [];
+        const orders = quotes.length;
+        const totalSpent = payments.reduce(
+          (sum, p) => sum + Number(p.amount),
+          0,
+        );
+        const rest = { ...(customer as any) };
+        delete rest.quotes;
+        delete rest.payments;
+        return {
+          ...rest,
+          orders,
+          totalSpent,
+        };
+      });
+
+      return {
+        data: formattedData,
+        meta: {
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
+        },
+      };
+    }
+
+    // When sorting by orders or totalSpent, fetch all matching customers to sort accurately across pagination
+    const allCustomers = await this.prisma.customer.findMany({
+      where,
+      include: {
+        quotes: {
+          where: { status: { in: ['APPROVED', 'SENT'] } },
+          select: { total: true },
+        },
+        payments: {
+          where: { status: 'succeeded' },
+          select: { amount: true },
+        },
+      },
+    });
+
+    const formattedData = allCustomers.map((customer) => {
       const quotes = (customer as any).quotes || [];
       const payments = (customer as any).payments || [];
       const orders = quotes.length;
-      const totalSpent = payments.reduce((sum, p) => sum + Number(p.amount), 0);
+      const totalSpent = payments.reduce(
+        (sum, p) => sum + Number(p.amount),
+        0,
+      );
       const rest = { ...(customer as any) };
       delete rest.quotes;
       delete rest.payments;
@@ -99,8 +169,25 @@ export class CustomerService {
       };
     });
 
+    formattedData.sort((a, b) => {
+      const valA = sortField === 'orders' ? a.orders : a.totalSpent;
+      const valB = sortField === 'orders' ? b.orders : b.totalSpent;
+      const diff = valA - valB;
+
+      if (diff !== 0) {
+        return sortDirection === 'asc' ? diff : -diff;
+      }
+
+      const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return timeB - timeA;
+    });
+
+    const total = formattedData.length;
+    const paginatedData = formattedData.slice(skip, skip + limit);
+
     return {
-      data: formattedData,
+      data: paginatedData,
       meta: {
         total,
         page,
