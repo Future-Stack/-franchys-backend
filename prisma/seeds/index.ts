@@ -2,6 +2,7 @@ import 'dotenv/config';
 import {
   PrismaClient,
   Role,
+  Status,
   CustomerType,
   QuoteStatus,
   JobStatus,
@@ -19,26 +20,142 @@ const prisma = new PrismaClient({ adapter });
 async function main() {
   console.log('🌱 Seeding database with full relational test data...');
 
-  const superAdminEmail =
-    process.env.SUPER_ADMIN_EMAIL || 'superadmin@example.com';
-  const superAdminPassword = process.env.SUPER_ADMIN_PASSWORD || 'password123';
-  const hashedPassword = await bcrypt.hash(superAdminPassword, 10);
+  const defaultPassword = process.env.SEED_DEFAULT_PASSWORD || 'password123';
 
-  // 1. Create / Get Super Admin
-  let superAdmin = await prisma.user.findFirst({
-    where: { email: superAdminEmail, role: Role.SUPER_ADMIN },
-  });
+  // 1. Seed Initial Accounts (Hybrid: predefined emails & roles; passwords configurable via .env)
+  const usersToSeed = [
+    {
+      email: process.env.SUPER_ADMIN_EMAIL || 'info@makservius.com',
+      name: 'MAK SERVI Super Admin',
+      role: Role.SUPER_ADMIN,
+      operationsRole: 'Super Admin',
+      password: process.env.SUPER_ADMIN_PASSWORD || defaultPassword,
+    },
+    {
+      email: process.env.ADMIN_EMAIL || '3bcw17@gmail.com',
+      name: 'Admin User',
+      role: Role.ADMIN,
+      operationsRole: 'Administrator',
+      password: process.env.ADMIN_PASSWORD || defaultPassword,
+    },
+    {
+      email: process.env.SALES_USER_EMAIL || 'sales@makservius.com',
+      name: 'Sales Rep',
+      role: Role.USER,
+      operationsRole: 'Sales',
+      password: process.env.SALES_USER_PASSWORD || defaultPassword,
+    },
+    {
+      email: process.env.DESIGNER_USER_EMAIL || 'designer@makservius.com',
+      name: 'Lead Designer',
+      role: Role.USER,
+      operationsRole: 'Designer',
+      password: process.env.DESIGNER_USER_PASSWORD || defaultPassword,
+    },
+  ];
 
-  if (!superAdmin) {
-    superAdmin = await prisma.user.create({
-      data: {
-        email: superAdminEmail,
+  let superAdmin: any = null;
+
+  for (const u of usersToSeed) {
+    const hashedPassword = await bcrypt.hash(u.password, 10);
+    const user = await prisma.user.upsert({
+      where: { email: u.email },
+      update: {
+        name: u.name,
+        role: u.role,
+        operationsRole: u.operationsRole,
+        isVerified: true,
+        status: Status.ACTIVE,
+        isDeleted: false,
+      },
+      create: {
+        email: u.email,
+        name: u.name,
         password: hashedPassword,
-        name: 'Super Admin',
-        role: Role.SUPER_ADMIN,
+        role: u.role,
+        operationsRole: u.operationsRole,
+        isVerified: true,
+        status: Status.ACTIVE,
+        isDeleted: false,
       },
     });
-    console.log(`Created super admin: ${superAdmin.email}`);
+
+    if (u.role === Role.SUPER_ADMIN) {
+      superAdmin = user;
+    }
+
+    console.log(`👤 Seeded user: ${user.email} [${user.role}]`);
+
+    // Assign full operational permissions for ADMIN
+    if (u.role === Role.ADMIN) {
+      await prisma.userPermission.upsert({
+        where: { userId: user.userId },
+        update: {
+          canCreateCustomers: true,
+          canUpdateCustomers: true,
+          canDeleteCustomers: true,
+          canCreateQuotes: true,
+          canUpdateQuotes: true,
+          canDeleteQuotes: true,
+          canApproveQuotes: true,
+          canCreateJobs: true,
+          canUpdateJobs: true,
+          canDeleteJobs: true,
+          canCreateProducts: true,
+          canUpdateProducts: true,
+          canDeleteProducts: true,
+          canCreateUsers: true,
+          canUpdateUsers: true,
+          canDeleteUsers: false,
+          canCreateInvoices: true,
+          canUpdateInvoices: true,
+          canDeleteInvoices: true,
+          canApproveInvoices: true,
+          canTakePayment: true,
+          canCreateInvoiceFees: true,
+          canUpdateInvoiceFees: true,
+          canDeleteInvoiceFees: true,
+          canChangeInvoiceInformation: true,
+          canChangeShopInformation: true,
+          canCreateVendor: true,
+          canUpdateVendor: true,
+          canDeleteVendor: true,
+        },
+        create: {
+          userId: user.userId,
+          canCreateCustomers: true,
+          canUpdateCustomers: true,
+          canDeleteCustomers: true,
+          canCreateQuotes: true,
+          canUpdateQuotes: true,
+          canDeleteQuotes: true,
+          canApproveQuotes: true,
+          canCreateJobs: true,
+          canUpdateJobs: true,
+          canDeleteJobs: true,
+          canCreateProducts: true,
+          canUpdateProducts: true,
+          canDeleteProducts: true,
+          canCreateUsers: true,
+          canUpdateUsers: true,
+          canDeleteUsers: false,
+          canCreateInvoices: true,
+          canUpdateInvoices: true,
+          canDeleteInvoices: true,
+          canApproveInvoices: true,
+          canTakePayment: true,
+          canCreateInvoiceFees: true,
+          canUpdateInvoiceFees: true,
+          canDeleteInvoiceFees: true,
+          canChangeInvoiceInformation: true,
+          canChangeShopInformation: true,
+          canCreateVendor: true,
+          canUpdateVendor: true,
+          canDeleteVendor: true,
+        },
+      });
+      console.log(`🔑 Configured full permissions for Admin: ${user.email}`);
+    }
   }
 
   // 2. Create Customers

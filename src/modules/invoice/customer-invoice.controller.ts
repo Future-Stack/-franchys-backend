@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Patch,
+  Delete,
   Body,
   Param,
   Query,
@@ -114,5 +115,14 @@ export class CustomerInvoiceController {
   @ApiParam({ name: 'id', description: 'Invoice UUID' })
   void(@Param('id') id: string) {
     return this.invoiceService.voidInvoice(id);
+  }
+
+  @Delete(':id')
+  @ApiOperation({
+    summary: 'Soft delete an invoice by ID (cannot delete invoices with payments)',
+  })
+  @ApiParam({ name: 'id', description: 'Invoice UUID' })
+  remove(@Param('id') id: string) {
+    return this.invoiceService.remove(id);
   }
 }
