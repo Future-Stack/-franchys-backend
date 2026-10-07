@@ -43,12 +43,15 @@ model CustomerInvoice {
     paidAt DateTime?   
     dueDate DateTime?    
     notes String? @db.Text 
+    isDeleted Boolean @default(false)
     lineItems    InvoiceLineItem[]
     installments InvoiceInstallment[] 
     payments     Payment[]
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
+
+    @@index([isDeleted])
 }
 
 model InvoiceLineItem {

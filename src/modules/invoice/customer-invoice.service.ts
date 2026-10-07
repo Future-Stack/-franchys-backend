@@ -205,7 +205,7 @@ export class CustomerInvoiceService {
     const { page = 1, limit = 10, customerId, quoteId, status, search } = query;
     const skip = (page - 1) * limit;
 
-    const where: any = {};
+    const where: any = { isDeleted: false };
     if (customerId) where.customerId = customerId;
     if (quoteId) where.quoteId = quoteId;
     if (status) where.status = status;
@@ -262,11 +262,12 @@ export class CustomerInvoiceService {
       this.prisma.customerInvoice.count({ where }),
     ]);
 
-    // Calculate status counts for tab badges — always across the entire DB,
+    // Calculate status counts for tab badges — always across active invoices in DB,
     // ignoring ALL query params (no status, customerId, or quoteId filter).
     // This ensures badge counts are consistent regardless of active filters.
     const rawStatusCounts = await this.prisma.customerInvoice.groupBy({
       by: ['status'],
+      where: { isDeleted: false },
       _count: {
         id: true,
       },
@@ -301,8 +302,8 @@ export class CustomerInvoiceService {
   }
 
   async findOne(id: string) {
-    const invoice = await this.prisma.customerInvoice.findUnique({
-      where: { id },
+    const invoice = await this.prisma.customerInvoice.findFirst({
+      where: { id, isDeleted: false },
       include: {
         customer: true,
         paymentTerm: true,
@@ -321,6 +322,7 @@ export class CustomerInvoiceService {
   async getInvoiceSummary() {
     const invoices = await this.prisma.customerInvoice.findMany({
       where: {
+        isDeleted: false,
         status: {
           notIn: ['VOID', 'UNCOLLECTIBLE'],
         },
@@ -374,16 +376,18 @@ export class CustomerInvoiceService {
       where: { status: 'succeeded' },
     });
 
-    // 3. Fetch sent unpaid installments
+    // 3. Fetch sent unpaid installments (for active invoices)
     const unpaidInstallments = await this.prisma.invoiceInstallment.findMany({
       where: {
         status: { in: ['SENT', 'OVERDUE'] },
+        invoice: { isDeleted: false },
       },
     });
 
-    // 4. Fetch sent unpaid full invoices
+    // 4. Fetch sent unpaid full invoices (active only)
     const unpaidFullInvoices = await this.prisma.customerInvoice.findMany({
       where: {
+        isDeleted: false,
         status: { in: ['OPEN', 'OVERDUE'] },
         installments: {
           none: {},
@@ -424,7 +428,7 @@ export class CustomerInvoiceService {
     // 1. Fetch completed payments
     const payments = await this.prisma.payment.findMany({
       include: {
-        invoice: { select: { invoiceNumber: true } },
+        invoice: { select: { invoiceNumber: true, isDeleted: true } },
         customer: {
           select: {
             firstName: true,
@@ -435,10 +439,11 @@ export class CustomerInvoiceService {
       },
     });
 
-    // 2. Fetch sent unpaid installments
+    // 2. Fetch sent unpaid installments (active invoices)
     const unpaidInstallments = await this.prisma.invoiceInstallment.findMany({
       where: {
         status: { in: ['SENT', 'OVERDUE'] },
+        invoice: { isDeleted: false },
       },
       include: {
         invoice: {
@@ -455,9 +460,10 @@ export class CustomerInvoiceService {
       },
     });
 
-    // 3. Fetch sent unpaid full invoices
+    // 3. Fetch sent unpaid full invoices (active only)
     const unpaidFullInvoices = await this.prisma.customerInvoice.findMany({
       where: {
+        isDeleted: false,
         status: { in: ['OPEN', 'OVERDUE'] },
         installments: {
           none: {},
@@ -1117,6 +1123,31 @@ export class CustomerInvoiceService {
   }
 
   // ─────────────────────────────────────────────────────────────────────────
+  // DELETE INVOICE — admin soft-deletes an invoice (cannot delete paid invoices)
+  // ─────────────────────────────────────────────────────────────────────────
+
+  async remove(id: string) {
+    const invoice = await this.findOne(id);
+
+    if (invoice.status === 'PAID' || Number(invoice.amountPaid) > 0) {
+      throw new BadRequestException(
+        `Invoice ${invoice.invoiceNumber} cannot be deleted because it has recorded payments. Please void it instead.`,
+      );
+    }
+
+    await this.prisma.customerInvoice.update({
+      where: { id },
+      data: { isDeleted: true },
+    });
+
+    return {
+      success: true,
+      message: `Invoice ${invoice.invoiceNumber} deleted successfully`,
+      id,
+    };
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
   // SEND REMINDER — resend existing payment link (link never expires!)
   // ─────────────────────────────────────────────────────────────────────────
 
@@ -1275,6 +1306,7 @@ export class CustomerInvoiceService {
       where: {
         status: 'SENT',
         dueDate: { lt: now },
+        invoice: { isDeleted: false },
       },
     });
 
@@ -1288,6 +1320,7 @@ export class CustomerInvoiceService {
     // Mark parent invoices as OVERDUE if any installment is overdue
     const overdueInvoices = await this.prisma.customerInvoice.findMany({
       where: {
+        isDeleted: false,
         status: { in: ['OPEN', 'PARTIAL'] },
         dueDate: { lt: now },
         installments: { every: { status: { not: 'PAID' } } },

@@ -34,6 +34,7 @@ export class AnalyticsService {
     // 4. Unpaid Invoices (invoices awaiting payment: OPEN, OVERDUE, PARTIAL)
     const unpaidInvoicesCount = await this.prisma.customerInvoice.count({
       where: {
+        isDeleted: false,
         status: { in: ['OPEN', 'OVERDUE', 'PARTIAL'] },
       },
     });
