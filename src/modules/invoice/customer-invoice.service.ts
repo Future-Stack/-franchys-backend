@@ -14,6 +14,8 @@ import {
   UpdateCustomerInvoiceDto,
   SendInvoiceDto,
   GetInvoicesDto,
+  InvoiceSortBy,
+  SortOrder,
 } from './dto/customer-invoice.dto';
 
 @Injectable()
@@ -237,12 +239,33 @@ export class CustomerInvoiceService {
       ];
     }
 
+    let orderBy: Record<string, 'asc' | 'desc'> = { createdAt: 'desc' };
+    const sortDirection: 'asc' | 'desc' =
+      query.sortOrder === SortOrder.ASC ||
+      String(query.sortOrder).toLowerCase() === 'asc'
+        ? 'asc'
+        : 'desc';
+
+    if (query.sortBy) {
+      if (query.sortBy === InvoiceSortBy.AMOUNT_DUE) {
+        orderBy = { amountDue: sortDirection };
+      } else if (query.sortBy === InvoiceSortBy.AMOUNT_PAID) {
+        orderBy = { amountPaid: sortDirection };
+      } else if (query.sortBy === InvoiceSortBy.TOTAL) {
+        orderBy = { total: sortDirection };
+      } else if (query.sortBy === InvoiceSortBy.CREATED_AT) {
+        orderBy = { createdAt: sortDirection };
+      }
+    } else if (query.sortOrder) {
+      orderBy = { createdAt: sortDirection };
+    }
+
     const [data, total] = await Promise.all([
       this.prisma.customerInvoice.findMany({
         where,
         skip,
         take: limit,
-        orderBy: { createdAt: 'desc' },
+        orderBy,
         include: {
           customer: {
             select: {
