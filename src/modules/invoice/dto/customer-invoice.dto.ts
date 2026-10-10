@@ -12,8 +12,20 @@ import {
   IsEnum,
   ValidateIf,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 import { InvoiceStatus } from '@prisma/client';
+
+export enum InvoiceSortBy {
+  AMOUNT_DUE = 'amountDue',
+  AMOUNT_PAID = 'amountPaid',
+  TOTAL = 'total',
+  CREATED_AT = 'createdAt',
+}
+
+export enum SortOrder {
+  ASC = 'asc',
+  DESC = 'desc',
+}
 
 export class InvoiceLineItemDto {
   @ApiProperty({ example: 'Custom Print Order — 50 shirts' })
@@ -164,6 +176,47 @@ export class GetInvoicesDto {
   @IsString()
   @IsOptional()
   search?: string;
+
+  @ApiPropertyOptional({
+    enum: InvoiceSortBy,
+    description:
+      'Field to sort by: "amountDue", "amountPaid", "total", or "createdAt"',
+    example: 'amountDue',
+  })
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      const v = value.trim().toLowerCase();
+      if (v === 'amountdue' || v === 'amount_due')
+        return InvoiceSortBy.AMOUNT_DUE;
+      if (v === 'amountpaid' || v === 'amount_paid')
+        return InvoiceSortBy.AMOUNT_PAID;
+      if (v === 'total') return InvoiceSortBy.TOTAL;
+      if (v === 'createdat' || v === 'created_at')
+        return InvoiceSortBy.CREATED_AT;
+    }
+    return value;
+  })
+  @IsEnum(InvoiceSortBy)
+  sortBy?: InvoiceSortBy;
+
+  @ApiPropertyOptional({
+    enum: SortOrder,
+    description: 'Sort direction: "asc" or "desc"',
+    default: SortOrder.DESC,
+    example: 'desc',
+  })
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      const v = value.trim().toLowerCase();
+      if (v === 'asc') return SortOrder.ASC;
+      if (v === 'desc') return SortOrder.DESC;
+    }
+    return value;
+  })
+  @IsEnum(SortOrder)
+  sortOrder?: SortOrder;
 }
 
 export class GetPaymentsDto {
